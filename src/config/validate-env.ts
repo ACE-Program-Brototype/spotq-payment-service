@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-	NODE_ENV: z.enum(['development', 'testing', 'production']),
+	NODE_ENV: z.enum(['development', 'testing', 'production', 'test']),
 
 	PORT: z.coerce.number().positive(),
 
@@ -16,6 +16,8 @@ const envSchema = z.object({
 
 	RAZORPAY_KEY_ID: z.string().min(1),
 	RAZORPAY_KEY_SECRET: z.string().min(1),
+
+	QUEUE_PREFIX: z.string().min(1),
 });
 
 export const validateEnv = () => {

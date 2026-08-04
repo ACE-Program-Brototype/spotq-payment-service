@@ -2,11 +2,19 @@ import app from './app.js';
 import { config } from './config/index.js';
 import { PrismaService } from './infrastructure/database/index.js';
 import { logger } from './infrastructure/logger/index.js';
+import { BullMQService } from './infrastructure/queue/index.js';
 import { RedisService } from './infrastructure/redis/index.js';
 
 async function bootstrap() {
 	await PrismaService.connect();
 	await RedisService.connect();
+
+	try {
+		await BullMQService.connect();
+	} catch (error) {
+		logger.error({ err: error }, 'Failed to initialize BullMQ infrastructure. Shutting down...');
+		process.exit(1);
+	}
 
 	const server = app.listen(config.server.port, () => {
 		logger.info(`${config.service.name} running on port ${config.server.port}`);
@@ -17,6 +25,7 @@ async function bootstrap() {
 
 		await PrismaService.disconnect();
 		await RedisService.disconnect();
+		await BullMQService.disconnect();
 
 		server.close(() => {
 			logger.info('Graceful shutdown completed');

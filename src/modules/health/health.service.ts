@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { RedisClientType } from 'redis';
+import { RazorpayService } from '../../infrastructure/payment/index.js';
 import { BullMQService } from '../../infrastructure/queue/index.js';
 
 export interface HealthCheckResult {
@@ -10,6 +11,7 @@ export interface HealthCheckResult {
 		database: 'UP' | 'DOWN';
 		redis: 'UP' | 'DOWN';
 		bullmq: 'UP' | 'DOWN';
+		razorpay: 'UP' | 'DOWN';
 	};
 }
 
@@ -29,7 +31,8 @@ export class HealthService {
 			BullMQService.isHealthy(),
 		]);
 
-		const isHealthy = dbHealthy && redisHealthy && bullmqHealthy;
+		const razorpayHealthy = RazorpayService.isHealthy();
+		const isHealthy = dbHealthy && redisHealthy && bullmqHealthy && razorpayHealthy;
 		const status = isHealthy ? 'UP' : 'DOWN';
 
 		return {
@@ -40,6 +43,7 @@ export class HealthService {
 				database: dbHealthy ? 'UP' : 'DOWN',
 				redis: redisHealthy ? 'UP' : 'DOWN',
 				bullmq: bullmqHealthy ? 'UP' : 'DOWN',
+				razorpay: razorpayHealthy ? 'UP' : 'DOWN',
 			},
 		};
 	}

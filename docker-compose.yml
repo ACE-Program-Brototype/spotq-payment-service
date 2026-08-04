@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: payment-service
+
+    ports:
+      - "3001:3001"
+
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      SERVICE_NAME: spotq-payment-service
+      LOG_LEVEL: info
+
+      DATABASE_URL: postgresql://postgres:postgres@postgres-payment:5432/spotq_payment
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@postgres-payment:5432/spotq_payment
+
+      REDIS_URL: redis://redis-payment:6379
+      RAZORPAY_KEY_ID: test_key_id
+      RAZORPAY_KEY_SECRET: test_key_secret
+
+    depends_on:
+      - postgres-payment
+      - redis-payment
+
+    networks:
+      - spotq-network
+
+  postgres-payment:
+    image: postgres:16-alpine
+
+    container_name: postgres-payment
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: spotq_payment
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+
+    networks:
+      - spotq-network
+
+  redis-payment:
+    image: redis:7-alpine
+
+    container_name: redis-payment
+
+    restart: unless-stopped
+
+    ports:
+      - "6380:6379"
+
+    volumes:
+      - redis-payment-data:/data
+
+    networks:
+      - spotq-network
+
+volumes:
+  postgres-payment-data:
+  redis-payment-data:
+
+networks:
+  spotq-network:
+    driver: bridge

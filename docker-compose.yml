@@ -18,7 +18,6 @@ services:
       LOG_LEVEL: info
 
       DATABASE_URL: postgresql://postgres:postgres@postgres-payment:5432/spotq_payment
-      DIRECT_DATABASE_URL: postgresql://postgres:postgres@postgres-payment:5432/spotq_payment
 
       REDIS_URL: redis://redis-payment:6379
       RAZORPAY_TEST_API_KEY: test_key_id

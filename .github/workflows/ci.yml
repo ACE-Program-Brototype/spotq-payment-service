@@ -46,6 +46,17 @@ jobs:
 
       - name: Run Tests
         run: pnpm test
+        env:
+          NODE_ENV: test
+          PORT: 3001
+          SERVICE_NAME: spotq-payment-service
+          LOG_LEVEL: info
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/spotq
+          DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/spotq
+          REDIS_URL: redis://localhost:6379
+          RAZORPAY_KEY_ID: test_key_id
+          RAZORPAY_KEY_SECRET: test_key_secret
+          QUEUE_PREFIX: spotq_payment
 
       - name: Build Docker Image
         run: docker build -t payment-service .

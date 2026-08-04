@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { RedisClientType } from 'redis';
+import { BullMQService } from '../../infrastructure/queue/index.js';
 
 export interface HealthCheckResult {
 	status: 'UP' | 'DOWN';
@@ -8,6 +9,7 @@ export interface HealthCheckResult {
 		application: 'UP';
 		database: 'UP' | 'DOWN';
 		redis: 'UP' | 'DOWN';
+		bullmq: 'UP' | 'DOWN';
 	};
 }
 
@@ -21,9 +23,13 @@ export class HealthService {
 	}
 
 	async check(): Promise<HealthCheckResult> {
-		const [dbHealthy, redisHealthy] = await Promise.all([this.checkDatabase(), this.checkRedis()]);
+		const [dbHealthy, redisHealthy, bullmqHealthy] = await Promise.all([
+			this.checkDatabase(),
+			this.checkRedis(),
+			BullMQService.isHealthy(),
+		]);
 
-		const isHealthy = dbHealthy && redisHealthy;
+		const isHealthy = dbHealthy && redisHealthy && bullmqHealthy;
 		const status = isHealthy ? 'UP' : 'DOWN';
 
 		return {
@@ -33,6 +39,7 @@ export class HealthService {
 				application: 'UP',
 				database: dbHealthy ? 'UP' : 'DOWN',
 				redis: redisHealthy ? 'UP' : 'DOWN',
+				bullmq: bullmqHealthy ? 'UP' : 'DOWN',
 			},
 		};
 	}

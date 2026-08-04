@@ -22,6 +22,7 @@ export const config = {
 
 	redis: {
 		url: env.REDIS_URL,
+		queuePrefix: env.QUEUE_PREFIX,
 	},
 
 	razorpay: {

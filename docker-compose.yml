@@ -21,8 +21,8 @@ services:
       DIRECT_DATABASE_URL: postgresql://postgres:postgres@postgres-payment:5432/spotq_payment
 
       REDIS_URL: redis://redis-payment:6379
-      RAZORPAY_KEY_ID: test_key_id
-      RAZORPAY_KEY_SECRET: test_key_secret
+      RAZORPAY_TEST_API_KEY: test_key_id
+      RAZORPAY_TEST_SECRET_KEY: test_key_secret
 
     depends_on:
       - postgres-payment

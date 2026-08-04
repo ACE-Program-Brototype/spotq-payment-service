@@ -52,7 +52,6 @@ jobs:
           SERVICE_NAME: spotq-payment-service
           LOG_LEVEL: info
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/spotq
-          DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/spotq
           REDIS_URL: redis://localhost:6379
           RAZORPAY_TEST_API_KEY: test_key_id
           RAZORPAY_TEST_SECRET_KEY: test_key_secret

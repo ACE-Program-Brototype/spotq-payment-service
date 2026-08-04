@@ -14,8 +14,8 @@ const envSchema = z.object({
 
 	REDIS_URL: z.string().url(),
 
-	RAZORPAY_KEY_ID: z.string().min(1),
-	RAZORPAY_KEY_SECRET: z.string().min(1),
+	RAZORPAY_TEST_API_KEY: z.string().min(1),
+	RAZORPAY_TEST_SECRET_KEY: z.string().min(1),
 
 	QUEUE_PREFIX: z.string().min(1),
 });

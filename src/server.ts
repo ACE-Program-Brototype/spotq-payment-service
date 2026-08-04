@@ -2,6 +2,7 @@ import app from './app.js';
 import { config } from './config/index.js';
 import { PrismaService } from './infrastructure/database/index.js';
 import { logger } from './infrastructure/logger/index.js';
+import { RazorpayService } from './infrastructure/payment/index.js';
 import { BullMQService } from './infrastructure/queue/index.js';
 import { RedisService } from './infrastructure/redis/index.js';
 
@@ -13,6 +14,13 @@ async function bootstrap() {
 		await BullMQService.connect();
 	} catch (error) {
 		logger.error({ err: error }, 'Failed to initialize BullMQ infrastructure. Shutting down...');
+		process.exit(1);
+	}
+
+	try {
+		await RazorpayService.initialize();
+	} catch (error) {
+		logger.error({ err: error }, 'Failed to initialize Razorpay infrastructure. Shutting down...');
 		process.exit(1);
 	}
 

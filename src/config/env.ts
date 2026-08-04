@@ -26,7 +26,7 @@ export const config = {
 	},
 
 	razorpay: {
-		keyId: env.RAZORPAY_KEY_ID,
-		keySecret: env.RAZORPAY_KEY_SECRET,
+		keyId: env.RAZORPAY_TEST_API_KEY,
+		keySecret: env.RAZORPAY_TEST_SECRET_KEY,
 	},
 } as const;

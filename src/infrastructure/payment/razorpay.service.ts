@@ -13,7 +13,7 @@ export class RazorpayService {
 
 			if (!keyId || !keySecret) {
 				throw new Error(
-					'Razorpay configuration missing: RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not defined',
+					'Razorpay configuration missing: RAZORPAY_TEST_API_KEY or RAZORPAY_TEST_SECRET_KEY is not defined',
 				);
 			}
 

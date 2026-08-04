@@ -9,5 +9,6 @@ const healthService = new HealthService(prisma, redisClient);
 const healthController = new HealthController(healthService);
 
 router.get('/health', healthController.check);
+router.get('/ready', healthController.check);
 
 export { router as healthRouter };

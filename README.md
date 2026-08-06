@@ -100,7 +100,7 @@ pnpm run prisma:generate
   ```
 - **Infisical Mode (Syncing secrets from workspace):**
   ```bash
-  infisical run --env=dev -- pnpm run dev
+  pnpm run dev:infisical
   ```
 
 ---
@@ -109,9 +109,14 @@ pnpm run prisma:generate
 
 ### Run Unit Tests
 Unit tests use Jest compiled via SWC for speed:
-```bash
-pnpm test
-```
+- **Local Fallback Mode:**
+  ```bash
+  pnpm test
+  ```
+- **Infisical Mode:**
+  ```bash
+  pnpm run test:infisical
+  ```
 
 ### Formatting and Linting Checks
 Biome handles styling and static checks. To audit the codebase:

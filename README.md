@@ -136,3 +136,71 @@ The service includes a multi-stage `Dockerfile` optimized for minimal production
 # Spins up Postgres, Redis, and the Payment Service container locally
 docker-compose up -d --build
 ```
+
+---
+
+## Branching Strategy
+
+### Permanent Branches
+- `main`
+- `staging`
+- `development`
+
+### Working Branches (must follow ticket key matching convention)
+- `feat/<feature>`
+- `fix/<issue>`
+- `refactor/<module>`
+- `docs/<topic>`
+- `chore/<task>`
+- `hotfix/<issue>`
+
+> **Branch Name Rule:** Working branches must include a JIRA ticket key matching: `^(feat|fix|chore|refactor|hotfix)/SCRUM-[0-9]+(-.+)?$`
+
+---
+
+## Coding Standards
+We strictly adhere to the following standards:
+- **Clean Architecture:** Domain -> Application -> Infrastructure -> Presentation.
+- **SOLID Principles:** For maintainable object-oriented codebase design.
+- **TypeScript Strict Mode:** To prevent type safety gaps.
+- **Biome Formatting & Linting:** Formatting and static check compliance.
+- **Structured Logging:** Unified Pino JSON logger configuration tracking request contexts (`requestId`, `correlationId`, `traceId`).
+- **Prometheus Metrics:** Tracking request count, duration, and connection health states.
+- **Conventional Git Commits:** Standardized semantic commit messages.
+
+---
+
+## CI Pipeline
+The GitHub Actions pipeline is configured to automatically validate code quality on every push and pull request. The pipeline runs:
+1. **Dependency Installation:** Restores cache and installs dependencies using `pnpm`.
+2. **Prisma Client Generation:** Pre-generates typescript types from Prisma schema.
+3. **Lint & Format Validation:** Audits compliance via Biome.
+4. **TypeScript Build Verification:** Compiles TS source checks via `tsc`.
+5. **Unit Tests Run:** Executes Jest test suites.
+6. **Docker Build:** Verifies container image builds successfully.
+
+### Triggers
+- **Pull Requests:** Targeting `development`, `staging`, or `main`.
+- **Pushes:** To `development`, `staging`, or `main` branches.
+
+---
+
+## Development Guidelines
+
+### Pre-commit Check
+Before pushing your changes or opening a PR, always execute local validation scripts:
+```bash
+# Run Biome linter check
+pnpm lint
+
+# Run Jest unit tests
+pnpm test
+
+# Build TypeScript target output
+pnpm build
+```
+
+### Verification Checks
+1. Ensure the application endpoint `/health` and `/ready` return successful statuses (`200 OK`) and include all dependencies states.
+2. Verify `/metrics` correctly outputs Prometheus format values.
+3. Ensure the local Docker container builds successfully via `docker-compose up -d --build`.

@@ -1,5 +1,6 @@
 import Razorpay from 'razorpay';
 import { config } from '../../config/index.js';
+import { MESSAGES } from '../../shared/constants/index.js';
 import { logger } from '../logger/index.js';
 import { setRazorpayClient } from './razorpay.client.js';
 
@@ -12,13 +13,11 @@ export class RazorpayService {
 			const { keyId, keySecret } = config.razorpay;
 
 			if (!keyId || !keySecret) {
-				throw new Error(
-					'Razorpay configuration missing: RAZORPAY_TEST_API_KEY or RAZORPAY_TEST_SECRET_KEY is not defined',
-				);
+				throw new Error(MESSAGES.RAZORPAY_CONFIG_MISSING);
 			}
 
 			if (keyId.trim().length === 0 || keySecret.trim().length === 0) {
-				throw new Error('Razorpay credentials cannot be empty');
+				throw new Error(MESSAGES.RAZORPAY_CREDS_EMPTY);
 			}
 
 			const client = new Razorpay({
@@ -29,9 +28,9 @@ export class RazorpayService {
 			setRazorpayClient(client);
 			RazorpayService.initialized = true;
 
-			logger.info('Razorpay Initialized');
+			logger.info(MESSAGES.RAZORPAY_INITIALIZED);
 		} catch (error) {
-			logger.error({ err: error }, 'Razorpay Initialization Failed');
+			logger.error({ err: error }, MESSAGES.RAZORPAY_INITIALIZATION_FAILED);
 			RazorpayService.initialized = false;
 			throw error;
 		}

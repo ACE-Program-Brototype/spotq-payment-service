@@ -5,6 +5,7 @@ import { logger } from './infrastructure/logger/index.js';
 import { RazorpayService } from './infrastructure/payment/index.js';
 import { BullMQService } from './infrastructure/queue/index.js';
 import { RedisService } from './infrastructure/redis/index.js';
+import { MESSAGES } from './shared/constants/index.js';
 
 async function bootstrap() {
 	await PrismaService.connect();
@@ -13,14 +14,14 @@ async function bootstrap() {
 	try {
 		await BullMQService.connect();
 	} catch (error) {
-		logger.error({ err: error }, 'Failed to initialize BullMQ infrastructure. Shutting down...');
+		logger.error({ err: error }, MESSAGES.BULLMQ_INIT_FAILED);
 		process.exit(1);
 	}
 
 	try {
 		await RazorpayService.initialize();
 	} catch (error) {
-		logger.error({ err: error }, 'Failed to initialize Razorpay infrastructure. Shutting down...');
+		logger.error({ err: error }, MESSAGES.RAZORPAY_INIT_FAILED);
 		process.exit(1);
 	}
 
@@ -29,14 +30,14 @@ async function bootstrap() {
 	});
 
 	const shutdown = async () => {
-		logger.info('Gracefully shutting down...');
+		logger.info(MESSAGES.SHUTDOWN_STARTING);
 
 		await PrismaService.disconnect();
 		await RedisService.disconnect();
 		await BullMQService.disconnect();
 
 		server.close(() => {
-			logger.info('Graceful shutdown completed');
+			logger.info(MESSAGES.SHUTDOWN_COMPLETED);
 			process.exit(0);
 		});
 	};
@@ -46,6 +47,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-	logger.error(error, 'Failed to bootstrap server');
+	logger.error(error, MESSAGES.SERVER_BOOTSTRAP_FAILED);
 	process.exit(1);
 });

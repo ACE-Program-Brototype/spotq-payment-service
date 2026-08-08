@@ -1,5 +1,6 @@
 import { Redis, type RedisOptions } from 'ioredis';
 import { config } from '../../config/index.js';
+import { MESSAGES } from '../../shared/constants/index.js';
 import { logger } from '../logger/index.js';
 import { bullmqConnection } from './bullmq.client.js';
 
@@ -17,14 +18,14 @@ export class BullMQService {
 			BullMQService.client = new Redis(config.redis.url, bullmqConnection as RedisOptions);
 
 			BullMQService.client.on('error', (err) => {
-				logger.error({ err }, 'BullMQ Redis Connection Error');
+				logger.error({ err }, MESSAGES.BULLMQ_CONNECTION_ERROR);
 			});
 
 			// Validate connection
 			await BullMQService.client.ping();
-			logger.info('BullMQ Connected');
+			logger.info(MESSAGES.BULLMQ_CONNECTED);
 		} catch (error) {
-			logger.error({ err: error }, 'BullMQ Connection Failed');
+			logger.error({ err: error }, MESSAGES.BULLMQ_CONNECTION_FAILED);
 			BullMQService.client = null;
 			throw error;
 		}
@@ -34,9 +35,9 @@ export class BullMQService {
 		if (BullMQService.client) {
 			try {
 				await BullMQService.client.quit();
-				logger.info('BullMQ Disconnected');
+				logger.info(MESSAGES.BULLMQ_DISCONNECTED);
 			} catch (error) {
-				logger.error({ err: error }, 'BullMQ Disconnect Error');
+				logger.error({ err: error }, MESSAGES.BULLMQ_DISCONNECT_ERROR);
 			} finally {
 				BullMQService.client = null;
 			}

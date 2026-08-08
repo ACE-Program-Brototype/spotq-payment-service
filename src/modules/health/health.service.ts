@@ -2,16 +2,17 @@ import type { PrismaClient } from '@prisma/client';
 import type { RedisClientType } from 'redis';
 import { RazorpayService } from '../../infrastructure/payment/index.js';
 import { BullMQService } from '../../infrastructure/queue/index.js';
+import { HEALTH_STATUS, type HealthStatus } from '../../shared/constants/index.js';
 
 export interface HealthCheckResult {
-	status: 'UP' | 'DOWN';
+	status: HealthStatus;
 	timestamp: string;
 	checks: {
-		application: 'UP';
-		database: 'UP' | 'DOWN';
-		redis: 'UP' | 'DOWN';
-		bullmq: 'UP' | 'DOWN';
-		razorpay: 'UP' | 'DOWN';
+		application: typeof HEALTH_STATUS.UP;
+		database: HealthStatus;
+		redis: HealthStatus;
+		bullmq: HealthStatus;
+		razorpay: HealthStatus;
 	};
 }
 
@@ -33,17 +34,17 @@ export class HealthService {
 
 		const razorpayHealthy = RazorpayService.isHealthy();
 		const isHealthy = dbHealthy && redisHealthy && bullmqHealthy && razorpayHealthy;
-		const status = isHealthy ? 'UP' : 'DOWN';
+		const status = isHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN;
 
 		return {
 			status,
 			timestamp: new Date().toISOString(),
 			checks: {
-				application: 'UP',
-				database: dbHealthy ? 'UP' : 'DOWN',
-				redis: redisHealthy ? 'UP' : 'DOWN',
-				bullmq: bullmqHealthy ? 'UP' : 'DOWN',
-				razorpay: razorpayHealthy ? 'UP' : 'DOWN',
+				application: HEALTH_STATUS.UP,
+				database: dbHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN,
+				redis: redisHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN,
+				bullmq: bullmqHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN,
+				razorpay: razorpayHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN,
 			},
 		};
 	}

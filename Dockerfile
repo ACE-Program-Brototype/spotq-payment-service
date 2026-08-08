@@ -9,7 +9,9 @@ RUN corepack enable
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm config set registry https://registry.npmmirror.com
+RUN pnpm config set registry https://registry.npmmirror.com && \
+    pnpm config set fetch-timeout 300000 && \
+    pnpm config set fetch-retries 5
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
@@ -45,4 +47,4 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --spider -q http://localhost:3003/health || exit 1
 
-CMD ["node", "dist/server.js"]
+CMD ["infisical", "run", "--", "node", "dist/server.js"]

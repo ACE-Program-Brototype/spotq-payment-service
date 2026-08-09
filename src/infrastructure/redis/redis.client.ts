@@ -1,4 +1,5 @@
 import { config } from '@config/index.js';
+import { logger } from '@infrastructure/logger/index.js';
 import { MESSAGES } from '@shared/constants/index.js';
 import { createClient } from 'redis';
 
@@ -19,17 +20,17 @@ export const redisClient = createClient({
 });
 
 redisClient.on('connect', () => {
-	console.log(MESSAGES.REDIS_CONNECTING);
+	logger.info(MESSAGES.REDIS_CONNECTING);
 });
 
 redisClient.on('ready', () => {
-	console.log(MESSAGES.REDIS_CONNECTED);
+	logger.info(MESSAGES.REDIS_CONNECTED);
 });
 
 redisClient.on('reconnecting', () => {
-	console.log(MESSAGES.REDIS_RECONNECTING);
+	logger.warn(MESSAGES.REDIS_RECONNECTING);
 });
 
 redisClient.on('error', (error) => {
-	console.error(MESSAGES.REDIS_ERROR, error);
+	logger.error({ err: error }, MESSAGES.REDIS_ERROR);
 });

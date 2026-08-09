@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "en-US"
+
+reviews:
+  # 'chill' profile gives feedback in a friendly, constructive manner with less pedantic comments
+  profile: "chill" 
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "development"
+      - "main"
+
+  # Exclude lockfiles, node_modules, generated code, and bundle outputs
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/generated/**"
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/.DS_Store"
+
+path_instructions:
+  - path: "**/prisma/schema.prisma"
+    instructions: |
+      Ensure schema changes include appropriate indexes for fields queried frequently.
+      Validate that any migrations are backward compatible and won't cause locking or service disruption.
+  - path: "src/**/*.ts"
+    instructions: |
+      Verify that error handling is robust and database transactions (Prisma) are closed/handled correctly.
+      Check that environment variables are accessed safely via validated config schemas.
+
+tools:
+  gitleaks:
+    enabled: true
+  semgrep:
+    enabled: true

@@ -1,5 +1,5 @@
+import { config } from '@config/index.js';
 import type { ConnectionOptions } from 'bullmq';
-import { config } from '../../config/index.js';
 
 const isTls = config.redis.url.startsWith('rediss://');
 

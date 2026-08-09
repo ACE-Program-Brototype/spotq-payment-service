@@ -1,7 +1,7 @@
+import { config } from '@config/index.js';
+import { logger } from '@infrastructure/logger/index.js';
+import { MESSAGES } from '@shared/constants/index.js';
 import { Redis, type RedisOptions } from 'ioredis';
-import { config } from '../../config/index.js';
-import { MESSAGES } from '../../shared/constants/index.js';
-import { logger } from '../logger/index.js';
 import { bullmqConnection } from './bullmq.client.js';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: service structure uses static class methods

@@ -1,6 +1,6 @@
+import { prisma } from '@infrastructure/database/index.js';
+import { redisClient } from '@infrastructure/redis/index.js';
 import { Router } from 'express';
-import { prisma } from '../../infrastructure/database/index.js';
-import { redisClient } from '../../infrastructure/redis/index.js';
 import { HealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
 

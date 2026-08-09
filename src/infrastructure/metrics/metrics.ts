@@ -1,6 +1,6 @@
+import { prisma } from '@infrastructure/database/index.js';
+import { redisClient } from '@infrastructure/redis/index.js';
 import client from 'prom-client';
-import { prisma } from '../database/index.js';
-import { redisClient } from '../redis/index.js';
 
 // Enable default metrics collection (includes CPU, Memory, Event Loop Lag, etc.)
 client.collectDefaultMetrics();

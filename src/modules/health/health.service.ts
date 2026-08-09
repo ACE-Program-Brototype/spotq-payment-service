@@ -1,8 +1,8 @@
+import { RazorpayService } from '@infrastructure/payment/index.js';
+import { BullMQService } from '@infrastructure/queue/index.js';
 import type { PrismaClient } from '@prisma/client';
+import { HEALTH_STATUS, type HealthStatus } from '@shared/constants/index.js';
 import type { RedisClientType } from 'redis';
-import { RazorpayService } from '../../infrastructure/payment/index.js';
-import { BullMQService } from '../../infrastructure/queue/index.js';
-import { HEALTH_STATUS, type HealthStatus } from '../../shared/constants/index.js';
 
 export interface HealthCheckResult {
 	status: HealthStatus;

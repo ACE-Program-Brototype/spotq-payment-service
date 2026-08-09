@@ -1,5 +1,5 @@
+import { httpRequestCounter, httpRequestDuration } from '@infrastructure/metrics/index.js';
 import type { NextFunction, Request, Response } from 'express';
-import { httpRequestCounter, httpRequestDuration } from '../../infrastructure/metrics/index.js';
 
 export function metricsMiddleware(req: Request, res: Response, next: NextFunction): void {
 	// Skip metrics and health check paths to prevent spamming metrics logs

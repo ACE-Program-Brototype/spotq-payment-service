@@ -1,5 +1,5 @@
+import { config } from '@config/env.js';
 import pino from 'pino';
-import { config } from '../../config/env.js';
 import { loggerLocalStorage } from './logger-context.js';
 
 export const logger = pino({

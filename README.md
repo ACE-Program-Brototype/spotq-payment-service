@@ -9,50 +9,60 @@ Built using **TypeScript**, **Express 5**, **Clean Architecture**, and modern ob
 ## Technology Stack
 - **Runtime & Language:** Node.js (v22+), Express 5, TypeScript (v7+)
 - **ORM & Database:** Prisma 7 with PostgreSQL (configured via `@prisma/adapter-pg` driver adapter)
-- **Caching & Pub/Sub:** Redis (using `redis` client)
+- **Caching & Pub/Sub:** Redis (using `redis` & `ioredis` clients)
+- **Job Queue:** BullMQ (for asynchronous background transaction processing)
+- **Payment Gateway:** Razorpay SDK (with `IPaymentGateway` domain abstraction)
 - **Secret Management:** Infisical CLI (for secure environment variable injections)
 - **Log Management:** Pino Logger (configured with native `AsyncLocalStorage` request-context tracking)
 - **Monitoring & Metrics:** `prom-client` (exposing system, network, and connectivity metrics)
 - **Quality & Formatters:** Biome (for lightning-fast linting and code formatting)
-- **Testing:** Jest with `@swc/jest` compiler (highly optimized for TS7 ESM)
+- **Testing:** Jest with `@swc/jest` compiler & Grafana k6 (load testing)
 - **Package Manager:** `pnpm` (v11+)
+- **Bundler:** `tsup` (esbuild-powered ESM bundler)
 
 ---
 
-## System Architecture
+## System Architecture & Path Aliases
+
 The codebase strictly follows **Clean Architecture** patterns:
-- **`src/domain/`**: Represents core business rules, entities, and interfaces (independent of external libraries).
-- **`src/application/`**: Contains use-cases and business workflows coordinating data between controllers and domain objects.
-- **`src/infrastructure/`**: Details concrete adapters for external systems (Database connection, Redis state, Metrics registry, Pino Logger configurations).
-- **`src/presentation/`**: Manages HTTP entrypoints, Express routes, and middlewares (validation, logger mapping, metrics tracking).
-- **`src/modules/`**: Hosts cohesive feature domains (such as the modular `health` check domain).
+- **`@domain/*` (`src/domain/`)**: Core business rules, entities, value objects, and domain interfaces (e.g. `IPaymentGateway`). Independent of any third-party framework or database.
+- **`@application/*` (`src/application/`)**: Application use cases and business workflows.
+- **`@infrastructure/*` (`src/infrastructure/`)**: Concrete adapters for external systems (Prisma Database, Redis, BullMQ, RazorpayGateway adapter, Logger, Prometheus Metrics, and Lifecycle orchestrator).
+- **`@presentation/*` (`src/presentation/`)**: HTTP entrypoints, Express routes, and middlewares (error handler, trace logging, metrics collection, 404 handler).
+- **`@modules/*` (`src/modules/`)**: Feature domains (such as modular `health` check domain).
+- **`@shared/*` (`src/shared/`)**: Shared constants, HTTP status code enums, and message definitions.
+- **`@config/*` (`src/config/`)**: Environment validation schemas and configuration objects.
 
 ---
 
 ## Key Features
 
-### 1. Production-Ready Health Monitoring (`GET /health`)
-Exposes the status of the service and its underlying database and caching dependencies:
+### 1. Production-Ready Health Monitoring (`GET /health` & `GET /ready`)
+Exposes the status of the service and all underlying dependencies:
 ```json
 {
   "status": "UP",
-  "timestamp": "2026-08-03T21:00:48.143Z",
+  "timestamp": "2026-08-09T01:23:31.000Z",
   "checks": {
     "application": "UP",
     "database": "UP",
-    "redis": "UP"
+    "redis": "UP",
+    "bullmq": "UP",
+    "razorpay": "UP"
   }
 }
 ```
-- **Database Connection Check:** Evaluates raw connection pooling state using Prisma's `SELECT 1`.
+- **Database Connection Check:** Evaluates connection pooling state via Prisma's `SELECT 1`.
 - **Redis Connection Check:** Queries latency status via `PING` -> `PONG`.
-- **HTTP Status Codes:** Returns `200 OK` when all systems are healthy, and `503 Service Unavailable` if any checks return `DOWN`.
+- **BullMQ Queue Check:** Verifies Redis queue broker connection state.
+- **Razorpay SDK Check:** Validates gateway credentials and client readiness.
+- **HTTP Status Codes:** Returns `200 OK` when all systems are healthy, and `503 Service Unavailable` if any check returns `DOWN`.
 
 ### 2. Structured JSON Logging with Trace Correlation
 Every log message is outputted in structured JSON via **Pino** and automatically correlates with the incoming HTTP request context using Node's native **`AsyncLocalStorage`**:
-- **Automatic Headers:** Every response returns `x-request-id` (unique tracking uuid) and `x-correlation-id` (forwarded microservice tracking identifier).
-- **Auto-injected Fields:** Every log statement emitted during the request automatically contains `"requestId"` and `"correlationId"`.
-- **Formatting:** Log levels are standardized to uppercase (e.g. `INFO`, `ERROR`) and timestamps use standardized ISO strings.
+- **Automatic Headers:** Every response returns `x-request-id`, `x-correlation-id`, and `x-trace-id`.
+- **Auto-injected Fields:** Every log statement emitted during the request automatically contains `"requestId"`, `"correlationId"`, and `"traceId"`.
+- **Formatting:** Log levels are standardized to uppercase (e.g. `INFO`, `ERROR`) and timestamps use ISO strings.
 - **Stack Traces:** Errors logged via `logger.error` are automatically serialized to include the error name, message, and structured stack trace.
 
 ### 3. Prometheus Observability Metrics (`GET /metrics`)
@@ -63,8 +73,8 @@ Exposes runtime metrics compiled in the standard Prometheus exposition format:
 - **Dependency State (`database_up` / `redis_up`):** Gauges measuring active connection status (1 for connected, 0 for disconnected) evaluated dynamically during scraper polls.
 
 ### 4. Secure Secrets Management (Infisical CLI)
-Environment credentials (like DB connection proxies and Redis passwords) are kept completely out of the codebase and Git history:
-- In production, secrets are fetched dynamically at boot and injected into the Node process using the **Infisical CLI**: `infisical run -- <command>`.
+Environment credentials are kept out of the codebase and Git history:
+- In production, secrets are fetched dynamically at boot and injected using the **Infisical CLI**: `infisical run -- <command>`.
 - In local development, the configuration seamlessly falls back to reading standard `.env` values when Infisical credentials are not present.
 
 ---
@@ -74,18 +84,12 @@ Environment credentials (like DB connection proxies and Redis passwords) are kep
 ### 1. Prerequisites
 - Install **Node.js** (v22+)
 - Install **pnpm** (v11+)
-- Install the **Infisical CLI** (optional for local fallback mode, required for syncing workspace keys)
+- Install **Infisical CLI** (optional for local fallback mode, required for syncing workspace keys)
 
 ### 2. Setup Dependencies & Services
 ```bash
 # Clone the repository and install packages
 pnpm install
-
-# Start the local Prisma Postgres development server
-pnpm exec prisma dev start default
-
-# Start your local Redis instance
-brew services start redis
 ```
 
 ### 3. Generate Prisma Client
@@ -109,14 +113,14 @@ pnpm run prisma:generate
 
 ### Run Unit Tests
 Unit tests use Jest compiled via SWC for speed:
-- **Local Fallback Mode:**
-  ```bash
-  pnpm test
-  ```
-- **Infisical Mode:**
-  ```bash
-  pnpm run test:infisical
-  ```
+```bash
+pnpm test
+```
+
+### Run Load Testing (k6)
+```bash
+k6 run test/load-test.js
+```
 
 ### Formatting and Linting Checks
 Biome handles styling and static checks. To audit the codebase:
@@ -133,14 +137,8 @@ pnpm run format
 ## Docker Deployment
 The service includes a multi-stage `Dockerfile` optimized for minimal production image footprint:
 
-- **Build Stage:** Installs dev dependencies, generates the Prisma client binaries, and compiles TypeScript source code.
+- **Build Stage:** Installs dev dependencies, generates the Prisma client binaries, and compiles TypeScript source code using `tsup`.
 - **Production Stage:** Prunes dev dependencies, installs the **Infisical CLI** for secure runtime injections, switches to a non-root `appuser` for security, and configures a Docker healthcheck using `wget` against `/health`.
-
-### Start the Container Cluster
-```bash
-# Spins up Postgres, Redis, and the Payment Service container locally
-docker-compose up -d --build
-```
 
 ---
 
@@ -165,9 +163,8 @@ docker-compose up -d --build
 
 ## Coding Standards
 We strictly adhere to the following standards:
-- **Clean Architecture:** Domain -> Application -> Infrastructure -> Presentation.
-- **SOLID Principles:** For maintainable object-oriented codebase design.
-- **TypeScript Strict Mode:** To prevent type safety gaps.
+- **Clean Architecture & SOLID:** Strict separation between Domain, Application, Infrastructure, and Presentation layers.
+- **TypeScript Strict Mode:** High type safety across source and test files.
 - **Biome Formatting & Linting:** Formatting and static check compliance.
 - **Structured Logging:** Unified Pino JSON logger configuration tracking request contexts (`requestId`, `correlationId`, `traceId`).
 - **Prometheus Metrics:** Tracking request count, duration, and connection health states.
@@ -180,7 +177,7 @@ The GitHub Actions pipeline is configured to automatically validate code quality
 1. **Dependency Installation:** Restores cache and installs dependencies using `pnpm`.
 2. **Prisma Client Generation:** Pre-generates typescript types from Prisma schema.
 3. **Lint & Format Validation:** Audits compliance via Biome.
-4. **TypeScript Build Verification:** Compiles TS source checks via `tsc`.
+4. **TypeScript Build Verification:** Compiles TS source checks via `tsc --noEmit && tsup`.
 5. **Unit Tests Run:** Executes Jest test suites.
 6. **Docker Build:** Verifies container image builds successfully.
 
@@ -206,6 +203,6 @@ pnpm build
 ```
 
 ### Verification Checks
-1. Ensure the application endpoint `/health` and `/ready` return successful statuses (`200 OK`) and include all dependencies states.
+1. Ensure the application endpoints `/health` and `/ready` return successful statuses (`200 OK`) and include all dependencies states.
 2. Verify `/metrics` correctly outputs Prometheus format values.
 3. Ensure the local Docker container builds successfully via `docker-compose up -d --build`.

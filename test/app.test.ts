@@ -2,6 +2,7 @@ import { prisma } from '@infrastructure/database/index.ts';
 import { RazorpayService } from '@infrastructure/payment/index.ts';
 import { BullMQService } from '@infrastructure/queue/index.ts';
 import { redisClient } from '@infrastructure/redis/index.ts';
+import { HEALTH_STATUS, HTTP_STATUS } from '@shared/constants/index.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
@@ -23,32 +24,32 @@ describe('Payment Service Observability Endpoints', () => {
 		it('should return health status checks containing bullmq and razorpay UP', async () => {
 			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(true);
 
-			const response = await request(app).get('/health').expect(200);
+			const response = await request(app).get('/health').expect(HTTP_STATUS.OK);
 
-			expect(response.body).toHaveProperty('status', 'UP');
-			expect(response.body.checks).toHaveProperty('bullmq', 'UP');
-			expect(response.body.checks).toHaveProperty('razorpay', 'UP');
+			expect(response.body).toHaveProperty('status', HEALTH_STATUS.UP);
+			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.UP);
+			expect(response.body.checks).toHaveProperty('razorpay', HEALTH_STATUS.UP);
 		});
 
 		it('should return 503 DOWN when bullmq health check fails', async () => {
 			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(false);
 
-			const response = await request(app).get('/health').expect(503);
+			const response = await request(app).get('/health').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
-			expect(response.body).toHaveProperty('status', 'DOWN');
-			expect(response.body.checks).toHaveProperty('bullmq', 'DOWN');
-			expect(response.body.checks).toHaveProperty('razorpay', 'UP');
+			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
+			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.DOWN);
+			expect(response.body.checks).toHaveProperty('razorpay', HEALTH_STATUS.UP);
 		});
 
 		it('should return 503 DOWN when razorpay health check fails', async () => {
 			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(true);
 			jest.spyOn(RazorpayService, 'isHealthy').mockReturnValue(false);
 
-			const response = await request(app).get('/health').expect(503);
+			const response = await request(app).get('/health').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
-			expect(response.body).toHaveProperty('status', 'DOWN');
-			expect(response.body.checks).toHaveProperty('bullmq', 'UP');
-			expect(response.body.checks).toHaveProperty('razorpay', 'DOWN');
+			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
+			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.UP);
+			expect(response.body.checks).toHaveProperty('razorpay', HEALTH_STATUS.DOWN);
 		});
 	});
 
@@ -56,20 +57,20 @@ describe('Payment Service Observability Endpoints', () => {
 		it('should return 200 OK when all systems are ready', async () => {
 			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(true);
 
-			const response = await request(app).get('/ready').expect(200);
+			const response = await request(app).get('/ready').expect(HTTP_STATUS.OK);
 
-			expect(response.body).toHaveProperty('status', 'UP');
-			expect(response.body.checks).toHaveProperty('bullmq', 'UP');
-			expect(response.body.checks).toHaveProperty('razorpay', 'UP');
+			expect(response.body).toHaveProperty('status', HEALTH_STATUS.UP);
+			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.UP);
+			expect(response.body.checks).toHaveProperty('razorpay', HEALTH_STATUS.UP);
 		});
 
 		it('should return 503 DOWN when dependencies are not ready', async () => {
 			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(false);
 
-			const response = await request(app).get('/ready').expect(503);
+			const response = await request(app).get('/ready').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
-			expect(response.body).toHaveProperty('status', 'DOWN');
-			expect(response.body.checks).toHaveProperty('bullmq', 'DOWN');
+			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
+			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.DOWN);
 		});
 	});
 });

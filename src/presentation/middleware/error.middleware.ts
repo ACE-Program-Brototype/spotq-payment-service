@@ -1,5 +1,5 @@
-import { logger } from '@infrastructure/logger/index.js';
-import { HTTP_STATUS, MESSAGES } from '@shared/constants/index.js';
+import { logger } from '@infrastructure/logger/index.ts';
+import { HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 export function errorMiddleware(

@@ -1,4 +1,4 @@
-import { redisClient } from './redis.client.js';
+import { redisClient } from './redis.client.ts';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: service structure uses static class methods
 export class RedisService {

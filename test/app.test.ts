@@ -1,9 +1,9 @@
-import { prisma } from '@infrastructure/database/index.js';
-import { RazorpayService } from '@infrastructure/payment/index.js';
-import { BullMQService } from '@infrastructure/queue/index.js';
-import { redisClient } from '@infrastructure/redis/index.js';
+import { prisma } from '@infrastructure/database/index.ts';
+import { RazorpayService } from '@infrastructure/payment/index.ts';
+import { BullMQService } from '@infrastructure/queue/index.ts';
+import { redisClient } from '@infrastructure/redis/index.ts';
 import request from 'supertest';
-import app from '../src/app.js';
+import app from '../src/app.ts';
 
 describe('Payment Service Observability Endpoints', () => {
 	beforeEach(() => {

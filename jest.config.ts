@@ -18,6 +18,7 @@ const config: Config = {
 		'^@shared/(.*)$': '<rootDir>/src/shared/$1',
 		'^@config/(.*)\\.(ts|js)$': '<rootDir>/src/config/$1',
 		'^@config/(.*)$': '<rootDir>/src/config/$1',
+		'^(\\.{1,2}/.*)\\.ts$': '$1',
 		'^(\\.{1,2}/.*)\\.js$': '$1',
 	},
 	transform: {

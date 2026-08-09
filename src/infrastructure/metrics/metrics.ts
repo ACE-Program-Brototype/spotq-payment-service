@@ -1,5 +1,5 @@
-import { prisma } from '@infrastructure/database/index.js';
-import { redisClient } from '@infrastructure/redis/index.js';
+import { prisma } from '@infrastructure/database/index.ts';
+import { redisClient } from '@infrastructure/redis/index.ts';
 import client from 'prom-client';
 
 // Enable default metrics collection (includes CPU, Memory, Event Loop Lag, etc.)

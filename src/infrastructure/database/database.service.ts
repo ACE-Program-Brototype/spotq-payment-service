@@ -1,4 +1,4 @@
-import { prisma } from './prisma.js';
+import { prisma } from './prisma.ts';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: service structure uses static class methods
 export class PrismaService {

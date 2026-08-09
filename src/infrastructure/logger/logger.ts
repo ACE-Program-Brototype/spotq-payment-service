@@ -1,6 +1,6 @@
-import { config } from '@config/env.js';
+import { config } from '@config/env.ts';
 import pino from 'pino';
-import { loggerLocalStorage } from './logger-context.js';
+import { loggerLocalStorage } from './logger-context.ts';
 
 export const logger = pino({
 	level: config.service.logLevel || 'info',

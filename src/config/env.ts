@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { validateEnv } from './validate-env.js';
+import { validateEnv } from './validate-env.ts';
 
 const env = validateEnv();
 

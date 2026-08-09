@@ -1,2 +1,2 @@
-export * from './razorpay.client.js';
-export * from './razorpay.service.js';
+export * from './razorpay.client.ts';
+export * from './razorpay.service.ts';

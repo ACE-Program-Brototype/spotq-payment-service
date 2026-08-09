@@ -1,11 +1,11 @@
-import { config } from '@config/index.js';
-import { PrismaService } from '@infrastructure/database/index.js';
-import { logger } from '@infrastructure/logger/index.js';
-import { RazorpayService } from '@infrastructure/payment/index.js';
-import { BullMQService } from '@infrastructure/queue/index.js';
-import { RedisService } from '@infrastructure/redis/index.js';
-import { MESSAGES } from '@shared/constants/index.js';
-import app from './app.js';
+import { config } from '@config/index.ts';
+import { PrismaService } from '@infrastructure/database/index.ts';
+import { logger } from '@infrastructure/logger/index.ts';
+import { RazorpayService } from '@infrastructure/payment/index.ts';
+import { BullMQService } from '@infrastructure/queue/index.ts';
+import { RedisService } from '@infrastructure/redis/index.ts';
+import { MESSAGES } from '@shared/constants/index.ts';
+import app from './app.ts';
 
 async function bootstrap() {
 	await PrismaService.connect();

@@ -1,6 +1,6 @@
-import { healthRouter } from '@modules/health/index.js';
+import { healthRouter } from '@modules/health/index.ts';
 import { Router } from 'express';
-import { metricsRouter } from './metrics.routes.js';
+import { metricsRouter } from './metrics.routes.ts';
 
 export const router = Router();
 

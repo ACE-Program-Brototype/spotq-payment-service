@@ -1,9 +1,10 @@
 {
 	"compilerOptions": {
 		"target": "ES2022",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"outDir": "./dist",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
 		"types": ["node", "jest"],
 		"paths": {
 			"@domain/*": ["./src/domain/*"],

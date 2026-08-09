@@ -1,4 +1,4 @@
-import { httpRequestCounter, httpRequestDuration } from '@infrastructure/metrics/index.js';
+import { httpRequestCounter, httpRequestDuration } from '@infrastructure/metrics/index.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 export function metricsMiddleware(req: Request, res: Response, next: NextFunction): void {

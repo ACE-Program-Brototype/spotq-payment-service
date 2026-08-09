@@ -1,2 +1,2 @@
-export * from './bullmq.client.js';
-export * from './bullmq.service.js';
+export * from './bullmq.client.ts';
+export * from './bullmq.service.ts';

@@ -1,1 +1,1 @@
-export { config } from './env.js';
+export { config } from './env.ts';

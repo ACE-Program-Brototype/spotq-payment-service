@@ -3,4 +3,4 @@ export {
 	httpRequestCounter,
 	httpRequestDuration,
 	redisUpGauge,
-} from './metrics.js';
+} from './metrics.ts';

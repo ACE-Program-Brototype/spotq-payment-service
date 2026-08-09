@@ -1,8 +1,8 @@
-import { prisma } from '@infrastructure/database/index.js';
-import { redisClient } from '@infrastructure/redis/index.js';
+import { prisma } from '@infrastructure/database/index.ts';
+import { redisClient } from '@infrastructure/redis/index.ts';
 import { Router } from 'express';
-import { HealthController } from './health.controller.js';
-import { HealthService } from './health.service.js';
+import { HealthController } from './health.controller.ts';
+import { HealthService } from './health.service.ts';
 
 const router = Router();
 const healthService = new HealthService(prisma, redisClient);

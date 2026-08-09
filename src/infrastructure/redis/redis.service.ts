@@ -1,27 +1,40 @@
+import type { IHealthCheckable } from '@domain/index.ts';
+import type { RedisClientType } from 'redis';
 import { redisClient } from './redis.client.ts';
 
-// biome-ignore lint/complexity/noStaticOnlyClass: service structure uses static class methods
-export class RedisService {
-	static async connect(): Promise<void> {
-		if (!redisClient.isOpen) {
-			await redisClient.connect();
-		}
+export class RedisService implements IHealthCheckable {
+	private readonly client: RedisClientType;
 
-		await redisClient.ping();
+	constructor(client: RedisClientType = redisClient) {
+		this.client = client;
 	}
 
-	static async disconnect(): Promise<void> {
-		if (redisClient.isOpen) {
-			await redisClient.quit();
+	async connect(): Promise<void> {
+		if (!this.client.isOpen) {
+			await this.client.connect();
+		}
+		await this.client.ping();
+	}
+
+	async disconnect(): Promise<void> {
+		if (this.client.isOpen) {
+			await this.client.quit();
 		}
 	}
 
-	static async health(): Promise<boolean> {
+	async isHealthy(): Promise<boolean> {
 		try {
-			await redisClient.ping();
+			await this.client.ping();
 			return true;
 		} catch {
 			return false;
 		}
 	}
+
+	async health(): Promise<boolean> {
+		return this.isHealthy();
+	}
 }
+
+export const redisService = new RedisService(redisClient);
+export const RedisServiceInstance = redisService;

@@ -1,29 +1,36 @@
-import { prisma } from '@infrastructure/database/index.ts';
-import { RazorpayService } from '@infrastructure/payment/index.ts';
-import { BullMQService } from '@infrastructure/queue/index.ts';
-import { redisClient } from '@infrastructure/redis/index.ts';
+import { databaseService } from '@infrastructure/database/index.ts';
+import { razorpayService } from '@infrastructure/payment/index.ts';
+import { bullmqService } from '@infrastructure/queue/index.ts';
+import { redisService } from '@infrastructure/redis/index.ts';
 import { HEALTH_STATUS, HTTP_STATUS } from '@shared/constants/index.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
 describe('Payment Service Observability Endpoints', () => {
 	beforeEach(() => {
+		jest.clearAllMocks();
 		// Mock Database check
-		jest.spyOn(prisma, '$queryRaw').mockResolvedValue([1]);
+		jest.spyOn(databaseService, 'isHealthy').mockResolvedValue(true);
 		// Mock Redis check
-		jest.spyOn(redisClient, 'ping').mockResolvedValue('PONG');
+		jest.spyOn(redisService, 'isHealthy').mockResolvedValue(true);
 		// Mock Razorpay health default to UP
-		jest.spyOn(RazorpayService, 'isHealthy').mockReturnValue(true);
+		jest.spyOn(razorpayService, 'isHealthy').mockResolvedValue(true);
+		// Mock BullMQ health default to UP
+		jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(true);
 	});
 
 	afterEach(() => {
 		jest.restoreAllMocks();
 	});
 
+	afterAll(async () => {
+		await bullmqService.disconnect();
+		await redisService.disconnect();
+		await databaseService.disconnect();
+	});
+
 	describe('GET /health', () => {
 		it('should return health status checks containing bullmq and razorpay UP', async () => {
-			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(true);
-
 			const response = await request(app).get('/health').expect(HTTP_STATUS.OK);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.UP);
@@ -32,7 +39,7 @@ describe('Payment Service Observability Endpoints', () => {
 		});
 
 		it('should return 503 DOWN when bullmq health check fails', async () => {
-			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(false);
+			jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(false);
 
 			const response = await request(app).get('/health').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
@@ -42,8 +49,7 @@ describe('Payment Service Observability Endpoints', () => {
 		});
 
 		it('should return 503 DOWN when razorpay health check fails', async () => {
-			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(true);
-			jest.spyOn(RazorpayService, 'isHealthy').mockReturnValue(false);
+			jest.spyOn(razorpayService, 'isHealthy').mockResolvedValue(false);
 
 			const response = await request(app).get('/health').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
@@ -55,8 +61,6 @@ describe('Payment Service Observability Endpoints', () => {
 
 	describe('GET /ready', () => {
 		it('should return 200 OK when all systems are ready', async () => {
-			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(true);
-
 			const response = await request(app).get('/ready').expect(HTTP_STATUS.OK);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.UP);
@@ -65,7 +69,7 @@ describe('Payment Service Observability Endpoints', () => {
 		});
 
 		it('should return 503 DOWN when dependencies are not ready', async () => {
-			jest.spyOn(BullMQService, 'isHealthy').mockResolvedValue(false);
+			jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(false);
 
 			const response = await request(app).get('/ready').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 

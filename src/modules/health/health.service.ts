@@ -1,38 +1,32 @@
-import { RazorpayService } from '@infrastructure/payment/index.ts';
-import { BullMQService } from '@infrastructure/queue/index.ts';
-import type { PrismaClient } from '@prisma/client';
-import { HEALTH_STATUS, type HealthStatus } from '@shared/constants/index.ts';
-import type { RedisClientType } from 'redis';
+import type { IHealthCheckable, IHealthService, PaymentHealthCheckResult } from '@domain/index.ts';
+import { HEALTH_STATUS } from '@shared/constants/index.ts';
 
-export interface HealthCheckResult {
-	status: HealthStatus;
-	timestamp: string;
-	checks: {
-		application: typeof HEALTH_STATUS.UP;
-		database: HealthStatus;
-		redis: HealthStatus;
-		bullmq: HealthStatus;
-		razorpay: HealthStatus;
-	};
-}
+export class HealthService implements IHealthService {
+	private readonly databaseService: IHealthCheckable;
+	private readonly redisService: IHealthCheckable;
+	private readonly bullmqService: IHealthCheckable;
+	private readonly razorpayService: IHealthCheckable;
 
-export class HealthService {
-	private readonly prisma: PrismaClient;
-	private readonly redisClient: RedisClientType;
-
-	constructor(prisma: PrismaClient, redisClient: RedisClientType) {
-		this.prisma = prisma;
-		this.redisClient = redisClient;
+	constructor(
+		databaseService: IHealthCheckable,
+		redisService: IHealthCheckable,
+		bullmqService: IHealthCheckable,
+		razorpayService: IHealthCheckable,
+	) {
+		this.databaseService = databaseService;
+		this.redisService = redisService;
+		this.bullmqService = bullmqService;
+		this.razorpayService = razorpayService;
 	}
 
-	async check(): Promise<HealthCheckResult> {
-		const [dbHealthy, redisHealthy, bullmqHealthy] = await Promise.all([
-			this.checkDatabase(),
-			this.checkRedis(),
-			BullMQService.isHealthy(),
+	async check(): Promise<PaymentHealthCheckResult> {
+		const [dbHealthy, redisHealthy, bullmqHealthy, razorpayHealthy] = await Promise.all([
+			this.databaseService.isHealthy(),
+			this.redisService.isHealthy(),
+			this.bullmqService.isHealthy(),
+			this.razorpayService.isHealthy(),
 		]);
 
-		const razorpayHealthy = RazorpayService.isHealthy();
 		const isHealthy = dbHealthy && redisHealthy && bullmqHealthy && razorpayHealthy;
 		const status = isHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN;
 
@@ -47,23 +41,5 @@ export class HealthService {
 				razorpay: razorpayHealthy ? HEALTH_STATUS.UP : HEALTH_STATUS.DOWN,
 			},
 		};
-	}
-
-	private async checkDatabase(): Promise<boolean> {
-		try {
-			await this.prisma.$queryRaw`SELECT 1`;
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	private async checkRedis(): Promise<boolean> {
-		try {
-			const response = await this.redisClient.ping();
-			return response === 'PONG';
-		} catch {
-			return false;
-		}
 	}
 }

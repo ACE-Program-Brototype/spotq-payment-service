@@ -1,1 +1,1 @@
-export * from './interfaces/payment-gateway.interface.ts';
+export * from './interfaces/index.ts';

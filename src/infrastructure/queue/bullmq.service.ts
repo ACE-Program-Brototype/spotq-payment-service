@@ -1,59 +1,72 @@
 import { config } from '@config/index.ts';
+import type { IHealthCheckable } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { MESSAGES } from '@shared/constants/index.ts';
 import { Redis, type RedisOptions } from 'ioredis';
 import { bullmqConnection } from './bullmq.client.ts';
 
-// biome-ignore lint/complexity/noStaticOnlyClass: service structure uses static class methods
-export class BullMQService {
-	private static client: Redis | null = null;
+export class BullMQService implements IHealthCheckable {
+	private readonly connectionUrl: string;
+	private readonly options: RedisOptions;
+	private client: Redis | null = null;
 
-	static async connect(): Promise<void> {
-		if (BullMQService.client) {
+	constructor(
+		connectionUrl: string = config.redis.url,
+		options: RedisOptions = bullmqConnection as RedisOptions,
+	) {
+		this.connectionUrl = connectionUrl;
+		this.options = options;
+	}
+
+	async connect(): Promise<void> {
+		if (this.client) {
 			return;
 		}
 
 		try {
-			// Instantiate dedicated ioredis client using the url and connection options
-			BullMQService.client = new Redis(config.redis.url, bullmqConnection as RedisOptions);
+			this.client = new Redis(this.connectionUrl, this.options);
 
-			BullMQService.client.on('error', (err) => {
+			this.client.on('error', (err) => {
 				logger.error({ err }, MESSAGES.BULLMQ_CONNECTION_ERROR);
 			});
 
-			// Validate connection
-			await BullMQService.client.ping();
+			await this.client.ping();
 			logger.info(MESSAGES.BULLMQ_CONNECTED);
 		} catch (error) {
 			logger.error({ err: error }, MESSAGES.BULLMQ_CONNECTION_FAILED);
-			BullMQService.client = null;
+			this.client = null;
 			throw error;
 		}
 	}
 
-	static async disconnect(): Promise<void> {
-		if (BullMQService.client) {
+	async disconnect(): Promise<void> {
+		if (this.client) {
 			try {
-				await BullMQService.client.quit();
+				await this.client.quit();
 				logger.info(MESSAGES.BULLMQ_DISCONNECTED);
 			} catch (error) {
 				logger.error({ err: error }, MESSAGES.BULLMQ_DISCONNECT_ERROR);
 			} finally {
-				BullMQService.client = null;
+				this.client = null;
 			}
 		}
 	}
 
-	static async isHealthy(): Promise<boolean> {
-		if (!BullMQService.client) {
+	async isHealthy(): Promise<boolean> {
+		if (!this.client) {
 			return false;
 		}
 
 		try {
-			const status = await BullMQService.client.ping();
+			const status = await this.client.ping();
 			return status === 'PONG';
 		} catch {
 			return false;
 		}
 	}
 }
+
+export const bullmqService = new BullMQService();
+export const PrismaService = bullmqService; // keep for any internal naming compatibility
+export const BullMQServiceInstance = bullmqService;
+export const BullMQServiceClass = BullMQService;

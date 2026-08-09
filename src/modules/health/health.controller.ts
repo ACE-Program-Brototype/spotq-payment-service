@@ -1,11 +1,11 @@
+import type { IHealthService } from '@domain/index.ts';
 import { HEALTH_STATUS, HTTP_STATUS } from '@shared/constants/index.ts';
 import type { Request, Response } from 'express';
-import type { HealthService } from './health.service.ts';
 
 export class HealthController {
-	private readonly healthService: HealthService;
+	private readonly healthService: IHealthService;
 
-	constructor(healthService: HealthService) {
+	constructor(healthService: IHealthService) {
 		this.healthService = healthService;
 	}
 

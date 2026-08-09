@@ -1,3 +1,3 @@
 export * from './razorpay.client.ts';
 export * from './razorpay.gateway.ts';
-export * from './razorpay.service.ts';
+export { RazorpayService, razorpayService } from './razorpay.service.ts';

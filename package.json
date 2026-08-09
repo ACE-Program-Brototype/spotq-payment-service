@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
 		"dev:infisical": "infisical run --env=dev -- pnpm dev",
-		"build": "tsc && tsc-alias",
+		"build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
 		"test": "jest",
 		"test:infisical": "infisical run --env=dev -- pnpm test",
 		"start": "node dist/server.js",

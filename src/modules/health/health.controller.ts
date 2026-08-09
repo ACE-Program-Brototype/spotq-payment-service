@@ -10,6 +10,7 @@ export class HealthController {
 	}
 
 	check = async (_req: Request, res: Response): Promise<void> => {
+		console.log('Testing Copilot Code Review', 123.45); // Violates logger guideline (should use Pino) and float guideline (should use integers)
 		const result = await this.healthService.check();
 		const statusCode =
 			result.status === HEALTH_STATUS.UP ? HTTP_STATUS.OK : HTTP_STATUS.SERVICE_UNAVAILABLE;

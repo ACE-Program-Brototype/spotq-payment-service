@@ -2,7 +2,7 @@ import { databaseService } from '@infrastructure/database/index.ts';
 import { razorpayService } from '@infrastructure/payment/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
-import { HEALTH_STATUS, HTTP_STATUS, MESSAGES } from '@shared/index.ts';
+import { HEALTH_STATUS, HTTP_STATUS, MESSAGES, ROUTES } from '@shared/index.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
@@ -31,7 +31,7 @@ describe('Payment Service Observability Endpoints', () => {
 
 	describe('GET /health', () => {
 		it('should return health status checks containing bullmq and razorpay UP', async () => {
-			const response = await request(app).get('/health').expect(HTTP_STATUS.OK);
+			const response = await request(app).get(ROUTES.HEALTH).expect(HTTP_STATUS.OK);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.UP);
 			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.UP);
@@ -41,7 +41,9 @@ describe('Payment Service Observability Endpoints', () => {
 		it('should return 503 DOWN when bullmq health check fails', async () => {
 			jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(false);
 
-			const response = await request(app).get('/health').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
+			const response = await request(app)
+				.get(ROUTES.HEALTH)
+				.expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
 			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.DOWN);
@@ -51,7 +53,9 @@ describe('Payment Service Observability Endpoints', () => {
 		it('should return 503 DOWN when razorpay health check fails', async () => {
 			jest.spyOn(razorpayService, 'isHealthy').mockResolvedValue(false);
 
-			const response = await request(app).get('/health').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
+			const response = await request(app)
+				.get(ROUTES.HEALTH)
+				.expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
 			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.UP);
@@ -61,7 +65,7 @@ describe('Payment Service Observability Endpoints', () => {
 
 	describe('GET /ready', () => {
 		it('should return 200 OK when all systems are ready', async () => {
-			const response = await request(app).get('/ready').expect(HTTP_STATUS.OK);
+			const response = await request(app).get(ROUTES.READY).expect(HTTP_STATUS.OK);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.UP);
 			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.UP);
@@ -71,7 +75,7 @@ describe('Payment Service Observability Endpoints', () => {
 		it('should return 503 DOWN when dependencies are not ready', async () => {
 			jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(false);
 
-			const response = await request(app).get('/ready').expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
+			const response = await request(app).get(ROUTES.READY).expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
 			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.DOWN);

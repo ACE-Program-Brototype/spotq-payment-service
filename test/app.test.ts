@@ -2,7 +2,7 @@ import { databaseService } from '@infrastructure/database/index.ts';
 import { razorpayService } from '@infrastructure/payment/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
-import { HEALTH_STATUS, HTTP_STATUS } from '@shared/constants/index.ts';
+import { HEALTH_STATUS, HTTP_STATUS, MESSAGES } from '@shared/index.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
@@ -75,6 +75,21 @@ describe('Payment Service Observability Endpoints', () => {
 
 			expect(response.body).toHaveProperty('status', HEALTH_STATUS.DOWN);
 			expect(response.body.checks).toHaveProperty('bullmq', HEALTH_STATUS.DOWN);
+		});
+	});
+
+	describe('Routing', () => {
+		it('should return 404 not found for invalid routes', async () => {
+			const response = await request(app).get('/invalid-route-xyz').expect(HTTP_STATUS.NOT_FOUND);
+
+			expect(response.body).toEqual(
+				expect.objectContaining({
+					success: false,
+					error: MESSAGES.NOT_FOUND,
+					message: 'Cannot GET /invalid-route-xyz',
+				}),
+			);
+			expect(response.body).toHaveProperty('timestamp');
 		});
 	});
 });

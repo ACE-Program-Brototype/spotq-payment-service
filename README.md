@@ -25,12 +25,12 @@ Built using **TypeScript**, **Express 5**, **Clean Architecture**, and modern ob
 ## System Architecture & Path Aliases
 
 The codebase strictly follows **Clean Architecture** patterns:
-- **`@domain/*` (`src/domain/`)**: Core business rules, entities, value objects, and domain interfaces (e.g. `IPaymentGateway`). Independent of any third-party framework or database.
+- **`@domain/*` (`src/domain/`)**: Core business rules, entities, value objects, and domain interfaces (e.g. `IPaymentGateway`, `IHealthCheckable`, `IHealthService`). Independent of any third-party framework or database.
 - **`@application/*` (`src/application/`)**: Application use cases and business workflows.
 - **`@infrastructure/*` (`src/infrastructure/`)**: Concrete adapters for external systems (Prisma Database, Redis, BullMQ, RazorpayGateway adapter, Logger, Prometheus Metrics, and Lifecycle orchestrator).
 - **`@presentation/*` (`src/presentation/`)**: HTTP entrypoints, Express routes, and middlewares (error handler, trace logging, metrics collection, 404 handler).
 - **`@modules/*` (`src/modules/`)**: Feature domains (such as modular `health` check domain).
-- **`@shared/*` (`src/shared/`)**: Shared constants, HTTP status code enums, and message definitions.
+- **`@shared/*` (`src/shared/`)**: Shared constants, HTTP status code enums, message definitions, and standardized success/error response wrappers (`SuccessResponse` / `ErrorResponse`).
 - **`@config/*` (`src/config/`)**: Environment validation schemas and configuration objects.
 
 ---

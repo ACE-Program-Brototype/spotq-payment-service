@@ -4,18 +4,12 @@ export interface IHealthCheckable {
 	isHealthy(): Promise<boolean> | boolean;
 }
 
-export interface PaymentHealthCheckResult {
+export interface HealthCheckResult {
 	status: HealthStatus;
 	timestamp: string;
-	checks: {
-		application: HealthStatus;
-		database: HealthStatus;
-		redis: HealthStatus;
-		bullmq: HealthStatus;
-		razorpay: HealthStatus;
-	};
+	checks: Record<string, HealthStatus>;
 }
 
 export interface IHealthService {
-	check(): Promise<PaymentHealthCheckResult>;
+	check(): Promise<HealthCheckResult>;
 }

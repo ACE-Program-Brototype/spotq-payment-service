@@ -1,4 +1,4 @@
-import type { IHealthCheckable, IHealthService, PaymentHealthCheckResult } from '@domain/index.ts';
+import type { HealthCheckResult, IHealthCheckable, IHealthService } from '@domain/index.ts';
 import { HEALTH_STATUS } from '@shared/constants/index.ts';
 
 export class HealthService implements IHealthService {
@@ -19,7 +19,7 @@ export class HealthService implements IHealthService {
 		this.razorpayService = razorpayService;
 	}
 
-	async check(): Promise<PaymentHealthCheckResult> {
+	async check(): Promise<HealthCheckResult> {
 		const [dbHealthy, redisHealthy, bullmqHealthy, razorpayHealthy] = await Promise.all([
 			this.databaseService.isHealthy(),
 			this.redisService.isHealthy(),

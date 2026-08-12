@@ -8,7 +8,7 @@ export function loggerMiddleware(req: Request, res: Response, next: NextFunction
 		(req.headers['x-correlation-id'] as string) ||
 		(req.headers['x-request-id'] as string) ||
 		randomUUID();
-	const requestId = randomUUID();
+	const requestId = (req.headers['x-request-id'] as string) || randomUUID();
 	const traceId = (req.headers['x-trace-id'] as string) || correlationId;
 
 	res.setHeader('x-correlation-id', correlationId);

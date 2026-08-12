@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { config } from '@config/index.ts';
+import { logger } from '@infrastructure/logger/index.ts';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import pg from 'pg';
@@ -23,7 +24,7 @@ if (caCert) {
 		try {
 			caContent = fs.readFileSync(caCert, 'utf8');
 		} catch (error) {
-			console.error(`Failed to read database CA cert from path: ${caCert}`, error);
+			logger.error({ err: error }, `Failed to read database CA cert from path: ${caCert}`);
 		}
 	}
 	ssl = {

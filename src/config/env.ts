@@ -1,0 +1,32 @@
+import 'dotenv/config';
+
+import { validateEnv } from './validate-env.ts';
+
+const env = validateEnv();
+
+export const config = {
+	server: {
+		port: env.PORT,
+		nodeEnv: env.NODE_ENV,
+	},
+
+	service: {
+		name: env.SERVICE_NAME,
+		logLevel: env.LOG_LEVEL,
+	},
+
+	database: {
+		url: env.DATABASE_URL,
+		directUrl: env.DATABASE_URL,
+	},
+
+	redis: {
+		url: env.REDIS_URL,
+		queuePrefix: env.QUEUE_PREFIX,
+	},
+
+	razorpay: {
+		keyId: env.RAZORPAY_TEST_API_KEY,
+		keySecret: env.RAZORPAY_TEST_SECRET_KEY,
+	},
+} as const;

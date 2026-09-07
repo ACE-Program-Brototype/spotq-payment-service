@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl"]
@@ -10,4 +8,131 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ----------------------------------------------------
+// Enums
+// ----------------------------------------------------
+
+enum PlanBillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PAST_DUE
+}
+
+enum PaymentStatus {
+  CREATED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum OutboxStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+// ----------------------------------------------------
+// Models
+// ----------------------------------------------------
+
+model SubscriptionPlan {
+  id           String           @id @default(uuid()) @db.Uuid
+  code         String           @unique
+  name         String
+  description  String?
+  pricePaise   Int              @map("price_paise")
+  currency     String           @default("INR")
+  billingCycle PlanBillingCycle @default(MONTHLY) @map("billing_cycle")
+  features     Json
+  isActive     Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  subscriptions       Subscription[]
+  paymentTransactions PaymentTransaction[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid()) @db.Uuid
+  restaurantId       String             @map("restaurant_id") @db.Uuid
+  planId             String             @map("plan_id") @db.Uuid
+  status             SubscriptionStatus @default(PENDING)
+  currentPeriodStart DateTime           @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd   DateTime           @map("current_period_end") @db.Timestamptz
+  canceledAt         DateTime?          @map("canceled_at") @db.Timestamptz
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  plan                SubscriptionPlan     @relation(fields: [planId], references: [id])
+  paymentTransactions PaymentTransaction[]
+
+  @@index([restaurantId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model PaymentTransaction {
+  id                String        @id @default(uuid()) @db.Uuid
+  restaurantId      String        @map("restaurant_id") @db.Uuid
+  subscriptionId    String?       @map("subscription_id") @db.Uuid
+  planId            String        @map("plan_id") @db.Uuid
+
+  razorpayOrderId   String        @unique @map("razorpay_order_id")
+  razorpayPaymentId String?       @unique @map("razorpay_payment_id")
+  razorpaySignature String?       @map("razorpay_signature")
+
+  amountPaise       Int           @map("amount_paise")
+  currency          String        @default("INR")
+  status            PaymentStatus @default(CREATED)
+  failureReason     String?       @map("failure_reason")
+  metadata          Json?
+
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  subscription      Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([restaurantId])
+  @@index([razorpayOrderId])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+model OutboxEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  eventType   String       @map("event_type")
+  aggregateId String       @map("aggregate_id")
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  retryCount  Int          @default(0) @map("retry_count")
+  lastError   String?      @map("last_error")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt DateTime?    @map("published_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@map("outbox_events")
+}
+
+model WebhookLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  eventId     String    @unique @map("event_id")
+  eventType   String    @map("event_type")
+  payload     Json
+  processed   Boolean   @default(false)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("webhook_logs")
 }

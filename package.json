@@ -17,6 +17,7 @@
 		"prisma:generate": "prisma generate",
 		"prisma:migrate": "prisma migrate dev",
 		"prisma:studio": "prisma studio",
+		"seed:plans": "tsx prisma/seed.ts",
 		"prepare": "husky"
 	},
 	"keywords": [],

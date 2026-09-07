@@ -75,14 +75,49 @@ export class RazorpayGateway implements IPaymentGateway {
 
 	verifyPaymentSignature(params: VerifyPaymentSignatureParams): boolean {
 		const { keySecret } = config.razorpay;
-		if (!keySecret) {
+		if (!keySecret || !params.signature) {
 			return false;
 		}
 
-		const body = `${params.orderId}|${params.paymentId}`;
-		const expectedSignature = crypto.createHmac('sha256', keySecret).update(body).digest('hex');
+		try {
+			const body = `${params.orderId}|${params.paymentId}`;
+			const expectedSignature = crypto.createHmac('sha256', keySecret).update(body).digest('hex');
 
-		return expectedSignature === params.signature;
+			const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+			const actualBuf = Buffer.from(params.signature, 'utf8');
+
+			if (expectedBuf.length !== actualBuf.length) {
+				return false;
+			}
+
+			return crypto.timingSafeEqual(expectedBuf, actualBuf);
+		} catch {
+			return false;
+		}
+	}
+
+	verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string): boolean {
+		if (!webhookSecret || !signature || !rawBody) {
+			return false;
+		}
+
+		try {
+			const expectedSignature = crypto
+				.createHmac('sha256', webhookSecret)
+				.update(rawBody)
+				.digest('hex');
+
+			const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+			const actualBuf = Buffer.from(signature, 'utf8');
+
+			if (expectedBuf.length !== actualBuf.length) {
+				return false;
+			}
+
+			return crypto.timingSafeEqual(expectedBuf, actualBuf);
+		} catch {
+			return false;
+		}
 	}
 
 	async getPaymentDetails(paymentId: string): Promise<unknown> {

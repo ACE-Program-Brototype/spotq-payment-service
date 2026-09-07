@@ -28,3 +28,9 @@ pnpm-lock.yaml.old
 .agents/
 .windsurf/
 .claude/
+
+# API Testing Tools
+bruno/
+*.bru
+*.postman_collection.json
+scripts/verify-api.js

@@ -44,7 +44,7 @@ export class SubscriptionEventProducer {
 		try {
 			const queue = this.getQueue();
 			await queue.add(SUBSCRIPTION_ACTIVATED_EVENT, payload, {
-				jobId: payload.eventId, // Idempotency deduplication key
+				jobId: payload.eventId,
 				attempts: 5,
 				backoff: {
 					type: 'exponential',

@@ -6,7 +6,7 @@ export const initialSubscriptionPlans = [
 		code: 'QUEUE_PRO',
 		name: 'Queue Pro',
 		description: 'Real-time digital queue management for bustling restaurants',
-		pricePaise: 149900, // ₹1,499
+		pricePaise: 149900,
 		currency: 'INR',
 		billingCycle: PlanBillingCycle.MONTHLY,
 		features: [
@@ -21,7 +21,7 @@ export const initialSubscriptionPlans = [
 		code: 'SELF_SERVICE_PRO',
 		name: 'Self-Service Pro',
 		description: 'Complete kiosk and self-service queue automation',
-		pricePaise: 250000, // ₹2,500
+		pricePaise: 250000,
 		currency: 'INR',
 		billingCycle: PlanBillingCycle.MONTHLY,
 		features: [

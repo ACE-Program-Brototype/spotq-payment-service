@@ -1,4 +1,5 @@
 import type { Subscription } from '../entities/subscription.entity.ts';
+import type { IBaseRepository } from './base.repository.interface.ts';
 
 export interface CreateSubscriptionInput {
 	restaurantId: string;
@@ -8,8 +9,15 @@ export interface CreateSubscriptionInput {
 	currentPeriodEnd: Date;
 }
 
-export interface ISubscriptionRepository {
+export interface UpdateSubscriptionInput {
+	status?: 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED';
+	currentPeriodStart?: Date;
+	currentPeriodEnd?: Date;
+	canceledAt?: Date | null;
+}
+
+export interface ISubscriptionRepository
+	extends IBaseRepository<Subscription, CreateSubscriptionInput, UpdateSubscriptionInput> {
 	findActiveByRestaurantId(restaurantId: string): Promise<Subscription | null>;
-	findById(id: string): Promise<Subscription | null>;
 	create(data: CreateSubscriptionInput): Promise<Subscription>;
 }

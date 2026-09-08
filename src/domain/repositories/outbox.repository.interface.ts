@@ -1,4 +1,4 @@
-import type { OutboxStatus } from '@prisma/client';
+export type OutboxStatus = 'PENDING' | 'PUBLISHED' | 'FAILED';
 
 export interface OutboxEventData {
 	id: string;

@@ -1,24 +1,27 @@
+import { container } from '@di/container.ts';
+import { TYPES } from '@di/types.ts';
 import { Router } from 'express';
-import { subscriptionController } from '../controllers/subscription.controller.ts';
+import type { SubscriptionController } from '../controllers/subscription.controller.ts';
 
 export const subscriptionRouter = Router();
 
+const getController = (): SubscriptionController =>
+	container.get<SubscriptionController>(TYPES.Controllers.SubscriptionController);
+
 // Plans
-subscriptionRouter.get('/plans', (req, res) => subscriptionController.getPlans(req, res));
+subscriptionRouter.get('/plans', (req, res) => getController().getPlans(req, res));
 
 // Subscription Order & Verification
 subscriptionRouter.post('/subscriptions/order', (req, res) =>
-	subscriptionController.createOrder(req, res),
+	getController().createOrder(req, res),
 );
 subscriptionRouter.post('/subscriptions/verify', (req, res) =>
-	subscriptionController.verifyPayment(req, res),
+	getController().verifyPayment(req, res),
 );
-subscriptionRouter.get('/subscriptions/status', (req, res) =>
-	subscriptionController.getStatus(req, res),
-);
+subscriptionRouter.get('/subscriptions/status', (req, res) => getController().getStatus(req, res));
 subscriptionRouter.get('/subscriptions/status/:restaurantId', (req, res) =>
-	subscriptionController.getStatus(req, res),
+	getController().getStatus(req, res),
 );
 
 // Webhook
-subscriptionRouter.post('/webhook', (req, res) => subscriptionController.handleWebhook(req, res));
+subscriptionRouter.post('/webhook', (req, res) => getController().handleWebhook(req, res));

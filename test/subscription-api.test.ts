@@ -1,18 +1,31 @@
+import { container } from '@di/container.ts';
+import { TYPES } from '@di/types.ts';
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import { Subscription } from '@domain/entities/subscription.entity.ts';
 import { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
+import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
+import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
+import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { databaseService } from '@infrastructure/database/index.ts';
 import { razorpayService } from '@infrastructure/payment/index.ts';
-import { razorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
-import { paymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
-import { subscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
-import { subscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PlanBillingCycle } from '@prisma/client';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
+
+const subscriptionPlanRepository = container.get<ISubscriptionPlanRepository>(
+	TYPES.Repositories.SubscriptionPlanRepository,
+);
+const subscriptionRepository = container.get<ISubscriptionRepository>(
+	TYPES.Repositories.SubscriptionRepository,
+);
+const paymentTransactionRepository = container.get<IPaymentTransactionRepository>(
+	TYPES.Repositories.PaymentTransactionRepository,
+);
+const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 
 describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	const mockPlan = new SubscriptionPlan({

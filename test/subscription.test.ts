@@ -55,6 +55,7 @@ describe('Subscription & Payment Use Cases', () => {
 			status: 'created',
 		}),
 		verifyPaymentSignature: jest.fn().mockReturnValue(true),
+		verifyWebhookSignature: jest.fn().mockReturnValue(true),
 		getPaymentDetails: jest.fn().mockResolvedValue({}),
 	};
 

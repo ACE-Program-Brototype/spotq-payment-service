@@ -21,7 +21,7 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		relayService = new OutboxRelayService();
+		relayService = new OutboxRelayService(outboxRepository);
 	});
 
 	it('successfully publishes pending outbox events and marks them PUBLISHED', async () => {

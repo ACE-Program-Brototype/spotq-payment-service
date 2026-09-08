@@ -32,8 +32,6 @@ export enum MessageEnum {
 	SHUTDOWN_COMPLETED = 'Graceful shutdown completed',
 	SHUTDOWN_STARTING = 'Gracefully shutting down...',
 	SERVER_BOOTSTRAP_FAILED = 'Failed to bootstrap server',
-
-	// Subscription & Payment Operation Messages
 	SUBSCRIPTION_PLANS_FETCHED = 'Subscription plans fetched successfully',
 	SUBSCRIPTION_ORDER_CREATED = 'Subscription order created successfully',
 	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
@@ -81,13 +79,12 @@ export const MESSAGES = {
 	SHUTDOWN_COMPLETED: MessageEnum.SHUTDOWN_COMPLETED,
 	SHUTDOWN_STARTING: MessageEnum.SHUTDOWN_STARTING,
 	SERVER_BOOTSTRAP_FAILED: MessageEnum.SERVER_BOOTSTRAP_FAILED,
-
-	// Subscription & Payment Operation Messages
 	SUBSCRIPTION_PLANS_FETCHED: MessageEnum.SUBSCRIPTION_PLANS_FETCHED,
 	SUBSCRIPTION_ORDER_CREATED: MessageEnum.SUBSCRIPTION_ORDER_CREATED,
 	PAYMENT_VERIFIED_SUCCESS: MessageEnum.PAYMENT_VERIFIED_SUCCESS,
 	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
 	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
+
 	ACTIVE_SUBSCRIPTION_EXISTS: MessageEnum.ACTIVE_SUBSCRIPTION_EXISTS,
 	PAYMENT_ORDER_NOT_FOUND: MessageEnum.PAYMENT_ORDER_NOT_FOUND,
 	INVALID_PAYMENT_SIGNATURE: MessageEnum.INVALID_PAYMENT_SIGNATURE,

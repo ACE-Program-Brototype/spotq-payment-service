@@ -66,7 +66,6 @@ export class PrismaPaymentTransactionRepository
 		restaurantId: string,
 		planId: string,
 	): Promise<PaymentTransaction | null> {
-		// Valid for 15 minutes
 		const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
 		const record = await this.prisma.paymentTransaction.findFirst({

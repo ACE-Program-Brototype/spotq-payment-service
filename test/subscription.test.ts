@@ -1,10 +1,12 @@
 import crypto from 'node:crypto';
-import { PlanBillingCycle } from '@prisma/client';
 import { CreateSubscriptionOrderUseCase } from '../src/application/use-cases/create-subscription-order.use-case.ts';
 import { GetSubscriptionPlansUseCase } from '../src/application/use-cases/get-subscription-plans.use-case.ts';
 import { PaymentTransaction } from '../src/domain/entities/payment-transaction.entity.ts';
 import { Subscription } from '../src/domain/entities/subscription.entity.ts';
-import { SubscriptionPlan } from '../src/domain/entities/subscription-plan.entity.ts';
+import {
+	PlanBillingCycle,
+	SubscriptionPlan,
+} from '../src/domain/entities/subscription-plan.entity.ts';
 import {
 	ActiveSubscriptionAlreadyExistsError,
 	PlanNotFoundError,

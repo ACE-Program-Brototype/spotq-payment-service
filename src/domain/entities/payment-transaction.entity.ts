@@ -1,4 +1,4 @@
-import type { PaymentStatus } from '@prisma/client';
+export type PaymentStatus = 'CREATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 
 export interface PaymentTransactionProps {
 	id: string;

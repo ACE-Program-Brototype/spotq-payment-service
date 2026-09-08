@@ -1,4 +1,9 @@
-import type { PlanBillingCycle } from '@prisma/client';
+export const PlanBillingCycle = {
+	MONTHLY: 'MONTHLY',
+	YEARLY: 'YEARLY',
+} as const;
+
+export type PlanBillingCycle = (typeof PlanBillingCycle)[keyof typeof PlanBillingCycle];
 
 export interface SubscriptionPlanProps {
 	id: string;

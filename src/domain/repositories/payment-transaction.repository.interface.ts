@@ -1,6 +1,4 @@
-import type { PaymentTransaction } from '../entities/payment-transaction.entity.ts';
-
-export type PaymentStatus = 'CREATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+import type { PaymentStatus, PaymentTransaction } from '../entities/payment-transaction.entity.ts';
 
 export interface CreatePaymentTransactionInput {
 	restaurantId: string;

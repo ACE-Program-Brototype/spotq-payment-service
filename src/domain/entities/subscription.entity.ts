@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from '@prisma/client';
+export type SubscriptionStatus = 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED' | 'PAST_DUE';
 
 export interface SubscriptionProps {
 	id: string;

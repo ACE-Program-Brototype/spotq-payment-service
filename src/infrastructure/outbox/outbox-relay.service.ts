@@ -1,16 +1,29 @@
+import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
+import { TYPES } from '@di/types.ts';
+import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import {
 	type SubscriptionActivatedEventPayload,
 	subscriptionEventProducer,
 } from '@infrastructure/queue/subscription-event.producer.ts';
-import { outboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
+import { inject, injectable } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
 export const BASE_RETRY_BACKOFF_MS = 2000;
 
-export class OutboxRelayService {
+/**
+ * Service responsible for polling pending transactional outbox events
+ * and publishing them to message brokers reliably.
+ */
+@injectable()
+export class OutboxRelayService implements IOutboxRelayService {
 	private intervalId: NodeJS.Timeout | null = null;
 	private isProcessing = false;
+
+	constructor(
+		@inject(TYPES.Repositories.OutboxRepository)
+		private readonly outboxRepository: IOutboxRepository,
+	) {}
 
 	start(pollIntervalMs = 5000): void {
 		if (this.intervalId) return;
@@ -40,7 +53,7 @@ export class OutboxRelayService {
 		this.isProcessing = true;
 
 		try {
-			const pendingEvents = await outboxRepository.findPendingEvents(20);
+			const pendingEvents = await this.outboxRepository.findPendingEvents(20);
 
 			for (const event of pendingEvents) {
 				try {
@@ -52,14 +65,14 @@ export class OutboxRelayService {
 						});
 					}
 
-					await outboxRepository.markPublished(event.id);
+					await this.outboxRepository.markPublished(event.id);
 					logger.debug(
 						{ eventId: event.id, eventType: event.eventType },
 						'Outbox event published successfully',
 					);
 				} catch (err: unknown) {
 					const errorMsg = err instanceof Error ? err.message : 'Unknown outbox publishing error';
-					const { isDeadLetter, retryCount } = await outboxRepository.recordFailure(
+					const { isDeadLetter, retryCount } = await this.outboxRepository.recordFailure(
 						event.id,
 						errorMsg,
 						MAX_OUTBOX_RETRIES,
@@ -95,7 +108,7 @@ export class OutboxRelayService {
 	}
 
 	async replayDeadLetterEvent(id: string): Promise<void> {
-		const replayed = await outboxRepository.replayDeadLetter(id);
+		const replayed = await this.outboxRepository.replayDeadLetter(id);
 		logger.info(
 			{ eventId: replayed.id, eventType: replayed.eventType },
 			'Replayed dead-letter outbox event back to PENDING',
@@ -103,4 +116,7 @@ export class OutboxRelayService {
 	}
 }
 
-export const outboxRelayService = new OutboxRelayService();
+export const outboxRelayService = new OutboxRelayService(
+	// Legacy fallback instance
+	{} as unknown as IOutboxRepository,
+);

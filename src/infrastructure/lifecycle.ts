@@ -1,7 +1,9 @@
+import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
+import { container } from '@di/container.ts';
+import { TYPES } from '@di/types.ts';
 import { MESSAGES } from '@shared/constants/index.ts';
 import { databaseService } from './database/index.ts';
 import { logger } from './logger/index.ts';
-import { outboxRelayService } from './outbox/outbox-relay.service.ts';
 import { razorpayService } from './payment/index.ts';
 import { bullmqService } from './queue/index.ts';
 import { redisService } from './redis/index.ts';
@@ -25,13 +27,12 @@ export async function initInfrastructure(): Promise<void> {
 		throw error;
 	}
 
-	// Start Outbox Relay Worker & Subscription Expiry Cron
-	outboxRelayService.start(5000);
+	container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService).start(5000);
 	paymentSubscriptionExpiryService.start(60 * 60 * 1000);
 }
 
 export async function shutdownInfrastructure(): Promise<void> {
-	outboxRelayService.stop();
+	container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService).stop();
 	paymentSubscriptionExpiryService.stop();
 
 	await Promise.allSettled([

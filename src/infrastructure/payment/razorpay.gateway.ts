@@ -8,9 +8,11 @@ import type {
 } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { MESSAGES } from '@shared/constants/index.ts';
+import { injectable } from 'inversify';
 import Razorpay from 'razorpay';
 import { setRazorpayClient } from './razorpay.client.ts';
 
+@injectable()
 export class RazorpayGateway implements IPaymentGateway {
 	private client: Razorpay | null = null;
 	private initialized = false;

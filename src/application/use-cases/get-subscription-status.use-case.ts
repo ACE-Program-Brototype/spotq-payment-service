@@ -1,21 +1,19 @@
+import type { SubscriptionStatusOutput } from '@application/dtos/get-subscription-status.dto.ts';
+import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
+import { TYPES } from '@di/types.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
+import { inject, injectable } from 'inversify';
 
-export interface SubscriptionStatusOutput {
-	isSubscriptionActive: boolean;
-	subscription: {
-		id: string;
-		status: string;
-		planCode?: string;
-		planName?: string;
-		currentPeriodStart?: string;
-		currentPeriodEnd?: string;
-	} | null;
-}
-
-export class GetSubscriptionStatusUseCase {
+/**
+ * Use case responsible for checking active subscription status for a restaurant.
+ */
+@injectable()
+export class GetSubscriptionStatusUseCase implements IGetSubscriptionStatusUseCase {
 	constructor(
+		@inject(TYPES.Repositories.SubscriptionRepository)
 		private readonly subscriptionRepository: ISubscriptionRepository,
+		@inject(TYPES.Repositories.SubscriptionPlanRepository)
 		private readonly planRepository: ISubscriptionPlanRepository,
 	) {}
 

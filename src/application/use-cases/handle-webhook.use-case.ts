@@ -1,43 +1,45 @@
+import type {
+	HandleWebhookInput,
+	HandleWebhookOutput,
+} from '@application/dtos/handle-webhook.dto.ts';
+import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
+import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
 import { config } from '@config/index.ts';
-import { prisma } from '@infrastructure/database/prisma.ts';
+import { TYPES } from '@di/types.ts';
+import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
+import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
+import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
+import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { outboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
-import type { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
-import type { Prisma } from '@prisma/client';
+import { inject, injectable } from 'inversify';
 
-export interface WebhookPayload {
-	event: string;
-	payload?: {
-		payment?: {
-			entity?: {
-				id: string;
-				order_id: string;
-				status: string;
-				amount: number;
-			};
-		};
-		order?: {
-			entity?: {
-				id: string;
-				status: string;
-			};
-		};
-	};
-}
+/**
+ * Use case responsible for processing external Razorpay webhook events,
+ * verifying signatures, and synchronizing subscription and payment states.
+ */
+@injectable()
+export class HandleWebhookUseCase implements IHandleWebhookUseCase {
+	constructor(
+		@inject(TYPES.Gateways.PaymentGateway)
+		private readonly paymentGateway: IPaymentGateway,
+		@inject(TYPES.Repositories.PaymentTransactionRepository)
+		private readonly paymentTransactionRepository: IPaymentTransactionRepository,
+		@inject(TYPES.Repositories.SubscriptionPlanRepository)
+		private readonly planRepository: ISubscriptionPlanRepository,
+		@inject(TYPES.Repositories.SubscriptionRepository)
+		private readonly subscriptionRepository: ISubscriptionRepository,
+		@inject(TYPES.Repositories.OutboxRepository)
+		private readonly outboxRepository: IOutboxRepository,
+		@inject(TYPES.Services.OutboxRelayService)
+		private readonly outboxRelayService: IOutboxRelayService,
+	) {}
 
-export class HandleWebhookUseCase {
-	constructor(private readonly razorpayGateway: RazorpayGateway) {}
-
-	async execute(params: {
-		rawBody: string;
-		signature: string;
-		parsedPayload: WebhookPayload;
-	}): Promise<{ received: boolean }> {
+	async execute(params: HandleWebhookInput): Promise<HandleWebhookOutput> {
 		const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || config.razorpay.keySecret;
 
-		// 1. Verify Webhook Signature
 		if (webhookSecret && params.signature) {
-			const isValid = this.razorpayGateway.verifyWebhookSignature(
+			const isValid = this.paymentGateway.verifyWebhookSignature(
 				params.rawBody,
 				params.signature,
 				webhookSecret,
@@ -54,7 +56,6 @@ export class HandleWebhookUseCase {
 
 		logger.info({ eventType, paymentId: paymentEntity?.id }, 'Processing Razorpay webhook event');
 
-		// 2. Handle payment.captured / order.paid
 		if (eventType === 'payment.captured' && paymentEntity) {
 			const orderId = paymentEntity.order_id;
 			const paymentId = paymentEntity.id;
@@ -63,23 +64,19 @@ export class HandleWebhookUseCase {
 				return { received: true };
 			}
 
-			const existingTx = await prisma.paymentTransaction.findUnique({
-				where: { razorpayOrderId: orderId },
-				include: { plan: true, subscription: true },
-			});
+			const existingTx = await this.paymentTransactionRepository.findByOrderId(orderId);
 
 			if (!existingTx) {
 				logger.warn({ orderId }, 'Payment order not found for webhook event');
 				return { received: true };
 			}
 
-			// Idempotent: If already processed, ignore
-			if (existingTx.status === 'SUCCESS' && existingTx.subscription) {
+			if (existingTx.status === 'SUCCESS' && existingTx.subscriptionId) {
 				logger.info({ orderId }, 'Webhook received for already completed transaction');
 				return { received: true };
 			}
 
-			const plan = existingTx.plan;
+			const plan = await this.planRepository.findById(existingTx.planId);
 			if (!plan) return { received: true };
 
 			const now = new Date();
@@ -90,45 +87,36 @@ export class HandleWebhookUseCase {
 				currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
 			}
 
-			await prisma.$transaction(async (tx) => {
-				const subscription = await tx.subscription.create({
-					data: {
-						restaurantId: existingTx.restaurantId,
-						planId: plan.id,
-						status: 'ACTIVE',
-						currentPeriodStart: now,
-						currentPeriodEnd: currentPeriodEnd,
-					},
-				});
-
-				await tx.paymentTransaction.update({
-					where: { id: existingTx.id },
-					data: {
-						status: 'SUCCESS',
-						razorpayPaymentId: paymentId,
-						subscriptionId: subscription.id,
-					},
-				});
-
-				await tx.outboxEvent.create({
-					data: {
-						eventType: 'subscription.activated',
-						aggregateId: existingTx.restaurantId,
-						payload: {
-							subscriptionId: subscription.id,
-							restaurantId: existingTx.restaurantId,
-							planCode: plan.code,
-							status: 'ACTIVE',
-							currentPeriodStart: now.toISOString(),
-							currentPeriodEnd: currentPeriodEnd.toISOString(),
-							timestamp: now.toISOString(),
-						} as unknown as Prisma.InputJsonValue,
-						status: 'PENDING',
-					},
-				});
+			const subscription = await this.subscriptionRepository.create({
+				restaurantId: existingTx.restaurantId,
+				planId: plan.id,
+				status: 'ACTIVE',
+				currentPeriodStart: now,
+				currentPeriodEnd: currentPeriodEnd,
 			});
 
-			outboxRelayService.processPendingEvents().catch((err) => {
+			await this.paymentTransactionRepository.markSuccess({
+				razorpayOrderId: existingTx.razorpayOrderId,
+				razorpayPaymentId: paymentId,
+				razorpaySignature: '',
+				subscriptionId: subscription.id,
+			});
+
+			await this.outboxRepository.create({
+				eventType: 'subscription.activated',
+				aggregateId: existingTx.restaurantId,
+				payload: {
+					subscriptionId: subscription.id,
+					restaurantId: existingTx.restaurantId,
+					planCode: plan.code,
+					status: 'ACTIVE',
+					currentPeriodStart: now.toISOString(),
+					currentPeriodEnd: currentPeriodEnd.toISOString(),
+					timestamp: now.toISOString(),
+				},
+			});
+
+			this.outboxRelayService.processPendingEvents().catch((err) => {
 				logger.error({ err }, 'Error triggering outbox relay after webhook');
 			});
 		}

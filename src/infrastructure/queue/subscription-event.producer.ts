@@ -34,7 +34,7 @@ export class SubscriptionEventProducer {
 					maxRetriesPerRequest: null,
 					enableReadyCheck: false,
 				},
-				prefix: 'bull',
+				prefix: config.redis.queuePrefix || 'bull',
 			});
 		}
 		return this.queue;

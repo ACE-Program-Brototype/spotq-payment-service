@@ -11,9 +11,11 @@ import {
 	ActiveSubscriptionAlreadyExistsError,
 	PlanNotFoundError,
 } from '../src/domain/errors/payment.errors.ts';
-import { razorpayGateway } from '../src/infrastructure/payment/razorpay.gateway.ts';
+import { RazorpayGateway } from '../src/infrastructure/payment/razorpay.gateway.ts';
 
 describe('Subscription & Payment Use Cases', () => {
+	const razorpayGateway = new RazorpayGateway();
+
 	const mockPlan = new SubscriptionPlan({
 		id: '11111111-1111-1111-1111-111111111111',
 		code: 'QUEUE_PRO',

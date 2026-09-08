@@ -76,5 +76,3 @@ export class PrismaSubscriptionPlanRepository
 		});
 	}
 }
-
-export const subscriptionPlanRepository = new PrismaSubscriptionPlanRepository();

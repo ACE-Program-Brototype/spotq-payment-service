@@ -1,11 +1,11 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import { TYPES } from '@di/types.ts';
+import type {
+	ISubscriptionEventProducer,
+	SubscriptionActivatedEventPayload,
+} from '@domain/interfaces/subscription-event-producer.interface.ts';
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import {
-	type SubscriptionActivatedEventPayload,
-	subscriptionEventProducer,
-} from '@infrastructure/queue/subscription-event.producer.ts';
 import { inject, injectable } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
@@ -23,6 +23,8 @@ export class OutboxRelayService implements IOutboxRelayService {
 	constructor(
 		@inject(TYPES.Repositories.OutboxRepository)
 		private readonly outboxRepository: IOutboxRepository,
+		@inject(TYPES.Services.SubscriptionEventProducer)
+		private readonly eventProducer: ISubscriptionEventProducer,
 	) {}
 
 	start(pollIntervalMs = 5000): void {
@@ -59,7 +61,7 @@ export class OutboxRelayService implements IOutboxRelayService {
 				try {
 					if (event.eventType === 'subscription.activated') {
 						const payload = event.payload as unknown as SubscriptionActivatedEventPayload;
-						await subscriptionEventProducer.publishSubscriptionActivated({
+						await this.eventProducer.publishSubscriptionActivated({
 							...payload,
 							eventId: event.id,
 						});

@@ -130,5 +130,3 @@ export class RazorpayGateway implements IPaymentGateway {
 		return this.client.payments.fetch(paymentId);
 	}
 }
-
-export const razorpayGateway = new RazorpayGateway();

@@ -8,7 +8,6 @@ import type { IPaymentTransactionRepository } from '@domain/repositories/payment
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { databaseService } from '@infrastructure/database/index.ts';
-import { razorpayService } from '@infrastructure/payment/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
@@ -43,7 +42,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		jest.clearAllMocks();
 		jest.spyOn(databaseService, 'isHealthy').mockResolvedValue(true);
 		jest.spyOn(redisService, 'isHealthy').mockResolvedValue(true);
-		jest.spyOn(razorpayService, 'isHealthy').mockResolvedValue(true);
+		jest.spyOn(razorpayGateway, 'isHealthy').mockReturnValue(true);
 		jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(true);
 	});
 

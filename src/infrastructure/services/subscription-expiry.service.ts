@@ -1,7 +1,10 @@
+import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import { prisma } from '@infrastructure/database/prisma.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import { injectable } from 'inversify';
 
-export class PaymentSubscriptionExpiryService {
+@injectable()
+export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExpiryService {
 	private intervalId: NodeJS.Timeout | null = null;
 	private isRunning = false;
 
@@ -32,7 +35,6 @@ export class PaymentSubscriptionExpiryService {
 	async expirePastDueSubscriptions(now = new Date()): Promise<number> {
 		if (this.isRunning) return 0;
 		this.isRunning = true;
-
 		try {
 			const result = await prisma.subscription.updateMany({
 				where: {
@@ -62,5 +64,3 @@ export class PaymentSubscriptionExpiryService {
 		}
 	}
 }
-
-export const paymentSubscriptionExpiryService = new PaymentSubscriptionExpiryService();

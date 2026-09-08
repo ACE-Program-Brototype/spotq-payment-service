@@ -133,5 +133,3 @@ export class PrismaOutboxRepository extends PrismaBaseRepository implements IOut
 		};
 	}
 }
-
-export const outboxRepository = new PrismaOutboxRepository();

@@ -1,12 +1,10 @@
+import type { ISubscriptionEventProducer } from '../src/domain/interfaces/subscription-event-producer.interface';
+import type { IOutboxRepository } from '../src/domain/repositories/outbox.repository.interface';
 import {
 	MAX_OUTBOX_RETRIES,
 	OutboxRelayService,
 } from '../src/infrastructure/outbox/outbox-relay.service';
-import { subscriptionEventProducer } from '../src/infrastructure/queue/subscription-event.producer';
-import { outboxRepository } from '../src/infrastructure/repositories/prisma-outbox.repository';
 
-jest.mock('../src/infrastructure/repositories/prisma-outbox.repository');
-jest.mock('../src/infrastructure/queue/subscription-event.producer');
 jest.mock('../src/infrastructure/logger', () => ({
 	logger: {
 		info: jest.fn(),
@@ -18,10 +16,26 @@ jest.mock('../src/infrastructure/logger', () => ({
 
 describe('OutboxRelayService & Dead-Letter Handling', () => {
 	let relayService: OutboxRelayService;
+	let mockOutboxRepository: jest.Mocked<IOutboxRepository>;
+	let mockEventProducer: jest.Mocked<ISubscriptionEventProducer>;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		relayService = new OutboxRelayService(outboxRepository);
+
+		mockOutboxRepository = {
+			createEvent: jest.fn(),
+			findPendingEvents: jest.fn(),
+			markPublished: jest.fn(),
+			recordFailure: jest.fn(),
+			replayDeadLetter: jest.fn(),
+		} as unknown as jest.Mocked<IOutboxRepository>;
+
+		mockEventProducer = {
+			publishSubscriptionActivated: jest.fn(),
+			close: jest.fn(),
+		};
+
+		relayService = new OutboxRelayService(mockOutboxRepository, mockEventProducer);
 	});
 
 	it('successfully publishes pending outbox events and marks them PUBLISHED', async () => {
@@ -37,20 +51,18 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			},
 		];
 
-		(outboxRepository.findPendingEvents as jest.Mock).mockResolvedValue(mockEvents);
-		(subscriptionEventProducer.publishSubscriptionActivated as jest.Mock).mockResolvedValue(
-			'job-123',
-		);
-		(outboxRepository.markPublished as jest.Mock).mockResolvedValue(undefined);
+		mockOutboxRepository.findPendingEvents.mockResolvedValue(mockEvents);
+		mockEventProducer.publishSubscriptionActivated.mockResolvedValue(undefined);
+		mockOutboxRepository.markPublished.mockResolvedValue(undefined);
 
 		await relayService.processPendingEvents();
 
-		expect(subscriptionEventProducer.publishSubscriptionActivated).toHaveBeenCalledWith({
+		expect(mockEventProducer.publishSubscriptionActivated).toHaveBeenCalledWith({
 			restaurantId: 'res-1',
 			planCode: 'QUEUE_PRO',
 			eventId: 'event-1',
 		});
-		expect(outboxRepository.markPublished).toHaveBeenCalledWith('event-1');
+		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-1');
 	});
 
 	it('records retry and stays PENDING when dispatch fails below MAX_RETRIES', async () => {
@@ -66,23 +78,23 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			},
 		];
 
-		(outboxRepository.findPendingEvents as jest.Mock).mockResolvedValue(mockEvents);
-		(subscriptionEventProducer.publishSubscriptionActivated as jest.Mock).mockRejectedValue(
+		mockOutboxRepository.findPendingEvents.mockResolvedValue(mockEvents);
+		mockEventProducer.publishSubscriptionActivated.mockRejectedValue(
 			new Error('Redis connection timeout'),
 		);
-		(outboxRepository.recordFailure as jest.Mock).mockResolvedValue({
+		mockOutboxRepository.recordFailure.mockResolvedValue({
 			isDeadLetter: false,
 			retryCount: 2,
 		});
 
 		await relayService.processPendingEvents();
 
-		expect(outboxRepository.recordFailure).toHaveBeenCalledWith(
+		expect(mockOutboxRepository.recordFailure).toHaveBeenCalledWith(
 			'event-2',
 			'Redis connection timeout',
 			MAX_OUTBOX_RETRIES,
 		);
-		expect(outboxRepository.markPublished).not.toHaveBeenCalled();
+		expect(mockOutboxRepository.markPublished).not.toHaveBeenCalled();
 	});
 
 	it('transitions event to FAILED (Dead-Letter state) when MAX_RETRIES is reached', async () => {
@@ -98,18 +110,18 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			},
 		];
 
-		(outboxRepository.findPendingEvents as jest.Mock).mockResolvedValue(mockEvents);
-		(subscriptionEventProducer.publishSubscriptionActivated as jest.Mock).mockRejectedValue(
+		mockOutboxRepository.findPendingEvents.mockResolvedValue(mockEvents);
+		mockEventProducer.publishSubscriptionActivated.mockRejectedValue(
 			new Error('Persistent serialization error'),
 		);
-		(outboxRepository.recordFailure as jest.Mock).mockResolvedValue({
+		mockOutboxRepository.recordFailure.mockResolvedValue({
 			isDeadLetter: true,
 			retryCount: 5,
 		});
 
 		await relayService.processPendingEvents();
 
-		expect(outboxRepository.recordFailure).toHaveBeenCalledWith(
+		expect(mockOutboxRepository.recordFailure).toHaveBeenCalledWith(
 			'event-3',
 			'Persistent serialization error',
 			MAX_OUTBOX_RETRIES,
@@ -128,10 +140,10 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			createdAt: new Date(),
 		};
 
-		(outboxRepository.replayDeadLetter as jest.Mock).mockResolvedValue(replayedEvent);
+		mockOutboxRepository.replayDeadLetter.mockResolvedValue(replayedEvent);
 
 		await relayService.replayDeadLetterEvent('event-3');
 
-		expect(outboxRepository.replayDeadLetter).toHaveBeenCalledWith('event-3');
+		expect(mockOutboxRepository.replayDeadLetter).toHaveBeenCalledWith('event-3');
 	});
 });

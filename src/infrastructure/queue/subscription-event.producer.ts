@@ -1,22 +1,18 @@
 import { config } from '@config/index.ts';
+import type {
+	ISubscriptionEventProducer,
+	SubscriptionActivatedEventPayload,
+} from '@domain/interfaces/subscription-event-producer.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { Queue } from 'bullmq';
+import { injectable } from 'inversify';
 
-export interface SubscriptionActivatedEventPayload {
-	eventId: string;
-	subscriptionId: string;
-	restaurantId: string;
-	planCode: string;
-	status: string;
-	currentPeriodStart: string;
-	currentPeriodEnd: string;
-	timestamp: string;
-}
-
+export type { SubscriptionActivatedEventPayload };
 export const SUBSCRIPTION_EVENTS_QUEUE = 'restaurant-subscription-events';
 export const SUBSCRIPTION_ACTIVATED_EVENT = 'subscription.activated';
 
-export class SubscriptionEventProducer {
+@injectable()
+export class SubscriptionEventProducer implements ISubscriptionEventProducer {
 	private queue: Queue | null = null;
 
 	private getQueue(): Queue {
@@ -78,5 +74,3 @@ export class SubscriptionEventProducer {
 		}
 	}
 }
-
-export const subscriptionEventProducer = new SubscriptionEventProducer();

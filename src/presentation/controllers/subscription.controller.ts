@@ -5,7 +5,12 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { DomainError } from '@domain/errors/payment.errors.ts';
-import { getStatusCodeForDomainError, HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
+import {
+	ERROR_CODES,
+	getStatusCodeForDomainError,
+	HTTP_STATUS,
+	MESSAGES,
+} from '@shared/constants/index.ts';
 import { sendErrorResponse, sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
@@ -51,16 +56,13 @@ export class SubscriptionController {
 		try {
 			const validated = createSubscriptionOrderSchema.parse(req.body);
 
-			const restaurantId =
-				(req.headers['x-restaurant-id'] as string) ||
-				validated.restaurantId ||
-				(req.headers['x-user-id'] as string);
+			const restaurantId = (req.headers['x-restaurant-id'] as string) || validated.restaurantId;
 
 			if (!restaurantId) {
 				sendErrorResponse(
 					res,
 					MESSAGES.UNAUTHORIZED_RESTAURANT,
-					'UNAUTHORIZED',
+					ERROR_CODES.UNAUTHORIZED,
 					HTTP_STATUS.UNAUTHORIZED,
 				);
 				return;
@@ -83,8 +85,7 @@ export class SubscriptionController {
 	verifyPayment = async (req: Request, res: Response): Promise<void> => {
 		try {
 			const validated = verifyPaymentSchema.parse(req.body);
-			const restaurantId =
-				(req.headers['x-restaurant-id'] as string) || (req.headers['x-user-id'] as string);
+			const restaurantId = req.headers['x-restaurant-id'] as string;
 
 			const result = await this.verifyPaymentUseCase.execute({
 				razorpayOrderId: validated.razorpayOrderId,
@@ -102,15 +103,13 @@ export class SubscriptionController {
 	getStatus = async (req: Request, res: Response): Promise<void> => {
 		try {
 			const restaurantId =
-				(req.params.restaurantId as string) ||
-				(req.headers['x-restaurant-id'] as string) ||
-				(req.headers['x-user-id'] as string);
+				(req.params.restaurantId as string) || (req.headers['x-restaurant-id'] as string);
 
 			if (!restaurantId) {
 				sendErrorResponse(
 					res,
 					MESSAGES.UNAUTHORIZED_RESTAURANT,
-					'UNAUTHORIZED',
+					ERROR_CODES.UNAUTHORIZED,
 					HTTP_STATUS.UNAUTHORIZED,
 				);
 				return;
@@ -152,7 +151,7 @@ export class SubscriptionController {
 			sendErrorResponse(
 				res,
 				MESSAGES.VALIDATION_ERROR,
-				'VALIDATION_ERROR',
+				ERROR_CODES.VALIDATION_ERROR,
 				HTTP_STATUS.UNPROCESSABLE_ENTITY,
 				zodError.issues,
 			);
@@ -160,6 +159,11 @@ export class SubscriptionController {
 		}
 
 		const message = error instanceof Error ? error.message : MESSAGES.INTERNAL_SERVER_ERROR;
-		sendErrorResponse(res, message, 'INTERNAL_SERVER_ERROR', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+		sendErrorResponse(
+			res,
+			message,
+			ERROR_CODES.INTERNAL_SERVER_ERROR,
+			HTTP_STATUS.INTERNAL_SERVER_ERROR,
+		);
 	}
 }

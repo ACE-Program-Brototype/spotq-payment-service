@@ -97,3 +97,10 @@ export const MESSAGES = {
 } as const;
 
 export type Message = (typeof MESSAGES)[keyof typeof MESSAGES];
+
+export const ERROR_CODES = {
+	UNAUTHORIZED: 'UNAUTHORIZED',
+	VALIDATION_ERROR: 'VALIDATION_ERROR',
+	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+	BAD_REQUEST: 'BAD_REQUEST',
+} as const;

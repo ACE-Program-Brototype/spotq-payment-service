@@ -8,8 +8,7 @@ import { razorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { paymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
 import { subscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
 import { subscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
-import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
-import { MESSAGES } from '@shared/constants/message.constants.ts';
+import { getStatusCodeForDomainError, HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
 import { ErrorResponse, SuccessResponse } from '@shared/utils/response.ts';
 import type { Request, Response } from 'express';
 import {
@@ -144,7 +143,8 @@ export class SubscriptionController {
 
 	private handleError(res: Response, error: unknown): void {
 		if (error instanceof DomainError) {
-			res.status(error.statusCode).json(new ErrorResponse(error.code, error.message));
+			const statusCode = getStatusCodeForDomainError(error.code, HTTP_STATUS.BAD_REQUEST);
+			res.status(statusCode).json(new ErrorResponse(error.code, error.message));
 			return;
 		}
 

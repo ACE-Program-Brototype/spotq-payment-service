@@ -7,7 +7,6 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
-import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
@@ -29,14 +28,12 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 		private readonly planRepository: ISubscriptionPlanRepository,
 		@inject(TYPES.Repositories.SubscriptionRepository)
 		private readonly subscriptionRepository: ISubscriptionRepository,
-		@inject(TYPES.Repositories.OutboxRepository)
-		private readonly outboxRepository: IOutboxRepository,
 		@inject(TYPES.Services.OutboxRelayService)
 		private readonly outboxRelayService: IOutboxRelayService,
 	) {}
 
 	async execute(params: HandleWebhookInput): Promise<HandleWebhookOutput> {
-		const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || config.razorpay.keySecret;
+		const webhookSecret = config.razorpay.webhookSecret || config.razorpay.keySecret;
 
 		if (webhookSecret && params.signature) {
 			const isValid = this.paymentGateway.verifyWebhookSignature(
@@ -87,38 +84,55 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 				currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
 			}
 
-			const subscription = await this.subscriptionRepository.create({
-				restaurantId: existingTx.restaurantId,
-				planId: plan.id,
-				status: 'ACTIVE',
-				currentPeriodStart: now,
-				currentPeriodEnd: currentPeriodEnd,
-			});
-
-			await this.paymentTransactionRepository.markSuccess({
-				razorpayOrderId: existingTx.razorpayOrderId,
-				razorpayPaymentId: paymentId,
-				razorpaySignature: '',
-				subscriptionId: subscription.id,
-			});
-
-			await this.outboxRepository.create({
-				eventType: 'subscription.activated',
-				aggregateId: existingTx.restaurantId,
-				payload: {
-					subscriptionId: subscription.id,
+			await this.subscriptionRepository.activateSubscriptionWithOutbox({
+				subscription: {
 					restaurantId: existingTx.restaurantId,
-					planCode: plan.code,
+					planId: plan.id,
 					status: 'ACTIVE',
-					currentPeriodStart: now.toISOString(),
-					currentPeriodEnd: currentPeriodEnd.toISOString(),
-					timestamp: now.toISOString(),
+					currentPeriodStart: now,
+					currentPeriodEnd: currentPeriodEnd,
+				},
+				payment: {
+					razorpayOrderId: existingTx.razorpayOrderId,
+					razorpayPaymentId: paymentId,
+					razorpaySignature: '',
+				},
+				outbox: {
+					eventType: 'subscription.activated',
+					aggregateId: existingTx.restaurantId,
+					payload: {
+						restaurantId: existingTx.restaurantId,
+						planCode: plan.code,
+						status: 'ACTIVE',
+						currentPeriodStart: now.toISOString(),
+						currentPeriodEnd: currentPeriodEnd.toISOString(),
+						timestamp: now.toISOString(),
+					},
 				},
 			});
 
 			this.outboxRelayService.processPendingEvents().catch((err) => {
 				logger.error({ err }, 'Error triggering outbox relay after webhook');
 			});
+		}
+
+		if (eventType === 'payment.failed' && paymentEntity) {
+			const orderId = paymentEntity.order_id;
+			const failureReason =
+				paymentEntity.error_description ||
+				paymentEntity.error_reason ||
+				'Payment failed on gateway';
+
+			if (orderId) {
+				const existingTx = await this.paymentTransactionRepository.findByOrderId(orderId);
+				if (existingTx && existingTx.status !== 'SUCCESS') {
+					await this.paymentTransactionRepository.markFailed(orderId, failureReason);
+					logger.info(
+						{ orderId, failureReason },
+						'Payment transaction marked as FAILED from webhook',
+					);
+				}
+			}
 		}
 
 		return { received: true };

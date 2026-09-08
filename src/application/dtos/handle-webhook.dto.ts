@@ -3,6 +3,8 @@ export interface WebhookPaymentEntity {
 	order_id: string;
 	status: string;
 	amount: number;
+	error_description?: string;
+	error_reason?: string;
 }
 
 export interface WebhookOrderEntity {

@@ -206,5 +206,41 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 			expect(res.body.received).toBe(true);
 		});
+
+		it('should handle payment.failed event and mark transaction failed', async () => {
+			const mockTx = new PaymentTransaction({
+				id: 'tx-123',
+				restaurantId: '33333333-3333-3333-3333-333333333333',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_failed_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'CREATED',
+			});
+
+			jest.spyOn(paymentTransactionRepository, 'findByOrderId').mockResolvedValueOnce(mockTx);
+			const markFailedSpy = jest
+				.spyOn(paymentTransactionRepository, 'markFailed')
+				.mockResolvedValueOnce(mockTx);
+
+			const res = await request(app)
+				.post('/webhook')
+				.send({
+					event: 'payment.failed',
+					payload: {
+						payment: {
+							entity: {
+								id: 'pay_failed_123',
+								order_id: 'order_failed_123',
+								error_description: 'Payment was dropped by user',
+							},
+						},
+					},
+				})
+				.expect(HTTP_STATUS.OK);
+
+			expect(res.body.received).toBe(true);
+			expect(markFailedSpy).toHaveBeenCalledWith('order_failed_123', 'Payment was dropped by user');
+		});
 	});
 });

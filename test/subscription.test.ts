@@ -34,6 +34,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findActiveByRestaurantId: jest.fn().mockResolvedValue(null),
 		findById: jest.fn().mockResolvedValue(null),
 		create: jest.fn(),
+		activateSubscriptionWithOutbox: jest.fn(),
 	};
 
 	const mockTxRepo = {

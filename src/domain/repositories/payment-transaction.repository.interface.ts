@@ -1,5 +1,6 @@
-import type { PaymentStatus } from '@prisma/client';
 import type { PaymentTransaction } from '../entities/payment-transaction.entity.ts';
+
+export type PaymentStatus = 'CREATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 
 export interface CreatePaymentTransactionInput {
 	restaurantId: string;

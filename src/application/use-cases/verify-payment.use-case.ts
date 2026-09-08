@@ -11,7 +11,6 @@ import {
 	PlanNotFoundError,
 } from '@domain/errors/payment.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
-import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
@@ -33,8 +32,6 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		private readonly planRepository: ISubscriptionPlanRepository,
 		@inject(TYPES.Repositories.SubscriptionRepository)
 		private readonly subscriptionRepository: ISubscriptionRepository,
-		@inject(TYPES.Repositories.OutboxRepository)
-		private readonly outboxRepository: IOutboxRepository,
 		@inject(TYPES.Services.OutboxRelayService)
 		private readonly outboxRelayService: IOutboxRelayService,
 	) {}
@@ -93,35 +90,31 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 			currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
 		}
 
-		const subscription = await this.subscriptionRepository.create({
-			restaurantId: existingTx.restaurantId,
-			planId: plan.id,
-			status: 'ACTIVE',
-			currentPeriodStart: now,
-			currentPeriodEnd: currentPeriodEnd,
-		});
-
-		await this.paymentTransactionRepository.markSuccess({
-			razorpayOrderId: existingTx.razorpayOrderId,
-			razorpayPaymentId: input.razorpayPaymentId,
-			razorpaySignature: input.razorpaySignature,
-			subscriptionId: subscription.id,
-		});
-
-		const outboxPayload = {
-			subscriptionId: subscription.id,
-			restaurantId: existingTx.restaurantId,
-			planCode: plan.code,
-			status: 'ACTIVE',
-			currentPeriodStart: now.toISOString(),
-			currentPeriodEnd: currentPeriodEnd.toISOString(),
-			timestamp: now.toISOString(),
-		};
-
-		await this.outboxRepository.create({
-			eventType: 'subscription.activated',
-			aggregateId: existingTx.restaurantId,
-			payload: outboxPayload,
+		const subscription = await this.subscriptionRepository.activateSubscriptionWithOutbox({
+			subscription: {
+				restaurantId: existingTx.restaurantId,
+				planId: plan.id,
+				status: 'ACTIVE',
+				currentPeriodStart: now,
+				currentPeriodEnd: currentPeriodEnd,
+			},
+			payment: {
+				razorpayOrderId: existingTx.razorpayOrderId,
+				razorpayPaymentId: input.razorpayPaymentId,
+				razorpaySignature: input.razorpaySignature,
+			},
+			outbox: {
+				eventType: 'subscription.activated',
+				aggregateId: existingTx.restaurantId,
+				payload: {
+					restaurantId: existingTx.restaurantId,
+					planCode: plan.code,
+					status: 'ACTIVE',
+					currentPeriodStart: now.toISOString(),
+					currentPeriodEnd: currentPeriodEnd.toISOString(),
+					timestamp: now.toISOString(),
+				},
+			},
 		});
 
 		logger.info(

@@ -191,5 +191,3 @@ export class PrismaPaymentTransactionRepository
 		});
 	}
 }
-
-export const paymentTransactionRepository = new PrismaPaymentTransactionRepository();

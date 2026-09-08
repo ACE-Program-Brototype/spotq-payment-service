@@ -80,4 +80,64 @@ export class PrismaSubscriptionRepository
 			updatedAt: record.updatedAt,
 		});
 	}
+
+	async activateSubscriptionWithOutbox(params: {
+		subscription: CreateSubscriptionInput;
+		payment: {
+			razorpayOrderId: string;
+			razorpayPaymentId: string;
+			razorpaySignature: string;
+		};
+		outbox: {
+			eventType: string;
+			aggregateId: string;
+			payload: Record<string, unknown>;
+		};
+	}): Promise<Subscription> {
+		return this.prisma.$transaction(async (tx) => {
+			const subRecord = await tx.subscription.create({
+				data: {
+					restaurantId: params.subscription.restaurantId,
+					planId: params.subscription.planId,
+					status: params.subscription.status,
+					currentPeriodStart: params.subscription.currentPeriodStart,
+					currentPeriodEnd: params.subscription.currentPeriodEnd,
+				},
+			});
+
+			await tx.paymentTransaction.update({
+				where: { razorpayOrderId: params.payment.razorpayOrderId },
+				data: {
+					status: 'SUCCESS',
+					razorpayPaymentId: params.payment.razorpayPaymentId,
+					razorpaySignature: params.payment.razorpaySignature,
+					subscriptionId: subRecord.id,
+				},
+			});
+
+			await tx.outboxEvent.create({
+				data: {
+					eventType: params.outbox.eventType,
+					aggregateId: params.outbox.aggregateId,
+					payload: {
+						...params.outbox.payload,
+						subscriptionId: subRecord.id,
+					},
+					status: 'PENDING',
+				},
+			});
+
+			return new Subscription({
+				id: subRecord.id,
+				restaurantId: subRecord.restaurantId,
+				planId: subRecord.planId,
+				status: subRecord.status,
+				currentPeriodStart: subRecord.currentPeriodStart,
+				currentPeriodEnd: subRecord.currentPeriodEnd,
+				canceledAt: subRecord.canceledAt,
+				createdAt: subRecord.createdAt,
+				updatedAt: subRecord.updatedAt,
+			});
+		});
+	}
 }

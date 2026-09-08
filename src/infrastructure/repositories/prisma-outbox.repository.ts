@@ -2,16 +2,18 @@ import type {
 	IOutboxRepository,
 	OutboxEventData,
 } from '@domain/repositories/outbox.repository.interface.ts';
-import { prisma } from '@infrastructure/database/prisma.ts';
 import type { Prisma } from '@prisma/client';
+import { injectable } from 'inversify';
+import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
-export class PrismaOutboxRepository implements IOutboxRepository {
+@injectable()
+export class PrismaOutboxRepository extends PrismaBaseRepository implements IOutboxRepository {
 	async create(data: {
 		eventType: string;
 		aggregateId: string;
 		payload: Record<string, unknown>;
 	}): Promise<OutboxEventData> {
-		const record = await prisma.outboxEvent.create({
+		const record = await this.prisma.outboxEvent.create({
 			data: {
 				eventType: data.eventType,
 				aggregateId: data.aggregateId,
@@ -34,7 +36,7 @@ export class PrismaOutboxRepository implements IOutboxRepository {
 	}
 
 	async findPendingEvents(limit = 50): Promise<OutboxEventData[]> {
-		const records = await prisma.outboxEvent.findMany({
+		const records = await this.prisma.outboxEvent.findMany({
 			where: { status: 'PENDING' },
 			orderBy: { createdAt: 'asc' },
 			take: limit,
@@ -54,7 +56,7 @@ export class PrismaOutboxRepository implements IOutboxRepository {
 	}
 
 	async findDeadLetterEvents(limit = 50): Promise<OutboxEventData[]> {
-		const records = await prisma.outboxEvent.findMany({
+		const records = await this.prisma.outboxEvent.findMany({
 			where: { status: 'FAILED' },
 			orderBy: { createdAt: 'desc' },
 			take: limit,
@@ -74,7 +76,7 @@ export class PrismaOutboxRepository implements IOutboxRepository {
 	}
 
 	async markPublished(id: string): Promise<void> {
-		await prisma.outboxEvent.update({
+		await this.prisma.outboxEvent.update({
 			where: { id },
 			data: {
 				status: 'PUBLISHED',
@@ -88,7 +90,7 @@ export class PrismaOutboxRepository implements IOutboxRepository {
 		error: string,
 		maxRetries = 5,
 	): Promise<{ isDeadLetter: boolean; retryCount: number }> {
-		const current = await prisma.outboxEvent.findUnique({
+		const current = await this.prisma.outboxEvent.findUnique({
 			where: { id },
 			select: { retryCount: true },
 		});
@@ -96,7 +98,7 @@ export class PrismaOutboxRepository implements IOutboxRepository {
 		const nextRetryCount = (current?.retryCount ?? 0) + 1;
 		const isDeadLetter = nextRetryCount >= maxRetries;
 
-		await prisma.outboxEvent.update({
+		await this.prisma.outboxEvent.update({
 			where: { id },
 			data: {
 				retryCount: nextRetryCount,
@@ -109,7 +111,7 @@ export class PrismaOutboxRepository implements IOutboxRepository {
 	}
 
 	async replayDeadLetter(id: string): Promise<OutboxEventData> {
-		const updated = await prisma.outboxEvent.update({
+		const updated = await this.prisma.outboxEvent.update({
 			where: { id },
 			data: {
 				status: 'PENDING',

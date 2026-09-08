@@ -1,10 +1,15 @@
 import { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
-import { prisma } from '@infrastructure/database/prisma.ts';
+import { injectable } from 'inversify';
+import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
-export class PrismaSubscriptionPlanRepository implements ISubscriptionPlanRepository {
+@injectable()
+export class PrismaSubscriptionPlanRepository
+	extends PrismaBaseRepository
+	implements ISubscriptionPlanRepository
+{
 	async findAllActive(): Promise<SubscriptionPlan[]> {
-		const records = await prisma.subscriptionPlan.findMany({
+		const records = await this.prisma.subscriptionPlan.findMany({
 			where: { isActive: true },
 			orderBy: { pricePaise: 'asc' },
 		});
@@ -28,7 +33,7 @@ export class PrismaSubscriptionPlanRepository implements ISubscriptionPlanReposi
 	}
 
 	async findById(id: string): Promise<SubscriptionPlan | null> {
-		const record = await prisma.subscriptionPlan.findUnique({
+		const record = await this.prisma.subscriptionPlan.findUnique({
 			where: { id },
 		});
 
@@ -50,7 +55,7 @@ export class PrismaSubscriptionPlanRepository implements ISubscriptionPlanReposi
 	}
 
 	async findByCode(code: string): Promise<SubscriptionPlan | null> {
-		const record = await prisma.subscriptionPlan.findUnique({
+		const record = await this.prisma.subscriptionPlan.findUnique({
 			where: { code },
 		});
 

@@ -3,6 +3,7 @@ export * from './entities/subscription.entity.ts';
 export * from './entities/subscription-plan.entity.ts';
 export * from './errors/payment.errors.ts';
 export * from './interfaces/index.ts';
+export * from './repositories/base.repository.interface.ts';
 export * from './repositories/outbox.repository.interface.ts';
 export * from './repositories/payment-transaction.repository.interface.ts';
 export * from './repositories/subscription.repository.interface.ts';

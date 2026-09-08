@@ -3,12 +3,17 @@ import type {
 	CreatePaymentTransactionInput,
 	IPaymentTransactionRepository,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
-import { prisma } from '@infrastructure/database/prisma.ts';
 import type { Prisma } from '@prisma/client';
+import { injectable } from 'inversify';
+import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
-export class PrismaPaymentTransactionRepository implements IPaymentTransactionRepository {
+@injectable()
+export class PrismaPaymentTransactionRepository
+	extends PrismaBaseRepository
+	implements IPaymentTransactionRepository
+{
 	async findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null> {
-		const record = await prisma.paymentTransaction.findUnique({
+		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { razorpayOrderId },
 		});
 
@@ -33,7 +38,7 @@ export class PrismaPaymentTransactionRepository implements IPaymentTransactionRe
 	}
 
 	async findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null> {
-		const record = await prisma.paymentTransaction.findUnique({
+		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { razorpayPaymentId },
 		});
 
@@ -64,7 +69,7 @@ export class PrismaPaymentTransactionRepository implements IPaymentTransactionRe
 		// Valid for 15 minutes
 		const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
-		const record = await prisma.paymentTransaction.findFirst({
+		const record = await this.prisma.paymentTransaction.findFirst({
 			where: {
 				restaurantId,
 				planId,
@@ -95,7 +100,7 @@ export class PrismaPaymentTransactionRepository implements IPaymentTransactionRe
 	}
 
 	async create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction> {
-		const record = await prisma.paymentTransaction.create({
+		const record = await this.prisma.paymentTransaction.create({
 			data: {
 				restaurantId: data.restaurantId,
 				planId: data.planId,
@@ -131,7 +136,7 @@ export class PrismaPaymentTransactionRepository implements IPaymentTransactionRe
 		razorpaySignature: string;
 		subscriptionId: string;
 	}): Promise<PaymentTransaction> {
-		const record = await prisma.paymentTransaction.update({
+		const record = await this.prisma.paymentTransaction.update({
 			where: { razorpayOrderId: params.razorpayOrderId },
 			data: {
 				status: 'SUCCESS',
@@ -160,7 +165,7 @@ export class PrismaPaymentTransactionRepository implements IPaymentTransactionRe
 	}
 
 	async markFailed(razorpayOrderId: string, failureReason: string): Promise<PaymentTransaction> {
-		const record = await prisma.paymentTransaction.update({
+		const record = await this.prisma.paymentTransaction.update({
 			where: { razorpayOrderId },
 			data: {
 				status: 'FAILED',

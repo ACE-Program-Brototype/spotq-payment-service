@@ -3,12 +3,17 @@ import type {
 	CreateSubscriptionInput,
 	ISubscriptionRepository,
 } from '@domain/repositories/subscription.repository.interface.ts';
-import { prisma } from '@infrastructure/database/prisma.ts';
+import { injectable } from 'inversify';
+import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
-export class PrismaSubscriptionRepository implements ISubscriptionRepository {
+@injectable()
+export class PrismaSubscriptionRepository
+	extends PrismaBaseRepository
+	implements ISubscriptionRepository
+{
 	async findActiveByRestaurantId(restaurantId: string): Promise<Subscription | null> {
 		const now = new Date();
-		const record = await prisma.subscription.findFirst({
+		const record = await this.prisma.subscription.findFirst({
 			where: {
 				restaurantId,
 				status: 'ACTIVE',
@@ -33,7 +38,7 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
 	}
 
 	async findById(id: string): Promise<Subscription | null> {
-		const record = await prisma.subscription.findUnique({
+		const record = await this.prisma.subscription.findUnique({
 			where: { id },
 		});
 
@@ -53,7 +58,7 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
 	}
 
 	async create(data: CreateSubscriptionInput): Promise<Subscription> {
-		const record = await prisma.subscription.create({
+		const record = await this.prisma.subscription.create({
 			data: {
 				restaurantId: data.restaurantId,
 				planId: data.planId,

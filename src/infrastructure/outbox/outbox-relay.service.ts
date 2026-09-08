@@ -115,8 +115,3 @@ export class OutboxRelayService implements IOutboxRelayService {
 		);
 	}
 }
-
-export const outboxRelayService = new OutboxRelayService(
-	// Legacy fallback instance
-	{} as unknown as IOutboxRepository,
-);

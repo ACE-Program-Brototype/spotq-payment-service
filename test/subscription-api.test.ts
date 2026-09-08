@@ -11,6 +11,7 @@ import { databaseService } from '@infrastructure/database/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
+import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
@@ -56,11 +57,11 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		await databaseService.disconnect();
 	});
 
-	describe('GET /plans', () => {
+	describe(`GET ${SUBSCRIPTION_ROUTES.PLANS}`, () => {
 		it('should return 200 with list of subscription plans', async () => {
 			jest.spyOn(subscriptionPlanRepository, 'findAllActive').mockResolvedValueOnce([mockPlan]);
 
-			const res = await request(app).get('/plans').expect(HTTP_STATUS.OK);
+			const res = await request(app).get(SUBSCRIPTION_ROUTES.PLANS).expect(HTTP_STATUS.OK);
 
 			expect(res.body.success).toBe(true);
 			expect(res.body.data).toHaveLength(1);
@@ -69,7 +70,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 	});
 
-	describe('POST /subscriptions/order', () => {
+	describe(`POST ${SUBSCRIPTION_ROUTES.ORDER}`, () => {
 		it('should return 201 when order is created successfully', async () => {
 			jest.spyOn(subscriptionPlanRepository, 'findById').mockResolvedValueOnce(mockPlan);
 			jest.spyOn(subscriptionRepository, 'findActiveByRestaurantId').mockResolvedValueOnce(null);
@@ -95,7 +96,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			);
 
 			const res = await request(app)
-				.post('/subscriptions/order')
+				.post(SUBSCRIPTION_ROUTES.ORDER)
 				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
 				.send({
 					planId: mockPlan.id,
@@ -110,7 +111,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 		it('should return 401 if restaurant identification is missing', async () => {
 			const res = await request(app)
-				.post('/subscriptions/order')
+				.post(SUBSCRIPTION_ROUTES.ORDER)
 				.send({
 					planId: mockPlan.id,
 				})
@@ -121,7 +122,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 		it('should return 422 if payload fails validation', async () => {
 			const res = await request(app)
-				.post('/subscriptions/order')
+				.post(SUBSCRIPTION_ROUTES.ORDER)
 				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
 				.send({
 					planId: 'not-a-uuid',
@@ -133,12 +134,12 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 	});
 
-	describe('POST /subscriptions/verify', () => {
+	describe(`POST ${SUBSCRIPTION_ROUTES.VERIFY}`, () => {
 		it('should return 400 if signature is invalid', async () => {
 			jest.spyOn(razorpayGateway, 'verifyPaymentSignature').mockReturnValueOnce(false);
 
 			const res = await request(app)
-				.post('/subscriptions/verify')
+				.post(SUBSCRIPTION_ROUTES.VERIFY)
 				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
 				.send({
 					razorpayOrderId: 'order_123',
@@ -152,7 +153,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 	});
 
-	describe('GET /subscriptions/status', () => {
+	describe(`GET ${SUBSCRIPTION_ROUTES.STATUS}`, () => {
 		it('should return 200 with active subscription details', async () => {
 			const activeSub = new Subscription({
 				id: 'sub-1',
@@ -169,7 +170,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			jest.spyOn(subscriptionPlanRepository, 'findById').mockResolvedValueOnce(mockPlan);
 
 			const res = await request(app)
-				.get('/subscriptions/status')
+				.get(SUBSCRIPTION_ROUTES.STATUS)
 				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
 				.expect(HTTP_STATUS.OK);
 
@@ -182,7 +183,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			jest.spyOn(subscriptionRepository, 'findActiveByRestaurantId').mockResolvedValueOnce(null);
 
 			const res = await request(app)
-				.get('/subscriptions/status')
+				.get(SUBSCRIPTION_ROUTES.STATUS)
 				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
 				.expect(HTTP_STATUS.OK);
 
@@ -192,10 +193,10 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 	});
 
-	describe('POST /webhook', () => {
+	describe(`POST ${SUBSCRIPTION_ROUTES.WEBHOOK}`, () => {
 		it('should return 200 OK for valid webhook calls', async () => {
 			const res = await request(app)
-				.post('/webhook')
+				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
 				.send({
 					event: 'payment.captured',
 					payload: {},
@@ -222,7 +223,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				.mockResolvedValueOnce(mockTx);
 
 			const res = await request(app)
-				.post('/webhook')
+				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
 				.send({
 					event: 'payment.failed',
 					payload: {

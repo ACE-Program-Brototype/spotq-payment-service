@@ -125,7 +125,9 @@ export class SubscriptionController {
 	handleWebhook = async (req: Request, res: Response): Promise<void> => {
 		try {
 			const signature = (req.headers['x-razorpay-signature'] as string) || '';
-			const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+			const rawBody =
+				(req as unknown as { rawBody?: string }).rawBody ||
+				(typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
 			const result = await this.handleWebhookUseCase.execute({
 				rawBody,

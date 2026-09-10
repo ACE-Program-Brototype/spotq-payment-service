@@ -95,6 +95,29 @@ export class PrismaSubscriptionRepository
 		};
 	}): Promise<Subscription> {
 		return this.prisma.$transaction(async (tx) => {
+			const existingTx = await tx.paymentTransaction.findUnique({
+				where: { razorpayOrderId: params.payment.razorpayOrderId },
+			});
+
+			if (existingTx?.status === 'SUCCESS' && existingTx.subscriptionId) {
+				const existingSub = await tx.subscription.findUnique({
+					where: { id: existingTx.subscriptionId },
+				});
+				if (existingSub) {
+					return new Subscription({
+						id: existingSub.id,
+						restaurantId: existingSub.restaurantId,
+						planId: existingSub.planId,
+						status: existingSub.status,
+						currentPeriodStart: existingSub.currentPeriodStart,
+						currentPeriodEnd: existingSub.currentPeriodEnd,
+						canceledAt: existingSub.canceledAt,
+						createdAt: existingSub.createdAt,
+						updatedAt: existingSub.updatedAt,
+					});
+				}
+			}
+
 			const subRecord = await tx.subscription.create({
 				data: {
 					restaurantId: params.subscription.restaurantId,

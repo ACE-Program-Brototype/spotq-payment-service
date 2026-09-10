@@ -51,65 +51,61 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		jest.restoreAllMocks();
 	});
 
-	afterAll(async () => {
-		await bullmqService.disconnect();
-		await redisService.disconnect();
-		await databaseService.disconnect();
-	});
-
 	describe(`GET ${SUBSCRIPTION_ROUTES.PLANS}`, () => {
-		it('should return 200 with list of subscription plans', async () => {
+		it('should return 200 OK and list of available subscription plans', async () => {
 			jest.spyOn(subscriptionPlanRepository, 'findAllActive').mockResolvedValueOnce([mockPlan]);
 
 			const res = await request(app).get(SUBSCRIPTION_ROUTES.PLANS).expect(HTTP_STATUS.OK);
 
 			expect(res.body.success).toBe(true);
+			expect(res.body.data).toBeInstanceOf(Array);
 			expect(res.body.data).toHaveLength(1);
 			expect(res.body.data[0].code).toBe('QUEUE_PRO');
-			expect(res.body.data[0].priceInRupees).toBe(1499);
+			expect(res.body.data[0].pricePaise).toBe(149900);
 		});
 	});
 
 	describe(`POST ${SUBSCRIPTION_ROUTES.ORDER}`, () => {
-		it('should return 201 when order is created successfully', async () => {
+		it('should create an order successfully with valid restaurant headers and payload', async () => {
 			jest.spyOn(subscriptionPlanRepository, 'findById').mockResolvedValueOnce(mockPlan);
 			jest.spyOn(subscriptionRepository, 'findActiveByRestaurantId').mockResolvedValueOnce(null);
 			jest
 				.spyOn(paymentTransactionRepository, 'findPendingByRestaurantAndPlan')
 				.mockResolvedValueOnce(null);
 			jest.spyOn(razorpayGateway, 'createOrder').mockResolvedValueOnce({
-				orderId: 'order_123456',
+				orderId: 'order_test_123',
 				amount: 149900,
 				currency: 'INR',
 				status: 'created',
 			});
-			jest.spyOn(paymentTransactionRepository, 'create').mockResolvedValueOnce(
-				new PaymentTransaction({
-					id: 'tx-1',
-					restaurantId: 'r-123',
-					planId: mockPlan.id,
-					razorpayOrderId: 'order_123456',
-					amountPaise: 149900,
-					currency: 'INR',
-					status: 'CREATED',
-				}),
-			);
+
+			const mockTx = new PaymentTransaction({
+				id: 'b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e',
+				restaurantId: '11111111-1111-1111-1111-111111111111',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_test_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'CREATED',
+			});
+			jest.spyOn(paymentTransactionRepository, 'create').mockResolvedValueOnce(mockTx);
 
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.ORDER)
-				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
+				.set('x-restaurant-id', '11111111-1111-1111-1111-111111111111')
+				.set('x-restaurant-name', 'Spicy Spoon')
+				.set('x-user-email', 'owner@spicyspoon.com')
 				.send({
 					planId: mockPlan.id,
-					restaurantName: 'Test Diner',
 				})
 				.expect(HTTP_STATUS.CREATED);
 
 			expect(res.body.success).toBe(true);
-			expect(res.body.data.orderId).toBe('order_123456');
+			expect(res.body.data.orderId).toBe('order_test_123');
 			expect(res.body.data.amount).toBe(149900);
 		});
 
-		it('should return 401 if restaurant identification is missing', async () => {
+		it('should return 401 UNAUTHORIZED if restaurantId is completely missing', async () => {
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.ORDER)
 				.send({
@@ -118,14 +114,15 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				.expect(HTTP_STATUS.UNAUTHORIZED);
 
 			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe('UNAUTHORIZED');
 		});
 
-		it('should return 422 if payload fails validation', async () => {
+		it('should return 422 UNPROCESSABLE_ENTITY on invalid request body', async () => {
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.ORDER)
-				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
+				.set('x-restaurant-id', '11111111-1111-1111-1111-111111111111')
 				.send({
-					planId: 'not-a-uuid',
+					planId: 'invalid-not-a-uuid',
 				})
 				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
@@ -135,16 +132,62 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	});
 
 	describe(`POST ${SUBSCRIPTION_ROUTES.VERIFY}`, () => {
-		it('should return 400 if signature is invalid', async () => {
+		it('should verify payment signature and activate subscription', async () => {
+			jest.spyOn(razorpayGateway, 'verifyPaymentSignature').mockReturnValueOnce(true);
+
+			const mockTx = new PaymentTransaction({
+				id: 'b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e',
+				restaurantId: '11111111-1111-1111-1111-111111111111',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_test_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'CREATED',
+			});
+			jest.spyOn(paymentTransactionRepository, 'findByOrderId').mockResolvedValueOnce(mockTx);
+			jest.spyOn(subscriptionPlanRepository, 'findById').mockResolvedValueOnce(mockPlan);
+
+			const now = new Date();
+			const periodEnd = new Date(now);
+			periodEnd.setDate(periodEnd.getDate() + 30);
+
+			const mockSub = new Subscription({
+				id: 'sub-12345',
+				restaurantId: '11111111-1111-1111-1111-111111111111',
+				planId: mockPlan.id,
+				status: 'ACTIVE',
+				currentPeriodStart: now,
+				currentPeriodEnd: periodEnd,
+			});
+			jest
+				.spyOn(subscriptionRepository, 'activateSubscriptionWithOutbox')
+				.mockResolvedValueOnce(mockSub);
+
+			const res = await request(app)
+				.post(SUBSCRIPTION_ROUTES.VERIFY)
+				.set('x-restaurant-id', '11111111-1111-1111-1111-111111111111')
+				.send({
+					razorpayOrderId: 'order_test_123',
+					razorpayPaymentId: 'pay_test_456',
+					razorpaySignature: 'valid_signature_abc',
+				})
+				.expect(HTTP_STATUS.OK);
+
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.status).toBe('ACTIVE');
+			expect(res.body.data.subscriptionId).toBe('sub-12345');
+		});
+
+		it('should return 400 BAD_REQUEST on invalid signature', async () => {
 			jest.spyOn(razorpayGateway, 'verifyPaymentSignature').mockReturnValueOnce(false);
 
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.VERIFY)
-				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
+				.set('x-restaurant-id', '11111111-1111-1111-1111-111111111111')
 				.send({
-					razorpayOrderId: 'order_123',
-					razorpayPaymentId: 'pay_456',
-					razorpaySignature: 'invalid_sig',
+					razorpayOrderId: 'order_test_123',
+					razorpayPaymentId: 'pay_test_456',
+					razorpaySignature: 'tampered_signature',
 				})
 				.expect(HTTP_STATUS.BAD_REQUEST);
 
@@ -153,38 +196,39 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 	});
 
-	describe(`GET ${SUBSCRIPTION_ROUTES.STATUS}`, () => {
-		it('should return 200 with active subscription details', async () => {
-			const activeSub = new Subscription({
-				id: 'sub-1',
-				restaurantId: '33333333-3333-3333-3333-333333333333',
+	describe(`GET ${SUBSCRIPTION_ROUTES.STATUS}/:restaurantId`, () => {
+		it('should return 200 OK and active subscription status', async () => {
+			const now = new Date();
+			const periodEnd = new Date(now);
+			periodEnd.setDate(periodEnd.getDate() + 30);
+
+			const mockSub = new Subscription({
+				id: 'sub-active-99',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
 				planId: mockPlan.id,
 				status: 'ACTIVE',
-				currentPeriodStart: new Date(),
-				currentPeriodEnd: new Date(Date.now() + 86400000 * 30),
+				currentPeriodStart: now,
+				currentPeriodEnd: periodEnd,
 			});
 
-			jest
-				.spyOn(subscriptionRepository, 'findActiveByRestaurantId')
-				.mockResolvedValueOnce(activeSub);
+			jest.spyOn(subscriptionRepository, 'findActiveByRestaurantId').mockResolvedValueOnce(mockSub);
 			jest.spyOn(subscriptionPlanRepository, 'findById').mockResolvedValueOnce(mockPlan);
 
 			const res = await request(app)
-				.get(SUBSCRIPTION_ROUTES.STATUS)
-				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
+				.get(`${SUBSCRIPTION_ROUTES.STATUS}/22222222-2222-2222-2222-222222222222`)
 				.expect(HTTP_STATUS.OK);
 
 			expect(res.body.success).toBe(true);
 			expect(res.body.data.isSubscriptionActive).toBe(true);
+			expect(res.body.data.subscription.id).toBe('sub-active-99');
 			expect(res.body.data.subscription.planCode).toBe('QUEUE_PRO');
 		});
 
-		it('should return isSubscriptionActive: false if restaurant has no active subscription', async () => {
+		it('should return 200 OK with isSubscriptionActive: false if no active subscription exists', async () => {
 			jest.spyOn(subscriptionRepository, 'findActiveByRestaurantId').mockResolvedValueOnce(null);
 
 			const res = await request(app)
-				.get(SUBSCRIPTION_ROUTES.STATUS)
-				.set('x-restaurant-id', '33333333-3333-3333-3333-333333333333')
+				.get(`${SUBSCRIPTION_ROUTES.STATUS}/22222222-2222-2222-2222-222222222222`)
 				.expect(HTTP_STATUS.OK);
 
 			expect(res.body.success).toBe(true);
@@ -195,8 +239,11 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 	describe(`POST ${SUBSCRIPTION_ROUTES.WEBHOOK}`, () => {
 		it('should return 200 OK for valid webhook calls', async () => {
+			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(true);
+
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
+				.set('x-razorpay-signature', 'valid_test_signature')
 				.send({
 					event: 'payment.captured',
 					payload: {},
@@ -207,6 +254,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 
 		it('should handle payment.failed event and mark transaction failed', async () => {
+			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(true);
+
 			const mockTx = new PaymentTransaction({
 				id: 'tx-123',
 				restaurantId: '33333333-3333-3333-3333-333333333333',
@@ -224,6 +273,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
+				.set('x-razorpay-signature', 'valid_test_signature')
 				.send({
 					event: 'payment.failed',
 					payload: {
@@ -240,6 +290,20 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 			expect(res.body.received).toBe(true);
 			expect(markFailedSpy).toHaveBeenCalledWith('order_failed_123', 'Payment was dropped by user');
+		});
+
+		it('should reject webhook with received: false when signature is invalid or missing', async () => {
+			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(false);
+
+			const res = await request(app)
+				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
+				.send({
+					event: 'payment.captured',
+					payload: {},
+				})
+				.expect(HTTP_STATUS.OK);
+
+			expect(res.body.received).toBe(false);
 		});
 	});
 });

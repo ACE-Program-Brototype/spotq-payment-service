@@ -35,7 +35,12 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 	async execute(params: HandleWebhookInput): Promise<HandleWebhookOutput> {
 		const webhookSecret = config.razorpay.webhookSecret || config.razorpay.keySecret;
 
-		if (webhookSecret && params.signature) {
+		if (webhookSecret) {
+			if (!params.signature) {
+				logger.warn('Missing webhook signature rejected');
+				return { received: false };
+			}
+
 			const isValid = this.paymentGateway.verifyWebhookSignature(
 				params.rawBody,
 				params.signature,

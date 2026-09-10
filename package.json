@@ -18,6 +18,7 @@
 		"prisma:migrate": "prisma migrate dev",
 		"prisma:studio": "prisma studio",
 		"seed:plans": "tsx prisma/seed.ts",
+		"subscription:reset": "infisical run --env=dev -- tsx scripts/reset-subscription.ts",
 		"prepare": "husky"
 	},
 	"keywords": [],

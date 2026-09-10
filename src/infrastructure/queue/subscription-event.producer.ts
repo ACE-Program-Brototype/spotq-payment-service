@@ -30,7 +30,7 @@ export class SubscriptionEventProducer implements ISubscriptionEventProducer {
 					maxRetriesPerRequest: null,
 					enableReadyCheck: false,
 				},
-				prefix: config.redis.queuePrefix || 'bull',
+				prefix: 'bull',
 			});
 		}
 		return this.queue;

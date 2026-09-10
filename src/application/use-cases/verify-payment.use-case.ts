@@ -9,6 +9,7 @@ import {
 	InvalidPaymentSignatureError,
 	PaymentOrderNotFoundError,
 	PlanNotFoundError,
+	UnauthorizedRestaurantError,
 } from '@domain/errors/payment.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
@@ -55,6 +56,18 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 
 		if (!existingTx) {
 			throw new PaymentOrderNotFoundError();
+		}
+
+		if (input.restaurantId && existingTx.restaurantId !== input.restaurantId) {
+			logger.warn(
+				{
+					orderId: input.razorpayOrderId,
+					expectedRestaurantId: existingTx.restaurantId,
+					callerRestaurantId: input.restaurantId,
+				},
+				'Restaurant authorization mismatch on verify payment',
+			);
+			throw new UnauthorizedRestaurantError();
 		}
 
 		if (existingTx.status === 'SUCCESS' && existingTx.subscriptionId) {

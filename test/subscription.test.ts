@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { CreateSubscriptionOrderUseCase } from '../src/application/use-cases/create-subscription-order.use-case.ts';
 import { GetSubscriptionPlansUseCase } from '../src/application/use-cases/get-subscription-plans.use-case.ts';
+import { VerifyPaymentUseCase } from '../src/application/use-cases/verify-payment.use-case.ts';
 import { PaymentTransaction } from '../src/domain/entities/payment-transaction.entity.ts';
 import { Subscription } from '../src/domain/entities/subscription.entity.ts';
 import {
@@ -10,6 +11,7 @@ import {
 import {
 	ActiveSubscriptionAlreadyExistsError,
 	PlanNotFoundError,
+	UnauthorizedRestaurantError,
 } from '../src/domain/errors/payment.errors.ts';
 import { RazorpayGateway } from '../src/infrastructure/payment/razorpay.gateway.ts';
 
@@ -62,6 +64,10 @@ describe('Subscription & Payment Use Cases', () => {
 		verifyPaymentSignature: jest.fn().mockReturnValue(true),
 		verifyWebhookSignature: jest.fn().mockReturnValue(true),
 		getPaymentDetails: jest.fn().mockResolvedValue({}),
+	};
+
+	const mockOutboxRelay = {
+		processPendingEvents: jest.fn().mockResolvedValue(0),
 	};
 
 	beforeEach(() => {
@@ -183,6 +189,39 @@ describe('Subscription & Payment Use Cases', () => {
 		});
 	});
 
+	describe('VerifyPaymentUseCase Authorization', () => {
+		it('should throw UnauthorizedRestaurantError if restaurantId does not match transaction owner', async () => {
+			const existingTx = new PaymentTransaction({
+				id: 'tx-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_test_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'CREATED',
+			});
+
+			mockTxRepo.findByOrderId.mockResolvedValueOnce(existingTx);
+
+			const useCase = new VerifyPaymentUseCase(
+				mockGateway,
+				mockTxRepo,
+				mockPlanRepo,
+				mockSubRepo,
+				mockOutboxRelay,
+			);
+
+			await expect(
+				useCase.execute({
+					razorpayOrderId: 'order_test_123',
+					razorpayPaymentId: 'pay_test_123',
+					razorpaySignature: 'sig_test_123',
+					restaurantId: '99999999-9999-9999-9999-999999999999',
+				}),
+			).rejects.toThrow(UnauthorizedRestaurantError);
+		});
+	});
+
 	describe('Cryptographic Signature Verification', () => {
 		it('should verify valid HMAC SHA256 signature using timingSafeEqual', () => {
 			const keySecret = 'test_secret_key_1234567890';
@@ -231,7 +270,7 @@ describe('SubscriptionPlan Entity', () => {
 		const endDate = plan.calculatePeriodEnd(startDate);
 
 		expect(endDate.getFullYear()).toBe(2026);
-		expect(endDate.getMonth()).toBe(1); // February (0-indexed 1)
+		expect(endDate.getMonth()).toBe(1);
 		expect(endDate.getDate()).toBe(15);
 	});
 
@@ -251,7 +290,7 @@ describe('SubscriptionPlan Entity', () => {
 		const endDate = plan.calculatePeriodEnd(startDate);
 
 		expect(endDate.getFullYear()).toBe(2027);
-		expect(endDate.getMonth()).toBe(2); // March
+		expect(endDate.getMonth()).toBe(2);
 		expect(endDate.getDate()).toBe(10);
 	});
 });

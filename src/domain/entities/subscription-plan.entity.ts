@@ -62,6 +62,16 @@ export class SubscriptionPlan {
 		return this.props.isActive;
 	}
 
+	calculatePeriodEnd(startDate: Date = new Date()): Date {
+		const periodEnd = new Date(startDate);
+		if (this.billingCycle === PlanBillingCycle.YEARLY) {
+			periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+		} else {
+			periodEnd.setMonth(periodEnd.getMonth() + 1);
+		}
+		return periodEnd;
+	}
+
 	toJSON() {
 		return {
 			id: this.id,

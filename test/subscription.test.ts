@@ -213,3 +213,45 @@ describe('Subscription & Payment Use Cases', () => {
 		});
 	});
 });
+
+describe('SubscriptionPlan Entity', () => {
+	it('should calculate monthly period end with calendar month advancement', () => {
+		const plan = new SubscriptionPlan({
+			id: '11111111-1111-1111-1111-111111111111',
+			code: 'QUEUE_PRO',
+			name: 'Queue Pro',
+			pricePaise: 149900,
+			currency: 'INR',
+			billingCycle: PlanBillingCycle.MONTHLY,
+			features: ['Queue Management'],
+			isActive: true,
+		});
+
+		const startDate = new Date('2026-01-15T00:00:00.000Z');
+		const endDate = plan.calculatePeriodEnd(startDate);
+
+		expect(endDate.getFullYear()).toBe(2026);
+		expect(endDate.getMonth()).toBe(1); // February (0-indexed 1)
+		expect(endDate.getDate()).toBe(15);
+	});
+
+	it('should calculate yearly period end with full year advancement', () => {
+		const plan = new SubscriptionPlan({
+			id: '22222222-2222-2222-2222-222222222222',
+			code: 'YEARLY_PRO',
+			name: 'Yearly Pro',
+			pricePaise: 1499000,
+			currency: 'INR',
+			billingCycle: PlanBillingCycle.YEARLY,
+			features: ['Queue Management'],
+			isActive: true,
+		});
+
+		const startDate = new Date('2026-03-10T00:00:00.000Z');
+		const endDate = plan.calculatePeriodEnd(startDate);
+
+		expect(endDate.getFullYear()).toBe(2027);
+		expect(endDate.getMonth()).toBe(2); // March
+		expect(endDate.getDate()).toBe(10);
+	});
+});

@@ -82,12 +82,7 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			if (!plan) return { received: true };
 
 			const now = new Date();
-			const currentPeriodEnd = new Date(now);
-			if (plan.billingCycle === 'YEARLY') {
-				currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
-			} else {
-				currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
-			}
+			const currentPeriodEnd = plan.calculatePeriodEnd(now);
 
 			await this.subscriptionRepository.activateSubscriptionWithOutbox({
 				subscription: {

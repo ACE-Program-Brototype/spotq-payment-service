@@ -36,26 +36,60 @@ export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExp
 		if (this.isRunning) return 0;
 		this.isRunning = true;
 		try {
-			const result = await prisma.subscription.updateMany({
+			const pastDueSubscriptions = await prisma.subscription.findMany({
 				where: {
 					status: 'ACTIVE',
 					currentPeriodEnd: {
 						lt: now,
 					},
 				},
-				data: {
-					status: 'EXPIRED',
+				include: {
+					plan: true,
 				},
 			});
 
-			if (result.count > 0) {
-				logger.info(
-					{ count: result.count, timestamp: now.toISOString() },
-					'Marked past-due subscriptions as EXPIRED in payment ledger',
-				);
+			if (pastDueSubscriptions.length === 0) {
+				return 0;
 			}
 
-			return result.count;
+			const subIds = pastDueSubscriptions.map((s) => s.id);
+
+			await prisma.$transaction(async (tx) => {
+				await tx.subscription.updateMany({
+					where: {
+						id: { in: subIds },
+					},
+					data: {
+						status: 'EXPIRED',
+					},
+				});
+
+				for (const sub of pastDueSubscriptions) {
+					await tx.outboxEvent.create({
+						data: {
+							eventType: 'subscription.expired',
+							aggregateId: sub.restaurantId,
+							payload: {
+								subscriptionId: sub.id,
+								restaurantId: sub.restaurantId,
+								planCode: sub.plan.code,
+								status: 'EXPIRED',
+								expiredAt: now.toISOString(),
+								currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+								timestamp: now.toISOString(),
+							},
+							status: 'PENDING',
+						},
+					});
+				}
+			});
+
+			logger.info(
+				{ count: pastDueSubscriptions.length, timestamp: now.toISOString() },
+				'Marked past-due subscriptions as EXPIRED and created outbox events',
+			);
+
+			return pastDueSubscriptions.length;
 		} catch (error) {
 			logger.error({ err: error }, 'Failed to expire past-due payment subscriptions');
 			throw error;

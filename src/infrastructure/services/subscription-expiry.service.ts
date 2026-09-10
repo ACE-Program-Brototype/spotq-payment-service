@@ -1,6 +1,11 @@
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import { prisma } from '@infrastructure/database/prisma.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import {
+	EXPIRY_CHECK_INTERVAL_MS,
+	SUBSCRIPTION_EVENTS,
+	SUBSCRIPTION_STATUS,
+} from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -8,7 +13,7 @@ export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExp
 	private intervalId: NodeJS.Timeout | null = null;
 	private isRunning = false;
 
-	start(intervalMs = 60 * 60 * 1000): void {
+	start(intervalMs = EXPIRY_CHECK_INTERVAL_MS): void {
 		if (this.intervalId) return;
 
 		this.expirePastDueSubscriptions().catch((err) => {
@@ -38,7 +43,7 @@ export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExp
 		try {
 			const pastDueSubscriptions = await prisma.subscription.findMany({
 				where: {
-					status: 'ACTIVE',
+					status: SUBSCRIPTION_STATUS.ACTIVE,
 					currentPeriodEnd: {
 						lt: now,
 					},
@@ -60,20 +65,20 @@ export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExp
 						id: { in: subIds },
 					},
 					data: {
-						status: 'EXPIRED',
+						status: SUBSCRIPTION_STATUS.EXPIRED,
 					},
 				});
 
 				for (const sub of pastDueSubscriptions) {
 					await tx.outboxEvent.create({
 						data: {
-							eventType: 'subscription.expired',
+							eventType: SUBSCRIPTION_EVENTS.EXPIRED,
 							aggregateId: sub.restaurantId,
 							payload: {
 								subscriptionId: sub.id,
 								restaurantId: sub.restaurantId,
 								planCode: sub.plan.code,
-								status: 'EXPIRED',
+								status: SUBSCRIPTION_STATUS.EXPIRED,
 								expiredAt: now.toISOString(),
 								currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
 								timestamp: now.toISOString(),

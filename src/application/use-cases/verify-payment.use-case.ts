@@ -16,6 +16,11 @@ import type { IPaymentTransactionRepository } from '@domain/repositories/payment
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import {
+	PAYMENT_STATUS,
+	SUBSCRIPTION_EVENTS,
+	SUBSCRIPTION_STATUS,
+} from '@shared/constants/index.ts';
 import { inject, injectable } from 'inversify';
 
 /**
@@ -70,7 +75,7 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 			throw new UnauthorizedRestaurantError();
 		}
 
-		if (existingTx.status === 'SUCCESS' && existingTx.subscriptionId) {
+		if (existingTx.status === PAYMENT_STATUS.SUCCESS && existingTx.subscriptionId) {
 			logger.info(
 				{ orderId: input.razorpayOrderId, subscriptionId: existingTx.subscriptionId },
 				'Payment already verified and subscription activated. Returning idempotently.',
@@ -83,7 +88,7 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 				subscriptionId: existingTx.subscriptionId,
 				restaurantId: existingTx.restaurantId,
 				planCode: plan?.code || '',
-				status: existingSub?.status || 'ACTIVE',
+				status: existingSub?.status || SUBSCRIPTION_STATUS.ACTIVE,
 				currentPeriodStart:
 					existingSub?.currentPeriodStart.toISOString() || new Date().toISOString(),
 				currentPeriodEnd: existingSub?.currentPeriodEnd.toISOString() || new Date().toISOString(),
@@ -102,7 +107,7 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 			subscription: {
 				restaurantId: existingTx.restaurantId,
 				planId: plan.id,
-				status: 'ACTIVE',
+				status: SUBSCRIPTION_STATUS.ACTIVE,
 				currentPeriodStart: now,
 				currentPeriodEnd: currentPeriodEnd,
 			},
@@ -112,12 +117,12 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 				razorpaySignature: input.razorpaySignature,
 			},
 			outbox: {
-				eventType: 'subscription.activated',
+				eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
 				aggregateId: existingTx.restaurantId,
 				payload: {
 					restaurantId: existingTx.restaurantId,
 					planCode: plan.code,
-					status: 'ACTIVE',
+					status: SUBSCRIPTION_STATUS.ACTIVE,
 					currentPeriodStart: now.toISOString(),
 					currentPeriodEnd: currentPeriodEnd.toISOString(),
 					timestamp: now.toISOString(),

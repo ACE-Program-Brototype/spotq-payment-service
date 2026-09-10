@@ -11,6 +11,11 @@ import type { IPaymentTransactionRepository } from '@domain/repositories/payment
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import {
+	PAYMENT_STATUS,
+	SUBSCRIPTION_EVENTS,
+	SUBSCRIPTION_STATUS,
+} from '@shared/constants/index.ts';
 import { inject, injectable } from 'inversify';
 
 /**
@@ -73,7 +78,7 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 				return { received: true };
 			}
 
-			if (existingTx.status === 'SUCCESS' && existingTx.subscriptionId) {
+			if (existingTx.status === PAYMENT_STATUS.SUCCESS && existingTx.subscriptionId) {
 				logger.info({ orderId }, 'Webhook received for already completed transaction');
 				return { received: true };
 			}
@@ -88,7 +93,7 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 				subscription: {
 					restaurantId: existingTx.restaurantId,
 					planId: plan.id,
-					status: 'ACTIVE',
+					status: SUBSCRIPTION_STATUS.ACTIVE,
 					currentPeriodStart: now,
 					currentPeriodEnd: currentPeriodEnd,
 				},
@@ -98,12 +103,12 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 					razorpaySignature: '',
 				},
 				outbox: {
-					eventType: 'subscription.activated',
+					eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
 					aggregateId: existingTx.restaurantId,
 					payload: {
 						restaurantId: existingTx.restaurantId,
 						planCode: plan.code,
-						status: 'ACTIVE',
+						status: SUBSCRIPTION_STATUS.ACTIVE,
 						currentPeriodStart: now.toISOString(),
 						currentPeriodEnd: currentPeriodEnd.toISOString(),
 						timestamp: now.toISOString(),
@@ -125,7 +130,7 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 
 			if (orderId) {
 				const existingTx = await this.paymentTransactionRepository.findByOrderId(orderId);
-				if (existingTx && existingTx.status !== 'SUCCESS') {
+				if (existingTx && existingTx.status !== PAYMENT_STATUS.SUCCESS) {
 					await this.paymentTransactionRepository.markFailed(orderId, failureReason);
 					logger.info(
 						{ orderId, failureReason },

@@ -4,6 +4,7 @@ import type {
 	IPaymentTransactionRepository,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { Prisma } from '@prisma/client';
+import { PAYMENT_STATUS, PENDING_ORDER_REUSE_WINDOW_MS } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -66,14 +67,14 @@ export class PrismaPaymentTransactionRepository
 		restaurantId: string,
 		planId: string,
 	): Promise<PaymentTransaction | null> {
-		const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+		const reusableWindowStart = new Date(Date.now() - PENDING_ORDER_REUSE_WINDOW_MS);
 
 		const record = await this.prisma.paymentTransaction.findFirst({
 			where: {
 				restaurantId,
 				planId,
-				status: 'CREATED',
-				createdAt: { gte: fifteenMinutesAgo },
+				status: PAYMENT_STATUS.CREATED,
+				createdAt: { gte: reusableWindowStart },
 			},
 			orderBy: { createdAt: 'desc' },
 		});
@@ -106,7 +107,7 @@ export class PrismaPaymentTransactionRepository
 				razorpayOrderId: data.razorpayOrderId,
 				amountPaise: data.amountPaise,
 				currency: data.currency,
-				status: data.status || 'CREATED',
+				status: data.status || PAYMENT_STATUS.CREATED,
 				metadata: (data.metadata as unknown as Prisma.InputJsonValue) || undefined,
 			},
 		});
@@ -138,7 +139,7 @@ export class PrismaPaymentTransactionRepository
 		const record = await this.prisma.paymentTransaction.update({
 			where: { razorpayOrderId: params.razorpayOrderId },
 			data: {
-				status: 'SUCCESS',
+				status: PAYMENT_STATUS.SUCCESS,
 				razorpayPaymentId: params.razorpayPaymentId,
 				razorpaySignature: params.razorpaySignature,
 				subscriptionId: params.subscriptionId,
@@ -167,7 +168,7 @@ export class PrismaPaymentTransactionRepository
 		const record = await this.prisma.paymentTransaction.update({
 			where: { razorpayOrderId },
 			data: {
-				status: 'FAILED',
+				status: PAYMENT_STATUS.FAILED,
 				failureReason,
 			},
 		});

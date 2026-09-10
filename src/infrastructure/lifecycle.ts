@@ -4,7 +4,11 @@ import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { ISubscriptionEventProducer } from '@domain/interfaces/subscription-event-producer.interface.ts';
-import { MESSAGES } from '@shared/constants/index.ts';
+import {
+	EXPIRY_CHECK_INTERVAL_MS,
+	MESSAGES,
+	OUTBOX_RELAY_INTERVAL_MS,
+} from '@shared/constants/index.ts';
 import { databaseService } from './database/index.ts';
 import { logger } from './logger/index.ts';
 import { bullmqService } from './queue/index.ts';
@@ -29,10 +33,12 @@ export async function initInfrastructure(): Promise<void> {
 		throw error;
 	}
 
-	container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService).start(5000);
+	container
+		.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService)
+		.start(OUTBOX_RELAY_INTERVAL_MS);
 	container
 		.get<IPaymentSubscriptionExpiryService>(TYPES.Services.SubscriptionExpiryService)
-		.start(60 * 60 * 1000);
+		.start(EXPIRY_CHECK_INTERVAL_MS);
 }
 
 export async function shutdownInfrastructure(): Promise<void> {

@@ -24,5 +24,6 @@ export interface IPaymentGateway {
 	isHealthy(): boolean;
 	createOrder(params: CreateOrderParams): Promise<PaymentOrderResult>;
 	verifyPaymentSignature(params: VerifyPaymentSignatureParams): boolean;
+	verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string): boolean;
 	getPaymentDetails(paymentId: string): Promise<unknown>;
 }

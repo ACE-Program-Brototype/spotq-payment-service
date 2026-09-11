@@ -15,8 +15,9 @@ const envSchema = z.object({
 
 	RAZORPAY_TEST_API_KEY: z.string().min(1),
 	RAZORPAY_TEST_SECRET_KEY: z.string().min(1),
+	RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 
-	QUEUE_PREFIX: z.string().min(1).default('spotq_payment'),
+	QUEUE_PREFIX: z.string().min(1).default('bull'),
 });
 
 export const validateEnv = () => {

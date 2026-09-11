@@ -67,6 +67,9 @@ describe('Subscription & Payment Use Cases', () => {
 	};
 
 	const mockOutboxRelay = {
+		start: jest.fn(),
+		stop: jest.fn(),
+		replayDeadLetterEvent: jest.fn(),
 		processPendingEvents: jest.fn().mockResolvedValue(0),
 	};
 

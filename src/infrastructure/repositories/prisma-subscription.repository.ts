@@ -3,6 +3,7 @@ import type {
 	CreateSubscriptionInput,
 	ISubscriptionRepository,
 } from '@domain/repositories/subscription.repository.interface.ts';
+import { PAYMENT_STATUS } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -99,7 +100,7 @@ export class PrismaSubscriptionRepository
 				where: { razorpayOrderId: params.payment.razorpayOrderId },
 			});
 
-			if (existingTx?.status === 'SUCCESS' && existingTx.subscriptionId) {
+			if (existingTx?.status === PAYMENT_STATUS.SUCCESS && existingTx.subscriptionId) {
 				const existingSub = await tx.subscription.findUnique({
 					where: { id: existingTx.subscriptionId },
 				});
@@ -118,6 +119,42 @@ export class PrismaSubscriptionRepository
 				}
 			}
 
+			const updateResult = await tx.paymentTransaction.updateMany({
+				where: {
+					razorpayOrderId: params.payment.razorpayOrderId,
+					status: { not: PAYMENT_STATUS.SUCCESS },
+				},
+				data: {
+					status: PAYMENT_STATUS.SUCCESS,
+					razorpayPaymentId: params.payment.razorpayPaymentId,
+					razorpaySignature: params.payment.razorpaySignature,
+				},
+			});
+
+			if (updateResult.count === 0) {
+				const updatedTx = await tx.paymentTransaction.findUnique({
+					where: { razorpayOrderId: params.payment.razorpayOrderId },
+				});
+				if (updatedTx?.subscriptionId) {
+					const existingSub = await tx.subscription.findUnique({
+						where: { id: updatedTx.subscriptionId },
+					});
+					if (existingSub) {
+						return new Subscription({
+							id: existingSub.id,
+							restaurantId: existingSub.restaurantId,
+							planId: existingSub.planId,
+							status: existingSub.status,
+							currentPeriodStart: existingSub.currentPeriodStart,
+							currentPeriodEnd: existingSub.currentPeriodEnd,
+							canceledAt: existingSub.canceledAt,
+							createdAt: existingSub.createdAt,
+							updatedAt: existingSub.updatedAt,
+						});
+					}
+				}
+			}
+
 			const subRecord = await tx.subscription.create({
 				data: {
 					restaurantId: params.subscription.restaurantId,
@@ -131,9 +168,6 @@ export class PrismaSubscriptionRepository
 			await tx.paymentTransaction.update({
 				where: { razorpayOrderId: params.payment.razorpayOrderId },
 				data: {
-					status: 'SUCCESS',
-					razorpayPaymentId: params.payment.razorpayPaymentId,
-					razorpaySignature: params.payment.razorpaySignature,
 					subscriptionId: subRecord.id,
 				},
 			});

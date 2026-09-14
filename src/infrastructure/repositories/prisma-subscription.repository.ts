@@ -1,5 +1,6 @@
 import { Subscription } from '@domain/entities/subscription.entity.ts';
 import type {
+	ActivateSubscriptionWithOutboxParams,
 	CreateSubscriptionInput,
 	ISubscriptionRepository,
 } from '@domain/repositories/subscription.repository.interface.ts';
@@ -82,19 +83,9 @@ export class PrismaSubscriptionRepository
 		});
 	}
 
-	async activateSubscriptionWithOutbox(params: {
-		subscription: CreateSubscriptionInput;
-		payment: {
-			razorpayOrderId: string;
-			razorpayPaymentId: string;
-			razorpaySignature: string;
-		};
-		outbox: {
-			eventType: string;
-			aggregateId: string;
-			payload: Record<string, unknown>;
-		};
-	}): Promise<Subscription> {
+	async activateSubscriptionWithOutbox(
+		params: ActivateSubscriptionWithOutboxParams,
+	): Promise<Subscription> {
 		return this.prisma.$transaction(async (tx) => {
 			const existingTx = await tx.paymentTransaction.findUnique({
 				where: { razorpayOrderId: params.payment.razorpayOrderId },

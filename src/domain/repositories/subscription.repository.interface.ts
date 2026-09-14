@@ -16,6 +16,16 @@ export interface UpdateSubscriptionInput {
 	canceledAt?: Date | null;
 }
 
+export interface ActivateSubscriptionOutboxPayload {
+	restaurantId: string;
+	planCode: string;
+	status: string;
+	currentPeriodStart: string;
+	currentPeriodEnd: string;
+	timestamp: string;
+	subscriptionId?: string;
+}
+
 export interface ActivateSubscriptionWithOutboxParams {
 	subscription: CreateSubscriptionInput;
 	payment: {
@@ -26,7 +36,7 @@ export interface ActivateSubscriptionWithOutboxParams {
 	outbox: {
 		eventType: string;
 		aggregateId: string;
-		payload: Record<string, unknown>;
+		payload: ActivateSubscriptionOutboxPayload;
 	};
 }
 

@@ -18,8 +18,8 @@ export const initialSubscriptionPlans = [
 		isActive: true,
 	},
 	{
-		code: 'SELF_SERVICE_PRO',
-		name: 'Self-Service Pro',
+		code: 'SELF_PRO',
+		name: 'Self Pro',
 		description: 'Complete kiosk and self-service queue automation',
 		pricePaise: 250000,
 		currency: 'INR',

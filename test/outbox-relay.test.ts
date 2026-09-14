@@ -32,6 +32,7 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 
 		mockEventProducer = {
 			publishSubscriptionActivated: jest.fn(),
+			publishSubscriptionExpired: jest.fn(),
 			close: jest.fn(),
 		};
 
@@ -145,5 +146,43 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 		await relayService.replayDeadLetterEvent('event-3');
 
 		expect(mockOutboxRepository.replayDeadLetter).toHaveBeenCalledWith('event-3');
+	});
+
+	it('successfully publishes subscription.expired events and marks them PUBLISHED', async () => {
+		const mockEvents = [
+			{
+				id: 'event-expired-1',
+				eventType: 'subscription.expired',
+				aggregateId: 'sub-exp-1',
+				payload: {
+					subscriptionId: 'sub-1',
+					restaurantId: 'res-1',
+					planCode: 'QUEUE_PRO',
+					status: 'EXPIRED',
+					currentPeriodEnd: '2026-10-01T00:00:00.000Z',
+					timestamp: '2026-10-01T00:00:00.000Z',
+				},
+				status: 'PENDING' as const,
+				retryCount: 0,
+				createdAt: new Date(),
+			},
+		];
+
+		mockOutboxRepository.findPendingEvents.mockResolvedValue(mockEvents);
+		mockEventProducer.publishSubscriptionExpired.mockResolvedValue(undefined);
+		mockOutboxRepository.markPublished.mockResolvedValue(undefined);
+
+		await relayService.processPendingEvents();
+
+		expect(mockEventProducer.publishSubscriptionExpired).toHaveBeenCalledWith({
+			subscriptionId: 'sub-1',
+			restaurantId: 'res-1',
+			planCode: 'QUEUE_PRO',
+			status: 'EXPIRED',
+			currentPeriodEnd: '2026-10-01T00:00:00.000Z',
+			timestamp: '2026-10-01T00:00:00.000Z',
+			eventId: 'event-expired-1',
+		});
+		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-expired-1');
 	});
 });

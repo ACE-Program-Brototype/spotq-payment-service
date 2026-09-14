@@ -3,9 +3,11 @@ import { TYPES } from '@di/types.ts';
 import type {
 	ISubscriptionEventProducer,
 	SubscriptionActivatedEventPayload,
+	SubscriptionExpiredEventPayload,
 } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import { SUBSCRIPTION_EVENTS } from '@shared/constants/index.ts';
 import { inject, injectable } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
@@ -59,12 +61,23 @@ export class OutboxRelayService implements IOutboxRelayService {
 
 			for (const event of pendingEvents) {
 				try {
-					if (event.eventType === 'subscription.activated') {
+					if (event.eventType === SUBSCRIPTION_EVENTS.ACTIVATED) {
 						const payload = event.payload as unknown as SubscriptionActivatedEventPayload;
 						await this.eventProducer.publishSubscriptionActivated({
 							...payload,
 							eventId: event.id,
 						});
+					} else if (event.eventType === SUBSCRIPTION_EVENTS.EXPIRED) {
+						const payload = event.payload as unknown as SubscriptionExpiredEventPayload;
+						await this.eventProducer.publishSubscriptionExpired({
+							...payload,
+							eventId: event.id,
+						});
+					} else {
+						logger.warn(
+							{ eventId: event.id, eventType: event.eventType },
+							'Unhandled outbox event type encountered',
+						);
 					}
 
 					await this.outboxRepository.markPublished(event.id);

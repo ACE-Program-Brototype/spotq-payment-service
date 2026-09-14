@@ -2,14 +2,16 @@ import { config } from '@config/index.ts';
 import type {
 	ISubscriptionEventProducer,
 	SubscriptionActivatedEventPayload,
+	SubscriptionExpiredEventPayload,
 } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { Queue } from 'bullmq';
 import { injectable } from 'inversify';
 
-export type { SubscriptionActivatedEventPayload };
+export type { SubscriptionActivatedEventPayload, SubscriptionExpiredEventPayload };
 export const SUBSCRIPTION_EVENTS_QUEUE = 'restaurant-subscription-events';
 export const SUBSCRIPTION_ACTIVATED_EVENT = 'subscription.activated';
+export const SUBSCRIPTION_EXPIRED_EVENT = 'subscription.expired';
 
 @injectable()
 export class SubscriptionEventProducer implements ISubscriptionEventProducer {
@@ -62,6 +64,37 @@ export class SubscriptionEventProducer implements ISubscriptionEventProducer {
 			logger.error(
 				{ err: error, payload },
 				'Failed to publish subscription.activated event to BullMQ',
+			);
+			throw error;
+		}
+	}
+
+	async publishSubscriptionExpired(payload: SubscriptionExpiredEventPayload): Promise<void> {
+		try {
+			const queue = this.getQueue();
+			await queue.add(SUBSCRIPTION_EXPIRED_EVENT, payload, {
+				jobId: payload.eventId,
+				attempts: 5,
+				backoff: {
+					type: 'exponential',
+					delay: 2000,
+				},
+				removeOnComplete: 1000,
+				removeOnFail: false,
+			});
+
+			logger.info(
+				{
+					eventId: payload.eventId,
+					restaurantId: payload.restaurantId,
+					planCode: payload.planCode,
+				},
+				'Published subscription.expired event to BullMQ',
+			);
+		} catch (error) {
+			logger.error(
+				{ err: error, payload },
+				'Failed to publish subscription.expired event to BullMQ',
 			);
 			throw error;
 		}

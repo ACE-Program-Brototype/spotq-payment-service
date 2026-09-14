@@ -7,8 +7,12 @@ import type {
 } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import {
+	redisService as defaultRedisService,
+	type RedisService,
+} from '@infrastructure/redis/index.ts';
 import { SUBSCRIPTION_EVENTS } from '@shared/constants/index.ts';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, unmanaged } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
 export const BASE_RETRY_BACKOFF_MS = 2000;
@@ -21,13 +25,18 @@ export const BASE_RETRY_BACKOFF_MS = 2000;
 export class OutboxRelayService implements IOutboxRelayService {
 	private intervalId: NodeJS.Timeout | null = null;
 	private isProcessing = false;
+	private readonly redisService: RedisService;
 
 	constructor(
 		@inject(TYPES.Repositories.OutboxRepository)
 		private readonly outboxRepository: IOutboxRepository,
 		@inject(TYPES.Services.SubscriptionEventProducer)
 		private readonly eventProducer: ISubscriptionEventProducer,
-	) {}
+		@unmanaged()
+		redisService?: RedisService,
+	) {
+		this.redisService = redisService ?? defaultRedisService;
+	}
 
 	start(pollIntervalMs = 5000): void {
 		if (this.intervalId) return;
@@ -54,6 +63,13 @@ export class OutboxRelayService implements IOutboxRelayService {
 
 	async processPendingEvents(): Promise<void> {
 		if (this.isProcessing) return;
+
+		const hasLock = await this.redisService.acquireLock('lock:outbox-relay', 10);
+		if (!hasLock) {
+			logger.debug('Another pod is currently processing outbox events, skipping cycle');
+			return;
+		}
+
 		this.isProcessing = true;
 
 		try {
@@ -119,6 +135,7 @@ export class OutboxRelayService implements IOutboxRelayService {
 			}
 		} finally {
 			this.isProcessing = false;
+			await this.redisService.releaseLock('lock:outbox-relay');
 		}
 	}
 

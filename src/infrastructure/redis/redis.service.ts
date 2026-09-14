@@ -34,6 +34,29 @@ export class RedisService implements IHealthCheckable {
 	async health(): Promise<boolean> {
 		return this.isHealthy();
 	}
+
+	async acquireLock(key: string, ttlSeconds = 10): Promise<boolean> {
+		try {
+			if (!this.client.isOpen) return true;
+			const result = await this.client.set(key, 'locked', {
+				NX: true,
+				EX: ttlSeconds,
+			});
+			return result === 'OK';
+		} catch {
+			return true;
+		}
+	}
+
+	async releaseLock(key: string): Promise<void> {
+		try {
+			if (this.client.isOpen) {
+				await this.client.del(key);
+			}
+		} catch {
+			// ignore cleanup errors
+		}
+	}
 }
 
 export const redisService = new RedisService(redisClient);

@@ -4,6 +4,7 @@ import {
 	MAX_OUTBOX_RETRIES,
 	OutboxRelayService,
 } from '../src/infrastructure/outbox/outbox-relay.service';
+import type { RedisService } from '../src/infrastructure/redis/redis.service';
 
 jest.mock('../src/infrastructure/logger', () => ({
 	logger: {
@@ -18,6 +19,7 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 	let relayService: OutboxRelayService;
 	let mockOutboxRepository: jest.Mocked<IOutboxRepository>;
 	let mockEventProducer: jest.Mocked<ISubscriptionEventProducer>;
+	let mockRedisService: jest.Mocked<RedisService>;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
@@ -36,7 +38,16 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			close: jest.fn(),
 		};
 
-		relayService = new OutboxRelayService(mockOutboxRepository, mockEventProducer);
+		mockRedisService = {
+			acquireLock: jest.fn().mockResolvedValue(true),
+			releaseLock: jest.fn().mockResolvedValue(undefined),
+		} as unknown as jest.Mocked<RedisService>;
+
+		relayService = new OutboxRelayService(
+			mockOutboxRepository,
+			mockEventProducer,
+			mockRedisService,
+		);
 	});
 
 	it('successfully publishes pending outbox events and marks them PUBLISHED', async () => {
@@ -184,5 +195,15 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			eventId: 'event-expired-1',
 		});
 		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-expired-1');
+	});
+
+	it('skips dispatching when another replica holds the distributed lock', async () => {
+		mockRedisService.acquireLock.mockResolvedValueOnce(false);
+
+		await relayService.processPendingEvents();
+
+		expect(mockOutboxRepository.findPendingEvents).not.toHaveBeenCalled();
+		expect(mockEventProducer.publishSubscriptionActivated).not.toHaveBeenCalled();
+		expect(mockRedisService.releaseLock).not.toHaveBeenCalled();
 	});
 });

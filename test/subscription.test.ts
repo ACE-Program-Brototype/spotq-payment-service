@@ -47,9 +47,19 @@ describe('Subscription & Payment Use Cases', () => {
 		findByOrderId: jest.fn().mockResolvedValue(null),
 		findByPaymentId: jest.fn().mockResolvedValue(null),
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
-		create: jest.fn(),
+		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
 		markSuccess: jest.fn(),
 		markFailed: jest.fn(),
+	};
+
+	const mockInvoiceRepo = {
+		findByInvoiceNumber: jest.fn().mockResolvedValue(null),
+		findByPaymentTransactionId: jest.fn().mockResolvedValue(null),
+		findByRestaurantId: jest.fn().mockResolvedValue([]),
+		create: jest.fn().mockResolvedValue({}),
+		update: jest.fn().mockResolvedValue({}),
+		delete: jest.fn().mockResolvedValue(true),
+		findById: jest.fn().mockResolvedValue(null),
 	};
 
 	const mockGateway = {
@@ -99,6 +109,7 @@ describe('Subscription & Payment Use Cases', () => {
 				mockSubRepo,
 				mockTxRepo,
 				mockGateway,
+				mockInvoiceRepo,
 			);
 
 			const result = await useCase.execute({
@@ -116,6 +127,13 @@ describe('Subscription & Payment Use Cases', () => {
 				}),
 			);
 			expect(mockTxRepo.create).toHaveBeenCalled();
+			expect(mockInvoiceRepo.create).toHaveBeenCalledWith(
+				expect.objectContaining({
+					restaurantId: '22222222-2222-2222-2222-222222222222',
+					amountPaise: 149900,
+					status: 'DRAFT',
+				}),
+			);
 		});
 
 		it('should reuse existing pending order within 15 minutes', async () => {

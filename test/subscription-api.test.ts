@@ -1,9 +1,11 @@
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
+import { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import { Subscription } from '@domain/entities/subscription.entity.ts';
 import { PlanBillingCycle, SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
+import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
@@ -23,6 +25,9 @@ const subscriptionRepository = container.get<ISubscriptionRepository>(
 );
 const paymentTransactionRepository = container.get<IPaymentTransactionRepository>(
 	TYPES.Repositories.PaymentTransactionRepository,
+);
+const billingInvoiceRepository = container.get<IBillingInvoiceRepository>(
+	TYPES.Repositories.BillingInvoiceRepository,
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 
@@ -89,6 +94,21 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				status: 'CREATED',
 			});
 			jest.spyOn(paymentTransactionRepository, 'create').mockResolvedValueOnce(mockTx);
+			jest.spyOn(billingInvoiceRepository, 'create').mockResolvedValueOnce(
+				new BillingInvoice({
+					id: 'inv-123',
+					restaurantId: '11111111-1111-1111-1111-111111111111',
+					subscriptionId: null,
+					paymentTransactionId: mockTx.id,
+					invoiceNumber: 'INV-TEST-1',
+					amountPaise: 149900,
+					currency: 'INR',
+					status: 'DRAFT',
+					paidAt: null,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				}),
+			);
 
 			const res = await request(app)
 				.post(SUBSCRIPTION_ROUTES.ORDER)

@@ -17,6 +17,7 @@ import { HandleWebhookUseCase } from '@application/use-cases/handle-webhook.use-
 import { VerifyPaymentUseCase } from '@application/use-cases/verify-payment.use-case.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { ISubscriptionEventProducer } from '@domain/interfaces/subscription-event-producer.interface.ts';
+import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
@@ -24,6 +25,7 @@ import type { ISubscriptionPlanRepository } from '@domain/repositories/subscript
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
+import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';
 import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
 import { PrismaPaymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
@@ -48,6 +50,11 @@ container
 container
 	.bind<IPaymentTransactionRepository>(TYPES.Repositories.PaymentTransactionRepository)
 	.to(PrismaPaymentTransactionRepository)
+	.inSingletonScope();
+
+container
+	.bind<IBillingInvoiceRepository>(TYPES.Repositories.BillingInvoiceRepository)
+	.to(PrismaBillingInvoiceRepository)
 	.inSingletonScope();
 
 container

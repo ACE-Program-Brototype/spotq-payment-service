@@ -9,6 +9,7 @@ export const SUBSCRIPTION_EVENTS = {
 
 export const PAYMENT_STATUS = {
 	CREATED: 'CREATED',
+	CAPTURED: 'CAPTURED',
 	SUCCESS: 'SUCCESS',
 	FAILED: 'FAILED',
 	REFUNDED: 'REFUNDED',
@@ -20,4 +21,10 @@ export const SUBSCRIPTION_STATUS = {
 	EXPIRED: 'EXPIRED',
 	CANCELLED: 'CANCELLED',
 	PAST_DUE: 'PAST_DUE',
+} as const;
+
+export const INVOICE_STATUS = {
+	DRAFT: 'DRAFT',
+	PAID: 'PAID',
+	VOID: 'VOID',
 } as const;

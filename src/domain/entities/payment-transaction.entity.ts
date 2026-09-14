@@ -1,4 +1,4 @@
-export type PaymentStatus = 'CREATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+export type PaymentStatus = 'CREATED' | 'CAPTURED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 
 export interface PaymentTransactionProps {
 	id: string;

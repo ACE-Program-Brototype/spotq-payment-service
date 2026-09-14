@@ -163,6 +163,35 @@ export class PrismaSubscriptionRepository
 				},
 			});
 
+			const existingInvoice = await tx.billingInvoice.findFirst({
+				where: { paymentTransactionId: existingTx?.id },
+			});
+
+			if (existingInvoice) {
+				await tx.billingInvoice.update({
+					where: { id: existingInvoice.id },
+					data: {
+						subscriptionId: subRecord.id,
+						status: 'PAID',
+						paidAt: new Date(),
+					},
+				});
+			} else if (existingTx) {
+				const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+				await tx.billingInvoice.create({
+					data: {
+						restaurantId: params.subscription.restaurantId,
+						subscriptionId: subRecord.id,
+						paymentTransactionId: existingTx.id,
+						invoiceNumber,
+						amountPaise: existingTx.amountPaise,
+						currency: existingTx.currency,
+						status: 'PAID',
+						paidAt: new Date(),
+					},
+				});
+			}
+
 			await tx.outboxEvent.create({
 				data: {
 					eventType: params.outbox.eventType,

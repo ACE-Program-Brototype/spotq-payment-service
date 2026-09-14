@@ -4,6 +4,7 @@ export const TYPES = {
 		SubscriptionPlanRepository: Symbol.for('ISubscriptionPlanRepository'),
 		PaymentTransactionRepository: Symbol.for('IPaymentTransactionRepository'),
 		OutboxRepository: Symbol.for('IOutboxRepository'),
+		BillingInvoiceRepository: Symbol.for('IBillingInvoiceRepository'),
 	},
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),

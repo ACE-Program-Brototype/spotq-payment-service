@@ -29,9 +29,16 @@ enum SubscriptionStatus {
 
 enum PaymentStatus {
   CREATED
+  CAPTURED
   SUCCESS
   FAILED
   REFUNDED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PAID
+  VOID
 }
 
 enum OutboxStatus {
@@ -76,6 +83,7 @@ model Subscription {
 
   plan                SubscriptionPlan     @relation(fields: [planId], references: [id])
   paymentTransactions PaymentTransaction[]
+  invoices            BillingInvoice[]
 
   @@index([restaurantId])
   @@index([status])
@@ -103,11 +111,33 @@ model PaymentTransaction {
 
   subscription      Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   plan              SubscriptionPlan @relation(fields: [planId], references: [id])
+  invoices          BillingInvoice[]
 
   @@index([restaurantId])
   @@index([razorpayOrderId])
   @@index([status])
   @@map("payment_transactions")
+}
+
+model BillingInvoice {
+  id                   String        @id @default(uuid()) @db.Uuid
+  restaurantId         String        @map("restaurant_id") @db.Uuid
+  subscriptionId       String?       @map("subscription_id") @db.Uuid
+  paymentTransactionId String?       @map("payment_transaction_id") @db.Uuid
+  invoiceNumber        String        @unique @map("invoice_number")
+  amountPaise          Int           @map("amount_paise")
+  currency             String        @default("INR")
+  status               InvoiceStatus @default(DRAFT)
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  paidAt               DateTime?     @map("paid_at") @db.Timestamptz
+
+  subscription       Subscription?       @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
+  @@index([status])
+  @@map("billing_invoices")
 }
 
 model OutboxEvent {

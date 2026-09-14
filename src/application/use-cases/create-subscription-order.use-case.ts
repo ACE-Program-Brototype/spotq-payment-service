@@ -11,11 +11,12 @@ import {
 	UnauthorizedRestaurantError,
 } from '@domain/errors/payment.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
+import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 
 /**
  * Use case responsible for validating subscription plan eligibility,
@@ -32,6 +33,9 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 		private readonly paymentTransactionRepository: IPaymentTransactionRepository,
 		@inject(TYPES.Gateways.PaymentGateway)
 		private readonly paymentGateway: IPaymentGateway,
+		@inject(TYPES.Repositories.BillingInvoiceRepository)
+		@optional()
+		private readonly billingInvoiceRepository?: IBillingInvoiceRepository,
 	) {}
 
 	async execute(input: CreateSubscriptionOrderInput): Promise<CreateSubscriptionOrderOutput> {
@@ -93,7 +97,7 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 			},
 		});
 
-		await this.paymentTransactionRepository.create({
+		const txRecord = await this.paymentTransactionRepository.create({
 			restaurantId: input.restaurantId,
 			planId: plan.id,
 			razorpayOrderId: orderResult.orderId,
@@ -106,6 +110,19 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 				planCode: plan.code,
 			},
 		});
+
+		const invoiceRepo = this.billingInvoiceRepository;
+		if (invoiceRepo) {
+			const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+			await invoiceRepo.create({
+				restaurantId: input.restaurantId,
+				paymentTransactionId: txRecord.id,
+				invoiceNumber,
+				amountPaise: plan.pricePaise,
+				currency: plan.currency,
+				status: 'DRAFT',
+			});
+		}
 
 		logger.info(
 			{ orderId: orderResult.orderId, restaurantId: input.restaurantId, planId: plan.id },

@@ -3,6 +3,7 @@ import { config } from '@config/index.ts';
 import type {
 	CreateOrderParams,
 	IPaymentGateway,
+	PaymentDetailsResult,
 	PaymentOrderResult,
 	VerifyPaymentSignatureParams,
 } from '@domain/index.ts';
@@ -122,11 +123,12 @@ export class RazorpayGateway implements IPaymentGateway {
 		}
 	}
 
-	async getPaymentDetails(paymentId: string): Promise<unknown> {
+	async getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult> {
 		if (!this.client) {
 			throw new Error('Razorpay client is not initialized');
 		}
 
-		return this.client.payments.fetch(paymentId);
+		const payment = await this.client.payments.fetch(paymentId);
+		return payment as unknown as PaymentDetailsResult;
 	}
 }

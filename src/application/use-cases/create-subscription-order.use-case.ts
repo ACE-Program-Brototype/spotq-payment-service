@@ -16,6 +16,7 @@ import type { IPaymentTransactionRepository } from '@domain/repositories/payment
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import { PAYMENT_STATUS } from '@shared/constants/index.ts';
 import { inject, injectable, optional } from 'inversify';
 
 /**
@@ -62,6 +63,14 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 			);
 
 		if (existingPendingTx) {
+			if (existingPendingTx.status === PAYMENT_STATUS.FAILED) {
+				await this.paymentTransactionRepository.resetToCreated(existingPendingTx.razorpayOrderId);
+				logger.info(
+					{ orderId: existingPendingTx.razorpayOrderId, restaurantId: input.restaurantId },
+					'Resetting failed transaction to CREATED for retry attempt',
+				);
+			}
+
 			logger.info(
 				{ orderId: existingPendingTx.razorpayOrderId, restaurantId: input.restaurantId },
 				'Reusing existing pending Razorpay order',

@@ -25,4 +25,5 @@ export interface IPaymentTransactionRepository {
 		subscriptionId: string;
 	}): Promise<PaymentTransaction>;
 	markFailed(razorpayOrderId: string, failureReason: string): Promise<PaymentTransaction>;
+	resetToCreated(razorpayOrderId: string): Promise<PaymentTransaction>;
 }

@@ -73,7 +73,8 @@ export class PrismaPaymentTransactionRepository
 			where: {
 				restaurantId,
 				planId,
-				status: PAYMENT_STATUS.CREATED,
+				subscriptionId: null,
+				status: { in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.FAILED] },
 				createdAt: { gte: reusableWindowStart },
 			},
 			orderBy: { createdAt: 'desc' },
@@ -170,6 +171,32 @@ export class PrismaPaymentTransactionRepository
 			data: {
 				status: PAYMENT_STATUS.FAILED,
 				failureReason,
+			},
+		});
+
+		return new PaymentTransaction({
+			id: record.id,
+			restaurantId: record.restaurantId,
+			subscriptionId: record.subscriptionId,
+			planId: record.planId,
+			razorpayOrderId: record.razorpayOrderId,
+			razorpayPaymentId: record.razorpayPaymentId,
+			razorpaySignature: record.razorpaySignature,
+			amountPaise: record.amountPaise,
+			currency: record.currency,
+			status: record.status,
+			failureReason: record.failureReason,
+			metadata: (record.metadata as Record<string, unknown>) || null,
+			createdAt: record.createdAt,
+			updatedAt: record.updatedAt,
+		});
+	}
+
+	async resetToCreated(razorpayOrderId: string): Promise<PaymentTransaction> {
+		const record = await this.prisma.paymentTransaction.update({
+			where: { razorpayOrderId },
+			data: {
+				status: PAYMENT_STATUS.CREATED,
 			},
 		});
 

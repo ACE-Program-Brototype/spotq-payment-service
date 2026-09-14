@@ -50,6 +50,7 @@ describe('Subscription & Payment Use Cases', () => {
 		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
 		markSuccess: jest.fn(),
 		markFailed: jest.fn(),
+		resetToCreated: jest.fn().mockResolvedValue({}),
 	};
 
 	const mockInvoiceRepo = {
@@ -162,6 +163,37 @@ describe('Subscription & Payment Use Cases', () => {
 			});
 
 			expect(result.orderId).toBe('order_existing_123');
+			expect(mockGateway.createOrder).not.toHaveBeenCalled();
+		});
+
+		it('should reuse existing failed transaction by resetting to CREATED on retry within window', async () => {
+			const failedTx = new PaymentTransaction({
+				id: 'tx-failed-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_retry_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'FAILED',
+				failureReason: 'Payment failed on gateway',
+			});
+
+			mockTxRepo.findPendingByRestaurantAndPlan.mockResolvedValueOnce(failedTx);
+
+			const useCase = new CreateSubscriptionOrderUseCase(
+				mockPlanRepo,
+				mockSubRepo,
+				mockTxRepo,
+				mockGateway,
+			);
+
+			const result = await useCase.execute({
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+			});
+
+			expect(result.orderId).toBe('order_retry_123');
+			expect(mockTxRepo.resetToCreated).toHaveBeenCalledWith('order_retry_123');
 			expect(mockGateway.createOrder).not.toHaveBeenCalled();
 		});
 

@@ -2,6 +2,7 @@ import type { Config } from 'jest';
 
 const config: Config = {
 	testEnvironment: 'node',
+	setupFiles: ['<rootDir>/test/setup.ts'],
 	extensionsToTreatAsEsm: ['.ts'],
 	moduleNameMapper: {
 		'^@domain/(.*)\\.(ts|js)$': '<rootDir>/src/domain/$1',
@@ -18,12 +19,34 @@ const config: Config = {
 		'^@shared/(.*)$': '<rootDir>/src/shared/$1',
 		'^@config/(.*)\\.(ts|js)$': '<rootDir>/src/config/$1',
 		'^@config/(.*)$': '<rootDir>/src/config/$1',
+		'^@di/(.*)\\.(ts|js)$': '<rootDir>/src/di/$1',
+		'^@di/(.*)$': '<rootDir>/src/di/$1',
 		'^(\\.{1,2}/.*)\\.ts$': '$1',
 		'^(\\.{1,2}/.*)\\.js$': '$1',
 	},
 	transform: {
-		'^.+\\.(t|j)sx?$': '@swc/jest',
+		'^.+\\.(t|j)sx?$': [
+			'@swc/jest',
+			{
+				jsc: {
+					parser: {
+						syntax: 'typescript',
+						decorators: true,
+						dynamicImport: true,
+					},
+					transform: {
+						legacyDecorator: true,
+						decoratorMetadata: true,
+					},
+					target: 'es2022',
+				},
+				module: {
+					type: 'es6',
+				},
+			},
+		],
 	},
+	transformIgnorePatterns: ['node_modules/(?!.*(inversify|@inversifyjs))'],
 };
 
 export default config;

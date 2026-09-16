@@ -32,6 +32,17 @@ export enum MessageEnum {
 	SHUTDOWN_COMPLETED = 'Graceful shutdown completed',
 	SHUTDOWN_STARTING = 'Gracefully shutting down...',
 	SERVER_BOOTSTRAP_FAILED = 'Failed to bootstrap server',
+	SUBSCRIPTION_PLANS_FETCHED = 'Subscription plans fetched successfully',
+	SUBSCRIPTION_ORDER_CREATED = 'Subscription order created successfully',
+	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
+	SUBSCRIPTION_STATUS_FETCHED = 'Subscription status retrieved successfully',
+	PLAN_NOT_FOUND = 'Subscription plan not found',
+	ACTIVE_SUBSCRIPTION_EXISTS = 'Restaurant already has an active subscription',
+	PAYMENT_ORDER_NOT_FOUND = 'Payment order not found',
+	INVALID_PAYMENT_SIGNATURE = 'Invalid payment signature provided',
+	PAYMENT_ALREADY_PROCESSED = 'Payment has already been processed',
+	UNAUTHORIZED_RESTAURANT = 'Unauthorized or missing restaurant identification',
+	VALIDATION_ERROR = 'Invalid request parameters',
 }
 
 export const MESSAGES = {
@@ -68,6 +79,25 @@ export const MESSAGES = {
 	SHUTDOWN_COMPLETED: MessageEnum.SHUTDOWN_COMPLETED,
 	SHUTDOWN_STARTING: MessageEnum.SHUTDOWN_STARTING,
 	SERVER_BOOTSTRAP_FAILED: MessageEnum.SERVER_BOOTSTRAP_FAILED,
+	SUBSCRIPTION_PLANS_FETCHED: MessageEnum.SUBSCRIPTION_PLANS_FETCHED,
+	SUBSCRIPTION_ORDER_CREATED: MessageEnum.SUBSCRIPTION_ORDER_CREATED,
+	PAYMENT_VERIFIED_SUCCESS: MessageEnum.PAYMENT_VERIFIED_SUCCESS,
+	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
+	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
+
+	ACTIVE_SUBSCRIPTION_EXISTS: MessageEnum.ACTIVE_SUBSCRIPTION_EXISTS,
+	PAYMENT_ORDER_NOT_FOUND: MessageEnum.PAYMENT_ORDER_NOT_FOUND,
+	INVALID_PAYMENT_SIGNATURE: MessageEnum.INVALID_PAYMENT_SIGNATURE,
+	PAYMENT_ALREADY_PROCESSED: MessageEnum.PAYMENT_ALREADY_PROCESSED,
+	UNAUTHORIZED_RESTAURANT: MessageEnum.UNAUTHORIZED_RESTAURANT,
+	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
 } as const;
 
 export type Message = (typeof MESSAGES)[keyof typeof MESSAGES];
+
+export const ERROR_CODES = {
+	UNAUTHORIZED: 'UNAUTHORIZED',
+	VALIDATION_ERROR: 'VALIDATION_ERROR',
+	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+	BAD_REQUEST: 'BAD_REQUEST',
+} as const;

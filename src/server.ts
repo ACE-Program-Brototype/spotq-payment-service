@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { config } from '@config/index.ts';
 import { initInfrastructure, logger, shutdownInfrastructure } from '@infrastructure/index.ts';
 import { MESSAGES } from '@shared/constants/index.ts';

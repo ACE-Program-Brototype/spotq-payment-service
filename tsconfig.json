@@ -13,9 +13,12 @@
 			"@presentation/*": ["./src/presentation/*"],
 			"@modules/*": ["./src/modules/*"],
 			"@shared/*": ["./src/shared/*"],
-			"@config/*": ["./src/config/*"]
+			"@config/*": ["./src/config/*"],
+			"@di/*": ["./src/di/*"]
 		},
 		"strict": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,

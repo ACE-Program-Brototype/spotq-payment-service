@@ -1,5 +1,7 @@
+import { container } from '@di/container.ts';
+import { TYPES } from '@di/types.ts';
+import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import { databaseService } from '@infrastructure/database/index.ts';
-import { razorpayService } from '@infrastructure/payment/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
 import { HEALTH_STATUS, HTTP_STATUS, MESSAGES, ROUTES } from '@shared/index.ts';
@@ -7,6 +9,8 @@ import request from 'supertest';
 import app from '../src/app.ts';
 
 describe('Payment Service Observability Endpoints', () => {
+	const paymentGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
+
 	beforeEach(() => {
 		jest.clearAllMocks();
 		// Mock Database check
@@ -14,7 +18,7 @@ describe('Payment Service Observability Endpoints', () => {
 		// Mock Redis check
 		jest.spyOn(redisService, 'isHealthy').mockResolvedValue(true);
 		// Mock Razorpay health default to UP
-		jest.spyOn(razorpayService, 'isHealthy').mockResolvedValue(true);
+		jest.spyOn(paymentGateway, 'isHealthy').mockReturnValue(true);
 		// Mock BullMQ health default to UP
 		jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(true);
 	});
@@ -51,7 +55,7 @@ describe('Payment Service Observability Endpoints', () => {
 		});
 
 		it('should return 503 DOWN when razorpay health check fails', async () => {
-			jest.spyOn(razorpayService, 'isHealthy').mockResolvedValue(false);
+			jest.spyOn(paymentGateway, 'isHealthy').mockReturnValue(false);
 
 			const response = await request(app)
 				.get(ROUTES.HEALTH)

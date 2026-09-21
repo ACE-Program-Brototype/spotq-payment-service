@@ -29,8 +29,8 @@ FROM node:22-alpine
 WORKDIR /app
 
 RUN apk add --no-cache bash curl && \
-    curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.alpine.sh' | bash && \
-    apk add infisical
+    curl -1sLf 'https://artifacts-cli.infisical.com/setup.apk.sh' | bash && \
+    apk add --no-cache infisical
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 

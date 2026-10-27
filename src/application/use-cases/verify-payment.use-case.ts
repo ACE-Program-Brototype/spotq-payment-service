@@ -82,7 +82,7 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 			);
 
 			const existingSub = await this.subscriptionRepository.findById(existingTx.subscriptionId);
-			const plan = await this.planRepository.findById(existingTx.planId);
+			const plan = existingTx.planId ? await this.planRepository.findById(existingTx.planId) : null;
 
 			return {
 				subscriptionId: existingTx.subscriptionId,
@@ -93,6 +93,10 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 					existingSub?.currentPeriodStart.toISOString() || new Date().toISOString(),
 				currentPeriodEnd: existingSub?.currentPeriodEnd.toISOString() || new Date().toISOString(),
 			};
+		}
+
+		if (!existingTx.planId) {
+			throw new PlanNotFoundError();
 		}
 
 		const plan = await this.planRepository.findById(existingTx.planId);

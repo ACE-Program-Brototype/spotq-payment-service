@@ -4,7 +4,7 @@ export interface PaymentTransactionProps {
 	id: string;
 	restaurantId: string;
 	subscriptionId?: string | null;
-	planId: string;
+	planId?: string | null;
 	razorpayOrderId: string;
 	razorpayPaymentId?: string | null;
 	razorpaySignature?: string | null;
@@ -32,7 +32,7 @@ export class PaymentTransaction {
 		return this.props.subscriptionId;
 	}
 
-	get planId(): string {
+	get planId(): string | null | undefined {
 		return this.props.planId;
 	}
 

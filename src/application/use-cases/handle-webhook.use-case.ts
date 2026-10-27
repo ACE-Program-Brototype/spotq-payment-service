@@ -83,6 +83,8 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 				return { received: true };
 			}
 
+			if (!existingTx.planId) return { received: true };
+
 			const plan = await this.planRepository.findById(existingTx.planId);
 			if (!plan) return { received: true };
 

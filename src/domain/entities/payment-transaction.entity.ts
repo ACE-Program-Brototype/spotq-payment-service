@@ -4,7 +4,7 @@ export interface PaymentTransactionProps {
 	id: string;
 	restaurantId: string;
 	subscriptionId?: string | null;
-	planId: string;
+	planId?: string | null;
 	razorpayOrderId: string;
 	razorpayPaymentId?: string | null;
 	razorpaySignature?: string | null;
@@ -28,24 +28,24 @@ export class PaymentTransaction {
 		return this.props.restaurantId;
 	}
 
-	get subscriptionId(): string | null | undefined {
-		return this.props.subscriptionId;
+	get subscriptionId(): string | null {
+		return this.props.subscriptionId ?? null;
 	}
 
-	get planId(): string {
-		return this.props.planId;
+	get planId(): string | null {
+		return this.props.planId ?? null;
 	}
 
 	get razorpayOrderId(): string {
 		return this.props.razorpayOrderId;
 	}
 
-	get razorpayPaymentId(): string | null | undefined {
-		return this.props.razorpayPaymentId;
+	get razorpayPaymentId(): string | null {
+		return this.props.razorpayPaymentId ?? null;
 	}
 
-	get razorpaySignature(): string | null | undefined {
-		return this.props.razorpaySignature;
+	get razorpaySignature(): string | null {
+		return this.props.razorpaySignature ?? null;
 	}
 
 	get amountPaise(): number {
@@ -60,12 +60,12 @@ export class PaymentTransaction {
 		return this.props.status;
 	}
 
-	get failureReason(): string | null | undefined {
-		return this.props.failureReason;
+	get failureReason(): string | null {
+		return this.props.failureReason ?? null;
 	}
 
-	get metadata(): Record<string, unknown> | null | undefined {
-		return this.props.metadata;
+	get metadata(): Record<string, unknown> | null {
+		return this.props.metadata ?? null;
 	}
 
 	toJSON() {

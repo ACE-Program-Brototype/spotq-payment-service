@@ -74,12 +74,23 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			const existingTx = await this.paymentTransactionRepository.findByOrderId(orderId);
 
 			if (!existingTx) {
-				logger.warn({ orderId }, 'Payment order not found for webhook event');
+				logger.warn(
+					{ orderId },
+					'Payment order not found for webhook event; acknowledging to prevent gateway retries',
+				);
 				return { received: true };
 			}
 
 			if (existingTx.status === PAYMENT_STATUS.SUCCESS && existingTx.subscriptionId) {
 				logger.info({ orderId }, 'Webhook received for already completed transaction');
+				return { received: true };
+			}
+
+			if (!existingTx.planId) {
+				logger.info(
+					{ orderId },
+					'Webhook received for non-subscription transaction; acknowledging',
+				);
 				return { received: true };
 			}
 

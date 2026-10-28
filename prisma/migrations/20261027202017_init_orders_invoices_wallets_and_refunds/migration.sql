@@ -34,7 +34,7 @@ CREATE TABLE "billing_invoices" (
     "amount_paise" INTEGER NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'INR',
     "status" "InvoiceStatus" NOT NULL DEFAULT 'DRAFT',
-    "s3_key" TEXT,
+    "invoice_pdf_key" TEXT,
     "pdf_generated_at" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE "settlements" (
 );
 
 -- CreateTable
-CREATE TABLE "platform_master_wallets" (
+CREATE TABLE "platform_wallets" (
     "id" UUID NOT NULL,
     "total_platform_balance_paise" BIGINT NOT NULL DEFAULT 0,
     "total_disbursed_to_venues_paise" BIGINT NOT NULL DEFAULT 0,
@@ -121,13 +121,13 @@ CREATE TABLE "platform_master_wallets" (
     "currency" VARCHAR(10) NOT NULL DEFAULT 'INR',
     "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
-    CONSTRAINT "platform_master_wallets_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "platform_wallets_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "platform_ledger_transactions" (
     "id" UUID NOT NULL,
-    "master_wallet_id" UUID NOT NULL,
+    "platform_wallet_id" UUID NOT NULL,
     "type" "PlatformTransactionType" NOT NULL,
     "amount_paise" BIGINT NOT NULL,
     "running_balance_paise" BIGINT NOT NULL,
@@ -175,7 +175,7 @@ CREATE INDEX "settlements_restaurant_id_status_idx" ON "settlements"("restaurant
 CREATE UNIQUE INDEX "settlements_restaurant_id_settlement_date_key" ON "settlements"("restaurant_id", "settlement_date");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "platform_master_wallets_currency_key" ON "platform_master_wallets"("currency");
+CREATE UNIQUE INDEX "platform_wallets_currency_key" ON "platform_wallets"("currency");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "platform_ledger_transactions_reference_id_key" ON "platform_ledger_transactions"("reference_id");
@@ -211,7 +211,7 @@ ALTER TABLE "wallet_ledger_entries" ADD CONSTRAINT "wallet_ledger_entries_wallet
 ALTER TABLE "wallet_ledger_entries" ADD CONSTRAINT "wallet_ledger_entries_settlement_id_fkey" FOREIGN KEY ("settlement_id") REFERENCES "settlements"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "platform_ledger_transactions" ADD CONSTRAINT "platform_ledger_transactions_master_wallet_id_fkey" FOREIGN KEY ("master_wallet_id") REFERENCES "platform_master_wallets"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "platform_ledger_transactions" ADD CONSTRAINT "platform_ledger_transactions_platform_wallet_id_fkey" FOREIGN KEY ("platform_wallet_id") REFERENCES "platform_wallets"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- Check Constraints to prevent negative amounts
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_amount_paise_check" CHECK ("amount_paise" > 0);
@@ -220,5 +220,5 @@ ALTER TABLE "payment_refunds" ADD CONSTRAINT "payment_refunds_amount_paise_check
 ALTER TABLE "restaurant_wallets" ADD CONSTRAINT "restaurant_wallets_balance_paise_check" CHECK ("balance_paise" >= 0);
 ALTER TABLE "wallet_ledger_entries" ADD CONSTRAINT "wallet_ledger_entries_amount_paise_check" CHECK ("amount_paise" > 0);
 ALTER TABLE "settlements" ADD CONSTRAINT "settlements_net_credit_paise_check" CHECK ("net_credit_paise" >= 0);
-ALTER TABLE "platform_master_wallets" ADD CONSTRAINT "platform_master_wallets_balance_paise_check" CHECK ("total_platform_balance_paise" >= 0);
+ALTER TABLE "platform_wallets" ADD CONSTRAINT "platform_wallets_balance_paise_check" CHECK ("total_platform_balance_paise" >= 0);
 ALTER TABLE "platform_ledger_transactions" ADD CONSTRAINT "platform_ledger_transactions_amount_paise_check" CHECK ("amount_paise" > 0);

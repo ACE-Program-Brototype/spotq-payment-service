@@ -159,7 +159,7 @@ model BillingInvoice {
   amountPaise          Int           @map("amount_paise")
   currency             String        @default("INR")
   status               InvoiceStatus @default(DRAFT)
-  s3Key                String?       @map("s3_key")
+  invoicePdfKey        String?       @map("invoice_pdf_key")
   pdfGeneratedAt       DateTime?     @map("pdf_generated_at") @db.Timestamptz
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz
@@ -257,7 +257,7 @@ model Settlement {
   @@map("settlements")
 }
 
-model PlatformMasterWallet {
+model PlatformWallet {
   id                          String   @id @default(uuid()) @db.Uuid
   totalPlatformBalancePaise   BigInt   @default(0) @map("total_platform_balance_paise")
   totalDisbursedToVenuesPaise BigInt   @default(0) @map("total_disbursed_to_venues_paise")
@@ -267,12 +267,12 @@ model PlatformMasterWallet {
 
   transactions PlatformLedgerTransaction[]
 
-  @@map("platform_master_wallets")
+  @@map("platform_wallets")
 }
 
 model PlatformLedgerTransaction {
   id                  String                  @id @default(uuid()) @db.Uuid
-  masterWalletId      String                  @map("master_wallet_id") @db.Uuid
+  platformWalletId    String                  @map("platform_wallet_id") @db.Uuid
   type                PlatformTransactionType
   amountPaise         BigInt                  @map("amount_paise")
   runningBalancePaise BigInt                  @map("running_balance_paise")
@@ -280,7 +280,7 @@ model PlatformLedgerTransaction {
   restaurantId        String?                 @map("restaurant_id") @db.Uuid
   createdAt           DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  masterWallet PlatformMasterWallet @relation(fields: [masterWalletId], references: [id], onDelete: Restrict)
+  platformWallet PlatformWallet @relation(fields: [platformWalletId], references: [id], onDelete: Restrict)
 
   @@index([type, createdAt])
   @@index([restaurantId])

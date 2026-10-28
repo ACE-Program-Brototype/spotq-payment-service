@@ -2,7 +2,7 @@ import type { PaymentStatus, PaymentTransaction } from '../entities/payment-tran
 
 export interface CreatePaymentTransactionInput {
 	restaurantId: string;
-	planId: string;
+	planId?: string | null;
 	razorpayOrderId: string;
 	amountPaise: number;
 	currency: string;

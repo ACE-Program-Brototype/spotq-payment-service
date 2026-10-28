@@ -55,6 +55,12 @@ enum SettlementStatus {
   ON_HOLD
 }
 
+enum RefundStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
 enum WalletLedgerType {
   CREDIT_SETTLEMENT
   DEBIT_PAYOUT_WITHDRAWAL
@@ -171,10 +177,10 @@ model PaymentRefund {
   id                   String @id @default(uuid()) @db.Uuid
   paymentTransactionId String @map("payment_transaction_id") @db.Uuid
 
-  razorpayRefundId String  @unique @map("razorpay_refund_id")
-  amountPaise      Int     @map("amount_paise")
-  currency         String  @default("INR")
-  status           String  @default("PROCESSED")
+  razorpayRefundId String       @unique @map("razorpay_refund_id")
+  amountPaise      Int          @map("amount_paise")
+  currency         String       @default("INR")
+  status           RefundStatus @default(PROCESSED)
   reason           String?
 
   arn           String?
@@ -223,7 +229,7 @@ model WalletLedgerEntry {
   utrNumber     String?          @map("utr_number") // Bank UTR reference from RazorpayX webhook
   createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
 
-  wallet     RestaurantWallet @relation(fields: [walletId], references: [id])
+  wallet     RestaurantWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
   settlement Settlement?      @relation(fields: [settlementId], references: [id])
 
   @@index([walletId, createdAt(sort: Desc)])
@@ -252,12 +258,12 @@ model Settlement {
 }
 
 model PlatformMasterWallet {
-  id                     String   @id @default(uuid()) @db.Uuid
-  totalPlatformBalance   Decimal  @default(0.00) @map("total_platform_balance") @db.Decimal(14, 2)
-  totalDisbursedToVenues Decimal  @default(0.00) @map("total_disbursed_to_venues") @db.Decimal(14, 2)
-  totalRefunded          Decimal  @default(0.00) @map("total_refunded") @db.Decimal(14, 2)
-  currency               String   @default("INR") @db.VarChar(10)
-  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                          String   @id @default(uuid()) @db.Uuid
+  totalPlatformBalancePaise   BigInt   @default(0) @map("total_platform_balance_paise")
+  totalDisbursedToVenuesPaise BigInt   @default(0) @map("total_disbursed_to_venues_paise")
+  totalRefundedPaise          BigInt   @default(0) @map("total_refunded_paise")
+  currency                    String   @unique @default("INR") @db.VarChar(10)
+  updatedAt                   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   transactions PlatformLedgerTransaction[]
 
@@ -265,16 +271,16 @@ model PlatformMasterWallet {
 }
 
 model PlatformLedgerTransaction {
-  id             String                  @id @default(uuid()) @db.Uuid
-  masterWalletId String                  @map("master_wallet_id") @db.Uuid
-  type           PlatformTransactionType
-  amount         Decimal                 @db.Decimal(14, 2)
-  runningBalance Decimal                 @map("running_balance") @db.Decimal(14, 2)
-  referenceId    String?                 @unique @map("reference_id") @db.VarChar(100)
-  restaurantId   String?                 @map("restaurant_id") @db.Uuid
-  createdAt      DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  id                  String                  @id @default(uuid()) @db.Uuid
+  masterWalletId      String                  @map("master_wallet_id") @db.Uuid
+  type                PlatformTransactionType
+  amountPaise         BigInt                  @map("amount_paise")
+  runningBalancePaise BigInt                  @map("running_balance_paise")
+  referenceId         String?                 @unique @map("reference_id") @db.VarChar(100)
+  restaurantId        String?                 @map("restaurant_id") @db.Uuid
+  createdAt           DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  masterWallet PlatformMasterWallet @relation(fields: [masterWalletId], references: [id], onDelete: Cascade)
+  masterWallet PlatformMasterWallet @relation(fields: [masterWalletId], references: [id], onDelete: Restrict)
 
   @@index([type, createdAt])
   @@index([restaurantId])

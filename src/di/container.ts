@@ -25,6 +25,7 @@ import type { ISubscriptionPlanRepository } from '@domain/repositories/subscript
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
+import { type RabbitMQService, rabbitMQService } from '@infrastructure/rabbitmq/index.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';
 import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
 import { PrismaPaymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
@@ -81,6 +82,8 @@ container
 	.bind<IPaymentSubscriptionExpiryService>(TYPES.Services.SubscriptionExpiryService)
 	.to(PaymentSubscriptionExpiryService)
 	.inSingletonScope();
+
+container.bind<RabbitMQService>(TYPES.Services.RabbitMQService).toConstantValue(rabbitMQService);
 
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)

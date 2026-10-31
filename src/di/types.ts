@@ -13,6 +13,7 @@ export const TYPES = {
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),
 		SubscriptionExpiryService: Symbol.for('IPaymentSubscriptionExpiryService'),
+		RabbitMQService: Symbol.for('RabbitMQService'),
 	},
 	UseCases: {
 		CreateSubscriptionOrderUseCase: Symbol.for('ICreateSubscriptionOrderUseCase'),

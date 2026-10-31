@@ -18,6 +18,9 @@ const envSchema = z.object({
 	RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 
 	QUEUE_PREFIX: z.string().min(1).default('bull'),
+
+	RABBITMQ_URL: z.url().default('amqp://guest:guest@localhost:5672'),
+	RABBITMQ_PREFETCH_COUNT: z.coerce.number().positive().default(10),
 });
 
 export const validateEnv = () => {

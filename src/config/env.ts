@@ -25,6 +25,11 @@ export const config = {
 		queuePrefix: env.QUEUE_PREFIX,
 	},
 
+	rabbitmq: {
+		url: env.RABBITMQ_URL,
+		prefetchCount: env.RABBITMQ_PREFETCH_COUNT,
+	},
+
 	razorpay: {
 		keyId: env.RAZORPAY_TEST_API_KEY,
 		keySecret: env.RAZORPAY_TEST_SECRET_KEY,

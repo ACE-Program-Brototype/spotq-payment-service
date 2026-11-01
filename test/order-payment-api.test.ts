@@ -1,3 +1,4 @@
+import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import { env } from '@config/env.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
@@ -19,6 +20,7 @@ const paymentTransactionRepository = container.get<IPaymentTransactionRepository
 	TYPES.Repositories.PaymentTransactionRepository,
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
+const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
 
 describe('Customer Order Payment Initiation, Signature Verification & Status API (SCRUM-13)', () => {
 	const mockOrderId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
@@ -35,6 +37,7 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 		jest.spyOn(razorpayGateway, 'isHealthy').mockReturnValue(true);
 		jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(true);
 		jest.spyOn(rabbitMQService, 'isHealthy').mockResolvedValue(true);
+		jest.spyOn(outboxRelayService, 'processPendingEvents').mockResolvedValue();
 	});
 
 	afterEach(() => {

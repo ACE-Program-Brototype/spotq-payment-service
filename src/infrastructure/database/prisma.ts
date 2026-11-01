@@ -36,6 +36,9 @@ if (caCert) {
 	ssl = {
 		rejectUnauthorized: !isExplicitNoVerify,
 	};
+} else if (initialSslMode === 'disable') {
+	// Explicitly disabled SSL in dev/test (e.g. local PostgreSQL)
+	ssl = undefined;
 } else {
 	// In development/testing, default to rejectUnauthorized: false to allow self-signed connections (e.g. Aiven)
 	const isExplicitReject = process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true';

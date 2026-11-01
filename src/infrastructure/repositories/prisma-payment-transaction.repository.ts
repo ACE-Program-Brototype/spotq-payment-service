@@ -1,10 +1,16 @@
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
+import { PaymentOrderNotFoundError } from '@domain/errors/payment.errors.ts';
 import type {
+	CaptureOrderPaymentWithOutboxParams,
 	CreatePaymentTransactionInput,
 	IPaymentTransactionRepository,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
-import type { Prisma } from '@prisma/client';
-import { PAYMENT_STATUS, PENDING_ORDER_REUSE_WINDOW_MS } from '@shared/constants/index.ts';
+import type { Prisma, PaymentTransaction as PrismaPaymentTransaction } from '@prisma/client';
+import {
+	OUTBOX_STATUS,
+	PAYMENT_STATUS,
+	PENDING_ORDER_REUSE_WINDOW_MS,
+} from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -13,18 +19,14 @@ export class PrismaPaymentTransactionRepository
 	extends PrismaBaseRepository
 	implements IPaymentTransactionRepository
 {
-	async findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null> {
-		const record = await this.prisma.paymentTransaction.findUnique({
-			where: { razorpayOrderId },
-		});
-
-		if (!record) return null;
-
+	private mapToDomain(record: PrismaPaymentTransaction): PaymentTransaction {
 		return new PaymentTransaction({
 			id: record.id,
 			restaurantId: record.restaurantId,
 			subscriptionId: record.subscriptionId,
 			planId: record.planId,
+			orderId: record.orderId,
+			customerId: record.customerId,
 			razorpayOrderId: record.razorpayOrderId,
 			razorpayPaymentId: record.razorpayPaymentId,
 			razorpaySignature: record.razorpaySignature,
@@ -38,29 +40,32 @@ export class PrismaPaymentTransactionRepository
 		});
 	}
 
+	async findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null> {
+		const record = await this.prisma.paymentTransaction.findUnique({
+			where: { razorpayOrderId },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
+	}
+
+	async findByCustomerOrderId(orderId: string): Promise<PaymentTransaction | null> {
+		const record = await this.prisma.paymentTransaction.findFirst({
+			where: { orderId },
+			orderBy: { createdAt: 'desc' },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
+	}
+
 	async findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null> {
 		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { razorpayPaymentId },
 		});
 
 		if (!record) return null;
-
-		return new PaymentTransaction({
-			id: record.id,
-			restaurantId: record.restaurantId,
-			subscriptionId: record.subscriptionId,
-			planId: record.planId,
-			razorpayOrderId: record.razorpayOrderId,
-			razorpayPaymentId: record.razorpayPaymentId,
-			razorpaySignature: record.razorpaySignature,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			failureReason: record.failureReason,
-			metadata: (record.metadata as Record<string, unknown>) || null,
-			createdAt: record.createdAt,
-			updatedAt: record.updatedAt,
-		});
+		return this.mapToDomain(record);
 	}
 
 	async findPendingByRestaurantAndPlan(
@@ -81,23 +86,7 @@ export class PrismaPaymentTransactionRepository
 		});
 
 		if (!record) return null;
-
-		return new PaymentTransaction({
-			id: record.id,
-			restaurantId: record.restaurantId,
-			subscriptionId: record.subscriptionId,
-			planId: record.planId,
-			razorpayOrderId: record.razorpayOrderId,
-			razorpayPaymentId: record.razorpayPaymentId,
-			razorpaySignature: record.razorpaySignature,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			failureReason: record.failureReason,
-			metadata: (record.metadata as Record<string, unknown>) || null,
-			createdAt: record.createdAt,
-			updatedAt: record.updatedAt,
-		});
+		return this.mapToDomain(record);
 	}
 
 	async create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction> {
@@ -105,6 +94,8 @@ export class PrismaPaymentTransactionRepository
 			data: {
 				restaurantId: data.restaurantId,
 				planId: data.planId,
+				orderId: data.orderId,
+				customerId: data.customerId,
 				razorpayOrderId: data.razorpayOrderId,
 				amountPaise: data.amountPaise,
 				currency: data.currency,
@@ -113,21 +104,50 @@ export class PrismaPaymentTransactionRepository
 			},
 		});
 
-		return new PaymentTransaction({
-			id: record.id,
-			restaurantId: record.restaurantId,
-			subscriptionId: record.subscriptionId,
-			planId: record.planId,
-			razorpayOrderId: record.razorpayOrderId,
-			razorpayPaymentId: record.razorpayPaymentId,
-			razorpaySignature: record.razorpaySignature,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			failureReason: record.failureReason,
-			metadata: (record.metadata as Record<string, unknown>) || null,
-			createdAt: record.createdAt,
-			updatedAt: record.updatedAt,
+		return this.mapToDomain(record);
+	}
+
+	async captureOrderPaymentWithOutbox(
+		params: CaptureOrderPaymentWithOutboxParams,
+	): Promise<PaymentTransaction> {
+		return await this.prisma.$transaction(async (tx) => {
+			const existing = await tx.paymentTransaction.findUnique({
+				where: { id: params.transaction.id },
+			});
+
+			if (!existing) {
+				throw new PaymentOrderNotFoundError();
+			}
+
+			if (existing.status === PAYMENT_STATUS.CAPTURED) {
+				return this.mapToDomain(existing);
+			}
+
+			const updated = await tx.paymentTransaction.update({
+				where: { id: params.transaction.id },
+				data: {
+					status: params.transaction.status,
+					razorpayPaymentId: params.transaction.razorpayPaymentId,
+					...(params.transaction.razorpaySignature
+						? { razorpaySignature: params.transaction.razorpaySignature }
+						: {}),
+					...(params.transaction.metadata
+						? { metadata: params.transaction.metadata as Prisma.InputJsonValue }
+						: {}),
+					updatedAt: params.transaction.updatedAt ?? new Date(),
+				},
+			});
+
+			await tx.outboxEvent.create({
+				data: {
+					eventType: params.outbox.eventType,
+					aggregateId: params.outbox.aggregateId,
+					payload: params.outbox.payload as unknown as Prisma.InputJsonValue,
+					status: OUTBOX_STATUS.PENDING,
+				},
+			});
+
+			return this.mapToDomain(updated);
 		});
 	}
 
@@ -147,22 +167,7 @@ export class PrismaPaymentTransactionRepository
 			},
 		});
 
-		return new PaymentTransaction({
-			id: record.id,
-			restaurantId: record.restaurantId,
-			subscriptionId: record.subscriptionId,
-			planId: record.planId,
-			razorpayOrderId: record.razorpayOrderId,
-			razorpayPaymentId: record.razorpayPaymentId,
-			razorpaySignature: record.razorpaySignature,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			failureReason: record.failureReason,
-			metadata: (record.metadata as Record<string, unknown>) || null,
-			createdAt: record.createdAt,
-			updatedAt: record.updatedAt,
-		});
+		return this.mapToDomain(record);
 	}
 
 	async markFailed(razorpayOrderId: string, failureReason: string): Promise<PaymentTransaction> {
@@ -174,22 +179,7 @@ export class PrismaPaymentTransactionRepository
 			},
 		});
 
-		return new PaymentTransaction({
-			id: record.id,
-			restaurantId: record.restaurantId,
-			subscriptionId: record.subscriptionId,
-			planId: record.planId,
-			razorpayOrderId: record.razorpayOrderId,
-			razorpayPaymentId: record.razorpayPaymentId,
-			razorpaySignature: record.razorpaySignature,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			failureReason: record.failureReason,
-			metadata: (record.metadata as Record<string, unknown>) || null,
-			createdAt: record.createdAt,
-			updatedAt: record.updatedAt,
-		});
+		return this.mapToDomain(record);
 	}
 
 	async resetToCreated(razorpayOrderId: string): Promise<PaymentTransaction> {
@@ -200,21 +190,6 @@ export class PrismaPaymentTransactionRepository
 			},
 		});
 
-		return new PaymentTransaction({
-			id: record.id,
-			restaurantId: record.restaurantId,
-			subscriptionId: record.subscriptionId,
-			planId: record.planId,
-			razorpayOrderId: record.razorpayOrderId,
-			razorpayPaymentId: record.razorpayPaymentId,
-			razorpaySignature: record.razorpaySignature,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			failureReason: record.failureReason,
-			metadata: (record.metadata as Record<string, unknown>) || null,
-			createdAt: record.createdAt,
-			updatedAt: record.updatedAt,
-		});
+		return this.mapToDomain(record);
 	}
 }

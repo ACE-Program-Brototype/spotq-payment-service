@@ -16,13 +16,17 @@ export const TYPES = {
 		RabbitMQService: Symbol.for('RabbitMQService'),
 	},
 	UseCases: {
+		CreateOrderPaymentUseCase: Symbol.for('ICreateOrderPaymentUseCase'),
 		CreateSubscriptionOrderUseCase: Symbol.for('ICreateSubscriptionOrderUseCase'),
+		GetOrderPaymentStatusUseCase: Symbol.for('IGetOrderPaymentStatusUseCase'),
 		GetSubscriptionPlansUseCase: Symbol.for('IGetSubscriptionPlansUseCase'),
 		GetSubscriptionStatusUseCase: Symbol.for('IGetSubscriptionStatusUseCase'),
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
+		VerifyOrderPaymentUseCase: Symbol.for('IVerifyOrderPaymentUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
 	},
 	Controllers: {
+		OrderPaymentController: Symbol.for('OrderPaymentController'),
 		SubscriptionController: Symbol.for('SubscriptionController'),
 	},
 } as const;

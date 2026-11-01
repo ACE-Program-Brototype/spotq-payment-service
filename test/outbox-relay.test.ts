@@ -4,7 +4,9 @@ import {
 	MAX_OUTBOX_RETRIES,
 	OutboxRelayService,
 } from '../src/infrastructure/outbox/outbox-relay.service';
+import type { RabbitMQService } from '../src/infrastructure/rabbitmq/rabbitmq.client';
 import type { RedisService } from '../src/infrastructure/redis/redis.service';
+import { RABBITMQ_QUEUES } from '../src/shared/constants';
 
 jest.mock('../src/infrastructure/logger', () => ({
 	logger: {
@@ -46,6 +48,7 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 		relayService = new OutboxRelayService(
 			mockOutboxRepository,
 			mockEventProducer,
+			undefined,
 			mockRedisService,
 		);
 	});
@@ -195,6 +198,50 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			eventId: 'event-expired-1',
 		});
 		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-expired-1');
+	});
+
+	it('publishes payment.order.captured outbox events to RabbitMQ and marks them PUBLISHED (AC7)', async () => {
+		const mockRabbitMQService = {
+			publishToQueue: jest.fn().mockResolvedValue(true),
+		} as unknown as RabbitMQService;
+
+		const rmqRelayService = new OutboxRelayService(
+			mockOutboxRepository,
+			mockEventProducer,
+			mockRabbitMQService,
+			mockRedisService,
+		);
+
+		const mockEvents = [
+			{
+				id: 'event-order-1',
+				eventType: 'payment.order.captured',
+				aggregateId: 'ord-uuid-1',
+				payload: {
+					paymentId: 'pay-uuid-1',
+					orderId: 'ord-uuid-1',
+					amountPaise: 45000,
+				},
+				status: 'PENDING' as const,
+				retryCount: 0,
+				createdAt: new Date(),
+			},
+		];
+
+		mockOutboxRepository.findPendingEvents.mockResolvedValue(mockEvents);
+		mockOutboxRepository.markPublished.mockResolvedValue(undefined);
+
+		await rmqRelayService.processPendingEvents();
+
+		expect(mockRabbitMQService.publishToQueue).toHaveBeenCalledWith(RABBITMQ_QUEUES.ORDER_EVENTS, {
+			eventId: 'event-order-1',
+			eventType: 'payment.order.captured',
+			aggregateId: 'ord-uuid-1',
+			paymentId: 'pay-uuid-1',
+			orderId: 'ord-uuid-1',
+			amountPaise: 45000,
+		});
+		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-order-1');
 	});
 
 	it('skips dispatching when another replica holds the distributed lock', async () => {

@@ -12,7 +12,11 @@ import type { ISubscriptionRepository } from '@domain/repositories/subscription.
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import {
+	DEFAULT_PAYMENT_FAILURE_REASON,
+	DEFAULT_PAYMENT_METHOD,
+	PAYMENT_EVENTS,
 	PAYMENT_STATUS,
+	RAZORPAY_WEBHOOK_EVENTS,
 	SUBSCRIPTION_EVENTS,
 	SUBSCRIPTION_STATUS,
 } from '@shared/constants/index.ts';
@@ -63,9 +67,14 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 
 		logger.info({ eventType, paymentId: paymentEntity?.id }, 'Processing Razorpay webhook event');
 
-		if (eventType === 'payment.captured' && paymentEntity) {
-			const orderId = paymentEntity.order_id;
-			const paymentId = paymentEntity.id;
+		if (
+			(eventType === RAZORPAY_WEBHOOK_EVENTS.PAYMENT_CAPTURED ||
+				eventType === RAZORPAY_WEBHOOK_EVENTS.ORDER_PAID) &&
+			(paymentEntity || params.parsedPayload.payload?.order?.entity)
+		) {
+			const orderEntity = params.parsedPayload.payload?.order?.entity;
+			const orderId = paymentEntity?.order_id || orderEntity?.id;
+			const paymentId = paymentEntity?.id || '';
 
 			if (!orderId) {
 				return { received: true };
@@ -81,6 +90,56 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 				return { received: true };
 			}
 
+			if (existingTx.orderId) {
+				if (existingTx.status === PAYMENT_STATUS.CAPTURED) {
+					logger.info(
+						{ orderId, foodOrderId: existingTx.orderId },
+						'Webhook received for already captured food order transaction (idempotent)',
+					);
+					return { received: true };
+				}
+
+				const method =
+					(paymentEntity as Record<string, unknown> | undefined)?.method ?? DEFAULT_PAYMENT_METHOD;
+				const resolvedPaymentId = paymentId || existingTx.razorpayPaymentId || '';
+
+				existingTx.capture({
+					paymentId: resolvedPaymentId,
+					signature: '',
+					metadata: { method },
+				});
+
+				await this.paymentTransactionRepository.captureOrderPaymentWithOutbox({
+					transaction: existingTx,
+					outbox: {
+						eventType: PAYMENT_EVENTS.ORDER_CAPTURED,
+						aggregateId: existingTx.orderId,
+						payload: {
+							paymentId: existingTx.id,
+							orderId: existingTx.orderId,
+							customerId: existingTx.customerId,
+							restaurantId: existingTx.restaurantId,
+							amountPaise: existingTx.amountPaise,
+							currency: existingTx.currency,
+							gatewayPaymentId: resolvedPaymentId,
+							method,
+							timestamp: new Date().toISOString(),
+						},
+					},
+				});
+
+				this.outboxRelayService.processPendingEvents().catch((err) => {
+					logger.error({ err }, 'Error triggering outbox relay after food order webhook');
+				});
+
+				logger.info(
+					{ orderId, foodOrderId: existingTx.orderId, paymentId },
+					'Food order payment captured via Razorpay webhook safety net',
+				);
+				return { received: true };
+			}
+
+			// Handle Subscription Order Payment
 			if (existingTx.status === PAYMENT_STATUS.SUCCESS && existingTx.subscriptionId) {
 				logger.info({ orderId }, 'Webhook received for already completed transaction');
 				return { received: true };
@@ -132,16 +191,20 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			});
 		}
 
-		if (eventType === 'payment.failed' && paymentEntity) {
+		if (eventType === RAZORPAY_WEBHOOK_EVENTS.PAYMENT_FAILED && paymentEntity) {
 			const orderId = paymentEntity.order_id;
 			const failureReason =
 				paymentEntity.error_description ||
 				paymentEntity.error_reason ||
-				'Payment failed on gateway';
+				DEFAULT_PAYMENT_FAILURE_REASON;
 
 			if (orderId) {
 				const existingTx = await this.paymentTransactionRepository.findByOrderId(orderId);
-				if (existingTx && existingTx.status !== PAYMENT_STATUS.SUCCESS) {
+				if (
+					existingTx &&
+					existingTx.status !== PAYMENT_STATUS.SUCCESS &&
+					existingTx.status !== PAYMENT_STATUS.CAPTURED
+				) {
 					await this.paymentTransactionRepository.markFailed(orderId, failureReason);
 					logger.info(
 						{ orderId, failureReason },

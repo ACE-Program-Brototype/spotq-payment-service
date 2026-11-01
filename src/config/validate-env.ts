@@ -5,7 +5,7 @@ const envSchema = z.object({
 
 	PORT: z.coerce.number().positive(),
 
-	SERVICE_NAME: z.string().min(1),
+	SERVICE_NAME: z.string().min(1).default('payment-service'),
 
 	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']),
 
@@ -21,6 +21,10 @@ const envSchema = z.object({
 
 	RABBITMQ_URL: z.url().default('amqp://guest:guest@localhost:5672'),
 	RABBITMQ_PREFETCH_COUNT: z.coerce.number().positive().default(10),
+
+	ORDER_S2S_PUBLIC_KEY: z.string().min(1),
+	S2S_AUDIENCE: z.string().min(1).default('payment-service'),
+	S2S_PRIVATE_KEY: z.string().min(1),
 });
 
 export const validateEnv = () => {

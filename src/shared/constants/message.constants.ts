@@ -97,6 +97,7 @@ export const MESSAGES = {
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED: 'Platform finance summary retrieved successfully',
+	PLATFORM_MASTER_LEDGER_FETCHED: 'Platform ledger entries retrieved successfully',
 } as const;
 
 export type Message = (typeof MESSAGES)[keyof typeof MESSAGES];

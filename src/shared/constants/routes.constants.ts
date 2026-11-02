@@ -17,6 +17,7 @@ export const SUBSCRIPTION_ROUTES = {
 export const PLATFORM_FINANCE_ROUTES = {
 	ROOT: '/admin/finance',
 	SUMMARY: '/summary',
+	LEDGER: '/ledger',
 } as const;
 
 export const ROUTES = {

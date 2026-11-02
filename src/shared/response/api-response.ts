@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import { HTTP_STATUS, type HttpStatus } from '../constants/http.constants.ts';
-import { ErrorResponse, SuccessResponse } from '../utils/response.ts';
+import { ApiResponse } from '../utils/response.ts';
 
 export function sendSuccessResponse<T>(
 	res: Response,
@@ -8,7 +8,7 @@ export function sendSuccessResponse<T>(
 	message: string,
 	statusCode: HttpStatus = HTTP_STATUS.OK,
 ): void {
-	res.status(statusCode).json(new SuccessResponse(message, data));
+	res.status(statusCode).json(ApiResponse.success(message, data));
 }
 
 export function sendErrorResponse(
@@ -18,5 +18,5 @@ export function sendErrorResponse(
 	statusCode: HttpStatus = HTTP_STATUS.BAD_REQUEST,
 	details?: unknown,
 ): void {
-	res.status(statusCode).json(new ErrorResponse(error, message, details));
+	res.status(statusCode).json(ApiResponse.error(error, message, details));
 }

@@ -1,9 +1,9 @@
-import { DEFAULT_PAYMENT_METHOD, PAYMENT_STATUS } from '@shared/constants/index.ts';
 import {
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
 	PaymentOrderNotFoundError,
-} from '../errors/payment.errors.ts';
+} from '@domain/errors/payment.errors.ts';
+import { DEFAULT_PAYMENT_METHOD, PAYMENT_STATUS } from '@shared/constants/index.ts';
 
 export type PaymentStatus = 'CREATED' | 'CAPTURED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 

@@ -3,6 +3,7 @@ import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-c
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
+import { CSV_FILENAME_TIMESTAMP_REGEX } from '@shared/constants/regex.constants.ts';
 import { sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
@@ -25,19 +26,25 @@ export class PlatformFinanceController {
 		sendSuccessResponse(res, result, MESSAGES.PLATFORM_FINANCE_SUMMARY_FETCHED, HTTP_STATUS.OK);
 	};
 
-	getLedger = async (req: Request, res: Response): Promise<void> => {
-		const input = req.query as unknown as GetPlatformMasterLedgerQuery;
+	getLedger = async (_req: Request, res: Response): Promise<void> => {
+		const input = res.locals.query as GetPlatformMasterLedgerQuery;
 		const result = await this.getPlatformMasterLedgerUseCase.execute(input);
 
 		sendSuccessResponse(res, result, MESSAGES.PLATFORM_MASTER_LEDGER_FETCHED, HTTP_STATUS.OK);
 	};
 
-	exportLedgerCsv = async (req: Request, res: Response): Promise<void> => {
-		const input = req.query as unknown as GetPlatformMasterLedgerQuery;
+	exportLedgerCsv = async (_req: Request, res: Response): Promise<void> => {
+		const input = res.locals.query as GetPlatformMasterLedgerQuery;
+
 		const csv = await this.exportPlatformLedgerUseCase.execute(input);
-		const timestamp = new Date().toISOString();
-		res.type('text/csv; charset=utf-8');
-		res.setHeader('Content-Disposition', `attachment; filename="platform-ledger-${timestamp}.csv"`);
-		res.send(`\uFEFF${csv}`);
+
+		const timestamp = new Date().toISOString().replace(CSV_FILENAME_TIMESTAMP_REGEX, '-');
+		const filename = `platform-ledger-${timestamp}.csv`;
+
+		res.status(HTTP_STATUS.OK);
+		res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+		res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+		res.setHeader('Content-Length', Buffer.byteLength(csv, 'utf8') + 3);
+		res.send(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(csv, 'utf8')]));
 	};
 }

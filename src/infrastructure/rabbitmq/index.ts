@@ -1,1 +1,1 @@
-export { RabbitMQService, rabbitMQService } from './rabbitmq.client.ts';
+export { RabbitMQService } from './rabbitmq.client.ts';

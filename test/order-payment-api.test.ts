@@ -7,7 +7,7 @@ import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interfa
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import { databaseService } from '@infrastructure/database/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
-import { rabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import type { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
 import { S2S_CALLER_SERVICES } from '@shared/constants/auth.constants.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
@@ -21,6 +21,7 @@ const paymentTransactionRepository = container.get<IPaymentTransactionRepository
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
+const rabbitMQService = container.get<RabbitMQService>(TYPES.Services.RabbitMQService);
 
 describe('Customer Order Payment Initiation, Signature Verification & Status API (SCRUM-13)', () => {
 	const mockOrderId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';

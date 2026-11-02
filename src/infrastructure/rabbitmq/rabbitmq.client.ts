@@ -1,14 +1,15 @@
 import { config } from '@config/index.ts';
 import type { IHealthCheckable } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { MESSAGES } from '@shared/constants/index.ts';
 import {
 	type ConsumeOptions,
 	type MessageHandler,
 	type PublishOptions,
 	RabbitMQClient,
 } from '@spotq-org/rabbitmq-client';
+import { injectable } from 'inversify';
 
+@injectable()
 export class RabbitMQService implements IHealthCheckable {
 	private readonly client: RabbitMQClient;
 
@@ -25,34 +26,15 @@ export class RabbitMQService implements IHealthCheckable {
 	}
 
 	async connect(): Promise<void> {
-		try {
-			await this.client.connect();
-			logger.info(MESSAGES.RABBITMQ_CONNECTED);
-		} catch (error) {
-			logger.error({ err: error }, MESSAGES.RABBITMQ_CONNECTION_ERROR);
-			throw error;
-		}
+		return this.client.connect();
 	}
 
 	async disconnect(): Promise<void> {
-		try {
-			await this.client.close();
-			logger.info(MESSAGES.RABBITMQ_DISCONNECTED);
-		} catch (error) {
-			logger.error({ err: error }, MESSAGES.RABBITMQ_CONNECTION_ERROR);
-		}
+		return this.client.close();
 	}
 
 	async isHealthy(): Promise<boolean> {
 		return this.client.isConnected();
-	}
-
-	isConnected(): boolean {
-		return this.client.isConnected();
-	}
-
-	getClient(): RabbitMQClient {
-		return this.client;
 	}
 
 	async publishToQueue<T = unknown>(
@@ -71,5 +53,3 @@ export class RabbitMQService implements IHealthCheckable {
 		return this.client.consumeFromQueue(queue, handler, options);
 	}
 }
-
-export const rabbitMQService = new RabbitMQService();

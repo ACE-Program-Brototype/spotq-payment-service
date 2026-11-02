@@ -10,7 +10,6 @@ export interface CreateOrderPaymentOutput {
 	paymentId: string;
 	orderId: string;
 	razorpayOrderId: string;
-	gatewayOrderId: string;
 	amountPaise: number;
 	currency: string;
 	keyId: string;

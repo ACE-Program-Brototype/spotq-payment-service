@@ -30,7 +30,6 @@ describe('OrderPaymentMapper', () => {
 				paymentId: 'pay_tx_123',
 				orderId: 'ord_456',
 				razorpayOrderId: 'order_rzp_999',
-				gatewayOrderId: 'order_rzp_999',
 				amountPaise: 49900,
 				currency: 'INR',
 				keyId: 'rzp_test_key',

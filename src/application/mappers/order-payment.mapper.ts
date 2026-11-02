@@ -10,7 +10,6 @@ export const OrderPaymentMapper = {
 			paymentId: transaction.id,
 			orderId: transaction.orderId ?? '',
 			razorpayOrderId: transaction.razorpayOrderId,
-			gatewayOrderId: transaction.razorpayOrderId,
 			amountPaise: transaction.amountPaise,
 			currency: transaction.currency,
 			keyId,

@@ -16,3 +16,9 @@ platformFinanceRouter.get(
 	validateRequestQuery(getPlatformMasterLedgerQuerySchema),
 	platformFinanceController.getLedger,
 );
+
+platformFinanceRouter.get(
+	PLATFORM_FINANCE_ROUTES.LEDGER_CSV,
+	validateRequestQuery(getPlatformMasterLedgerQuerySchema),
+	platformFinanceController.exportLedgerCsv,
+);

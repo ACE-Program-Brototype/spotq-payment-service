@@ -4,6 +4,7 @@ import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cas
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
+import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port.ts';
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
@@ -11,6 +12,7 @@ import { CreateSubscriptionOrderUseCase } from '@application/use-cases/create-su
 import { GetSubscriptionPlansUseCase } from '@application/use-cases/get-subscription-plans.use-case.ts';
 import { GetSubscriptionStatusUseCase } from '@application/use-cases/get-subscription-status.use-case.ts';
 import { HandleWebhookUseCase } from '@application/use-cases/handle-webhook.use-case.ts';
+import { ExportPlatformLedgerUseCase } from '@application/use-cases/platform-finance/export-platform-ledger.use-case.ts';
 import { GetPlatformFinanceSummaryUseCase } from '@application/use-cases/platform-finance/get-platform-finance-summary.use-case.ts';
 import { GetPlatformMasterLedgerUseCase } from '@application/use-cases/platform-finance/get-platform-master-ledger.use-case.ts';
 import { VerifyPaymentUseCase } from '@application/use-cases/verify-payment.use-case.ts';
@@ -121,6 +123,10 @@ container
 container
 	.bind<IGetPlatformMasterLedgerUseCase>(TYPES.UseCases.GetPlatformMasterLedgerUseCase)
 	.to(GetPlatformMasterLedgerUseCase);
+
+container
+	.bind<IExportPlatformLedgerUseCase>(TYPES.UseCases.ExportPlatformLedgerUseCase)
+	.to(ExportPlatformLedgerUseCase);
 
 container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)

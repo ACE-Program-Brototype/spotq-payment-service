@@ -24,6 +24,7 @@ export const TYPES = {
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
+		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
 	},
 	Controllers: {
 		SubscriptionController: Symbol.for('SubscriptionController'),

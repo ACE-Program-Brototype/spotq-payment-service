@@ -1,6 +1,5 @@
+import { YYYY_MM_DD_REGEX } from '@shared/constants/regex.constants.ts';
 import { z } from 'zod';
-
-const YYYY_MM_DD_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export const dateSchema = z
 	.string()

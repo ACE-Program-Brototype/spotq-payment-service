@@ -17,6 +17,7 @@ import type { ISubscriptionRepository } from '@domain/repositories/subscription.
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { PAYMENT_STATUS } from '@shared/constants/index.ts';
+import { HYPHEN_REGEX } from '@shared/constants/regex.constants.ts';
 import { inject, injectable, optional } from 'inversify';
 
 /**
@@ -94,7 +95,7 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 			};
 		}
 
-		const receiptId = `rcpt_${input.restaurantId.replace(/-/g, '').slice(0, 10)}_${Date.now()}`;
+		const receiptId = `rcpt_${input.restaurantId.replace(HYPHEN_REGEX, '').slice(0, 10)}_${Date.now()}`;
 		const orderResult = await this.paymentGateway.createOrder({
 			amountInPaise: plan.pricePaise,
 			currency: plan.currency,

@@ -18,6 +18,7 @@ export const PLATFORM_FINANCE_ROUTES = {
 	ROOT: '/admin/finance',
 	SUMMARY: '/summary',
 	LEDGER: '/ledger',
+	LEDGER_CSV: '/ledger/export.csv',
 } as const;
 
 export const ROUTES = {

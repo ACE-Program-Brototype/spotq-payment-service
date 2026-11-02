@@ -93,18 +93,27 @@ export class OutboxRelayService implements IOutboxRelayService {
 							...payload,
 							eventId: event.id,
 						});
-					} else if (event.eventType === PAYMENT_EVENTS.ORDER_CAPTURED) {
-						if (this.rabbitMQService) {
-							await this.rabbitMQService.publishToQueue(RABBITMQ_QUEUES.ORDER_EVENTS, {
+					} else if (
+						event.eventType === PAYMENT_EVENTS.ORDER_CAPTURED ||
+						event.eventType === PAYMENT_EVENTS.ORDER_FAILED
+					) {
+						if (!this.rabbitMQService) {
+							throw new Error(
+								`RabbitMQService is not configured to relay order event '${event.eventType}'`,
+							);
+						}
+						const published = await this.rabbitMQService.publishToQueue(
+							RABBITMQ_QUEUES.ORDER_EVENTS,
+							{
 								eventId: event.id,
 								eventType: event.eventType,
 								aggregateId: event.aggregateId,
 								...((event.payload as object) || {}),
-							});
-						} else {
-							logger.warn(
-								{ eventId: event.id, eventType: event.eventType },
-								'RabbitMQService not configured to relay order captured event',
+							},
+						);
+						if (!published) {
+							throw new Error(
+								`Failed to publish event '${event.eventType}' to RabbitMQ queue '${RABBITMQ_QUEUES.ORDER_EVENTS}'`,
 							);
 						}
 					} else {

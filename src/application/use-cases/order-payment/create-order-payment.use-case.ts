@@ -39,11 +39,22 @@ export class CreateOrderPaymentUseCase implements ICreateOrderPaymentUseCase {
 			}
 
 			if (existingTx.status === PAYMENT_STATUS.CREATED) {
+				if (existingTx.amountPaise === input.amountPaise) {
+					logger.info(
+						{ orderId: input.orderId, razorpayOrderId: existingTx.razorpayOrderId },
+						'Reusing existing pending payment transaction for food order',
+					);
+					return OrderPaymentMapper.toCreateResponse(existingTx, config.razorpay.keyId);
+				}
+
 				logger.info(
-					{ orderId: input.orderId, razorpayOrderId: existingTx.razorpayOrderId },
-					'Reusing existing pending payment transaction for food order',
+					{
+						orderId: input.orderId,
+						existingAmount: existingTx.amountPaise,
+						newAmount: input.amountPaise,
+					},
+					'Order amount modified; creating a new gateway order instead of reusing previous pending transaction',
 				);
-				return OrderPaymentMapper.toCreateResponse(existingTx, config.razorpay.keyId);
 			}
 		}
 

@@ -3,6 +3,7 @@ import { PaymentOrderNotFoundError } from '@domain/errors/payment.errors.ts';
 import type {
 	CaptureOrderPaymentWithOutboxParams,
 	CreatePaymentTransactionInput,
+	FailOrderPaymentWithOutboxParams,
 	IPaymentTransactionRepository,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { Prisma, PaymentTransaction as PrismaPaymentTransaction } from '@prisma/client';
@@ -134,6 +135,48 @@ export class PrismaPaymentTransactionRepository
 					...(params.transaction.metadata
 						? { metadata: params.transaction.metadata as Prisma.InputJsonValue }
 						: {}),
+					updatedAt: params.transaction.updatedAt ?? new Date(),
+				},
+			});
+
+			await tx.outboxEvent.create({
+				data: {
+					eventType: params.outbox.eventType,
+					aggregateId: params.outbox.aggregateId,
+					payload: params.outbox.payload as unknown as Prisma.InputJsonValue,
+					status: OUTBOX_STATUS.PENDING,
+				},
+			});
+
+			return this.mapToDomain(updated);
+		});
+	}
+
+	async failOrderPaymentWithOutbox(
+		params: FailOrderPaymentWithOutboxParams,
+	): Promise<PaymentTransaction> {
+		return await this.prisma.$transaction(async (tx) => {
+			const existing = await tx.paymentTransaction.findUnique({
+				where: { id: params.transaction.id },
+			});
+
+			if (!existing) {
+				throw new PaymentOrderNotFoundError();
+			}
+
+			if (
+				existing.status === PAYMENT_STATUS.CAPTURED ||
+				existing.status === PAYMENT_STATUS.SUCCESS ||
+				existing.status === PAYMENT_STATUS.FAILED
+			) {
+				return this.mapToDomain(existing);
+			}
+
+			const updated = await tx.paymentTransaction.update({
+				where: { id: params.transaction.id },
+				data: {
+					status: params.transaction.status,
+					failureReason: params.transaction.failureReason,
 					updatedAt: params.transaction.updatedAt ?? new Date(),
 				},
 			});

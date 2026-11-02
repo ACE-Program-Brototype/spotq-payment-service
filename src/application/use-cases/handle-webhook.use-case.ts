@@ -74,7 +74,7 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 		) {
 			const orderEntity = params.parsedPayload.payload?.order?.entity;
 			const orderId = paymentEntity?.order_id || orderEntity?.id;
-			const paymentId = paymentEntity?.id || '';
+			const paymentId = paymentEntity?.id ?? null;
 
 			if (!orderId) {
 				return { received: true };
@@ -101,11 +101,11 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 
 				const method =
 					(paymentEntity as Record<string, unknown> | undefined)?.method ?? DEFAULT_PAYMENT_METHOD;
-				const resolvedPaymentId = paymentId || existingTx.razorpayPaymentId || '';
+				const resolvedPaymentId = paymentId ?? existingTx.razorpayPaymentId ?? null;
 
 				existingTx.capture({
 					paymentId: resolvedPaymentId,
-					signature: '',
+					signature: null,
 					metadata: { method },
 				});
 
@@ -169,7 +169,7 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 				},
 				payment: {
 					razorpayOrderId: existingTx.razorpayOrderId,
-					razorpayPaymentId: paymentId,
+					razorpayPaymentId: paymentId || existingTx.razorpayPaymentId || '',
 					razorpaySignature: '',
 				},
 				outbox: {
@@ -205,7 +205,36 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 					existingTx.status !== PAYMENT_STATUS.SUCCESS &&
 					existingTx.status !== PAYMENT_STATUS.CAPTURED
 				) {
-					await this.paymentTransactionRepository.markFailed(orderId, failureReason);
+					if (existingTx.orderId) {
+						existingTx.markFailed(failureReason);
+						const now = new Date();
+						await this.paymentTransactionRepository.failOrderPaymentWithOutbox({
+							transaction: existingTx,
+							outbox: {
+								eventType: PAYMENT_EVENTS.ORDER_FAILED,
+								aggregateId: existingTx.orderId,
+								payload: {
+									paymentId: existingTx.id,
+									orderId: existingTx.orderId,
+									customerId: existingTx.customerId,
+									restaurantId: existingTx.restaurantId,
+									amountPaise: existingTx.amountPaise,
+									currency: existingTx.currency,
+									failureReason,
+									timestamp: now.toISOString(),
+								},
+							},
+						});
+
+						this.outboxRelayService.processPendingEvents().catch((err) => {
+							logger.error(
+								{ err },
+								'Error triggering outbox relay after food order payment failure webhook',
+							);
+						});
+					} else {
+						await this.paymentTransactionRepository.markFailed(orderId, failureReason);
+					}
 					logger.info(
 						{ orderId, failureReason },
 						'Payment transaction marked as FAILED from webhook',

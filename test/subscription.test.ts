@@ -50,6 +50,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
 		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
 		captureOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
+		failOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
 		markSuccess: jest.fn(),
 		markFailed: jest.fn(),
 		resetToCreated: jest.fn().mockResolvedValue({}),

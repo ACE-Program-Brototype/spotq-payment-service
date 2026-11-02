@@ -1,5 +1,4 @@
 import {
-	validate,
 	validateRequestBody,
 	validateRequestParams,
 	validateRequestQuery,
@@ -29,27 +28,6 @@ describe('Validation Middleware', () => {
 			locals: {},
 		};
 		nextFn = jest.fn();
-	});
-
-	describe('validate', () => {
-		it('should throw ZodError on invalid body', () => {
-			mockReq.body = { name: 'A' };
-
-			expect(() => {
-				validate(testSchema)(mockReq as Request, mockRes as Response, nextFn);
-			}).toThrow(z.ZodError);
-
-			expect(nextFn).not.toHaveBeenCalled();
-		});
-
-		it('should assign parsed data to req.body and call next() on valid body', () => {
-			mockReq.body = { name: 'Alice', age: 25 };
-
-			validate(testSchema)(mockReq as Request, mockRes as Response, nextFn);
-
-			expect(mockReq.body).toEqual({ name: 'Alice', age: 25 });
-			expect(nextFn).toHaveBeenCalledTimes(1);
-		});
 	});
 
 	describe('validateRequestBody', () => {

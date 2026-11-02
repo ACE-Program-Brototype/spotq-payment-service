@@ -21,6 +21,15 @@ export interface CaptureOrderPaymentWithOutboxParams {
 	};
 }
 
+export interface FailOrderPaymentWithOutboxParams {
+	transaction: PaymentTransaction;
+	outbox: {
+		eventType: string;
+		aggregateId: string;
+		payload: Record<string, unknown>;
+	};
+}
+
 export interface IPaymentTransactionRepository {
 	findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null>;
 	findByCustomerOrderId(orderId: string): Promise<PaymentTransaction | null>;
@@ -33,6 +42,7 @@ export interface IPaymentTransactionRepository {
 	captureOrderPaymentWithOutbox(
 		params: CaptureOrderPaymentWithOutboxParams,
 	): Promise<PaymentTransaction>;
+	failOrderPaymentWithOutbox(params: FailOrderPaymentWithOutboxParams): Promise<PaymentTransaction>;
 	markSuccess(params: {
 		razorpayOrderId: string;
 		razorpayPaymentId: string;

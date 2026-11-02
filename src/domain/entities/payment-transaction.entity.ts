@@ -109,8 +109,10 @@ export class PaymentTransaction {
 	}
 
 	assertOwnership(customerId?: string): void {
-		if (customerId && !this.isOwnedBy(customerId)) {
-			throw new CustomerUnauthorizedError();
+		if (this.props.customerId) {
+			if (!customerId || !this.isOwnedBy(customerId)) {
+				throw new CustomerUnauthorizedError();
+			}
 		}
 	}
 
@@ -125,7 +127,7 @@ export class PaymentTransaction {
 	}
 
 	capture(params: {
-		paymentId: string;
+		paymentId?: string | null;
 		signature?: string | null;
 		metadata?: Record<string, unknown>;
 	}): void {
@@ -136,7 +138,9 @@ export class PaymentTransaction {
 			throw new InvalidPaymentStateTransitionError();
 		}
 		this.props.status = PAYMENT_STATUS.CAPTURED;
-		this.props.razorpayPaymentId = params.paymentId;
+		if (params.paymentId !== undefined && params.paymentId !== null) {
+			this.props.razorpayPaymentId = params.paymentId;
+		}
 		if (params.signature !== undefined) {
 			this.props.razorpaySignature = params.signature;
 		}

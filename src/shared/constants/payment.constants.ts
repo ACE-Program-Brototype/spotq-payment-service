@@ -29,6 +29,13 @@ export const RAZORPAY_WEBHOOK_EVENTS = {
 export type RazorpayWebhookEvent =
 	(typeof RAZORPAY_WEBHOOK_EVENTS)[keyof typeof RAZORPAY_WEBHOOK_EVENTS];
 
+export const PAYMENT_EVENTS = {
+	ORDER_CAPTURED: 'payment.order.captured',
+	ORDER_FAILED: 'payment.order.failed',
+} as const;
+
+export type PaymentEvent = (typeof PAYMENT_EVENTS)[keyof typeof PAYMENT_EVENTS];
+
 export const DEFAULT_PAYMENT_FAILURE_REASON = 'Payment failed on gateway';
 
 export const RABBITMQ_QUEUES = {

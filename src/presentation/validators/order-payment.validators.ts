@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const createOrderPaymentSchema = z.object({
 	orderId: z.uuid(),
-	customerId: z.string().min(1),
+	customerId: z.uuid(),
 	restaurantId: z.uuid(),
 	amountPaise: z.number().int().positive(),
 	currency: z.string().default(DEFAULT_CURRENCY).optional(),

@@ -24,7 +24,7 @@ const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.Out
 
 describe('Customer Order Payment Initiation, Signature Verification & Status API (SCRUM-13)', () => {
 	const mockOrderId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
-	const mockCustomerId = 'usr-uuid-101';
+	const mockCustomerId = '10101010-1010-4010-a010-101010101010';
 	const mockRestaurantId = '20202020-2020-4020-a020-202020202020';
 	const mockRazorpayOrderId = 'order_EK98a123cd45';
 	const mockRazorpayPaymentId = 'pay_EK98b987ef65';
@@ -173,6 +173,59 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 				}),
 			);
 			expect(createOrderSpy).not.toHaveBeenCalled();
+		});
+
+		it('should create a new gateway order instead of reusing previous pending transaction if order amount changed', async () => {
+			const previousLowerAmountTx = new PaymentTransaction({
+				id: 'pay-txn-uuid-previous-lower',
+				restaurantId: mockRestaurantId,
+				orderId: mockOrderId,
+				customerId: mockCustomerId,
+				razorpayOrderId: 'order_previous_123',
+				amountPaise: 30000, // old amount 300
+				currency: 'INR',
+				status: 'CREATED',
+				createdAt: new Date('2026-10-27T00:00:00.000Z'),
+			});
+
+			const newCreatedTx = new PaymentTransaction({
+				id: 'pay-txn-uuid-new-higher',
+				restaurantId: mockRestaurantId,
+				orderId: mockOrderId,
+				customerId: mockCustomerId,
+				razorpayOrderId: 'order_new_450',
+				amountPaise: 45000, // new amount 450
+				currency: 'INR',
+				status: 'CREATED',
+				createdAt: new Date('2026-10-27T00:01:00.000Z'),
+			});
+
+			jest
+				.spyOn(paymentTransactionRepository, 'findByCustomerOrderId')
+				.mockResolvedValueOnce(previousLowerAmountTx);
+			const createOrderSpy = jest.spyOn(razorpayGateway, 'createOrder').mockResolvedValueOnce({
+				orderId: 'order_new_450',
+				amount: 45000,
+				currency: 'INR',
+				receipt: 'ord_rcpt_1',
+				status: 'created',
+			});
+			jest.spyOn(paymentTransactionRepository, 'create').mockResolvedValueOnce(newCreatedTx);
+
+			const res = await request(app)
+				.post(ORDER_PAYMENT_ROUTES.CREATE_GATEWAY_ORDER)
+				.set('Authorization', `Bearer ${getValidS2SToken()}`)
+				.set('x-caller-service', S2S_CALLER_SERVICES.ORDER_SERVICE)
+				.send(validPayload)
+				.expect(HTTP_STATUS.CREATED);
+
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.razorpayOrderId).toBe('order_new_450');
+			expect(createOrderSpy).toHaveBeenCalledWith(
+				expect.objectContaining({
+					amountInPaise: 45000,
+				}),
+			);
 		});
 
 		it('should return 409 CONFLICT when order payment is already captured', async () => {
@@ -554,7 +607,7 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 			expect(captureSpy).toHaveBeenCalled();
 		});
 
-		it('should mark food order transaction as FAILED on payment.failed webhook', async () => {
+		it('should mark food order transaction as FAILED and create outbox event on payment.failed webhook', async () => {
 			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(true);
 
 			const pendingTx = new PaymentTransaction({
@@ -569,8 +622,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 			});
 
 			jest.spyOn(paymentTransactionRepository, 'findByOrderId').mockResolvedValueOnce(pendingTx);
-			const markFailedSpy = jest
-				.spyOn(paymentTransactionRepository, 'markFailed')
+			const failWithOutboxSpy = jest
+				.spyOn(paymentTransactionRepository, 'failOrderPaymentWithOutbox')
 				.mockResolvedValueOnce(pendingTx);
 
 			const res = await request(app)
@@ -591,9 +644,18 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 				.expect(HTTP_STATUS.OK);
 
 			expect(res.body.received).toBe(true);
-			expect(markFailedSpy).toHaveBeenCalledWith(
-				mockRazorpayOrderId,
-				'Card declined by issuing bank',
+			expect(failWithOutboxSpy).toHaveBeenCalledWith(
+				expect.objectContaining({
+					transaction: expect.any(PaymentTransaction),
+					outbox: expect.objectContaining({
+						eventType: 'payment.order.failed',
+						aggregateId: mockOrderId,
+						payload: expect.objectContaining({
+							orderId: mockOrderId,
+							failureReason: 'Card declined by issuing bank',
+						}),
+					}),
+				}),
 			);
 		});
 

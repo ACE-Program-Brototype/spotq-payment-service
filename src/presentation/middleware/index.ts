@@ -5,7 +5,6 @@ export { loggerMiddleware } from './logger.middleware.ts';
 export { metricsMiddleware } from './metrics.middleware.ts';
 export { notFoundMiddleware } from './not-found.middleware.ts';
 export {
-	validate,
 	validateRequestBody,
 	validateRequestParams,
 	validateRequestQuery,

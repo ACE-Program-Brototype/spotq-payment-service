@@ -7,11 +7,6 @@ export const SUBSCRIPTION_EVENTS = {
 	EXPIRED: 'subscription.expired',
 } as const;
 
-export const PAYMENT_EVENTS = {
-	ORDER_CAPTURED: 'payment.order.captured',
-	ORDER_FAILED: 'payment.order.failed',
-} as const;
-
 export const PAYMENT_STATUS = {
 	CREATED: 'CREATED',
 	CAPTURED: 'CAPTURED',

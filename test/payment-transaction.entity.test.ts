@@ -41,8 +41,14 @@ describe('PaymentTransaction Entity', () => {
 			expect(() => tx.assertOwnership('cust-100')).not.toThrow();
 		});
 
-		it('should not throw when caller is undefined/empty', () => {
+		it('should throw CustomerUnauthorizedError when customerId is present but caller is undefined/empty', () => {
 			const tx = createTx('cust-100');
+			expect(() => tx.assertOwnership(undefined)).toThrow(CustomerUnauthorizedError);
+			expect(() => tx.assertOwnership('')).toThrow(CustomerUnauthorizedError);
+		});
+
+		it('should not throw when transaction has no customerId and caller is undefined', () => {
+			const tx = createTx(null);
 			expect(() => tx.assertOwnership(undefined)).not.toThrow();
 		});
 

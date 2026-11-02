@@ -7,10 +7,10 @@ export const CURRENCIES = {
 export type Currency = (typeof CURRENCIES)[keyof typeof CURRENCIES];
 
 export const PAYMENT_METHODS = {
-	UPI: 'UPI',
+	ONLINE: 'ONLINE',
 } as const;
 
-export const DEFAULT_PAYMENT_METHOD = PAYMENT_METHODS.UPI;
+export const DEFAULT_PAYMENT_METHOD = PAYMENT_METHODS.ONLINE;
 
 export const PAYMENT_RECEIPT = {
 	ORDER_PREFIX: 'ord_',

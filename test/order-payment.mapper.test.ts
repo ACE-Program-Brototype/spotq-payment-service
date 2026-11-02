@@ -58,7 +58,7 @@ describe('OrderPaymentMapper', () => {
 				amountPaise: 49900,
 				currency: 'INR',
 				status: PAYMENT_STATUS.CAPTURED,
-				method: 'UPI',
+				method: 'ONLINE',
 				createdAt: '2026-11-01T10:00:00.000Z',
 			});
 		});

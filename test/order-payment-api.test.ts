@@ -806,7 +806,7 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 					amountPaise: 45000,
 					currency: 'INR',
 					status: 'CAPTURED',
-					method: 'UPI',
+					method: 'ONLINE',
 					createdAt: expect.any(String),
 				}),
 			);

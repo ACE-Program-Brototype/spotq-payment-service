@@ -97,7 +97,7 @@ describe('PaymentTransaction Entity', () => {
 			expect(tx.paymentMethod).toBe('netbanking');
 		});
 
-		it('should fallback to DEFAULT_PAYMENT_METHOD (UPI) when status is CAPTURED and metadata has no method', () => {
+		it('should fallback to DEFAULT_PAYMENT_METHOD (ONLINE) when status is CAPTURED and metadata has no method', () => {
 			const tx = new PaymentTransaction({
 				id: 'pay-123',
 				restaurantId: 'rest-123',
@@ -107,7 +107,7 @@ describe('PaymentTransaction Entity', () => {
 				currency: 'INR',
 				status: 'CAPTURED',
 			});
-			expect(tx.paymentMethod).toBe('UPI');
+			expect(tx.paymentMethod).toBe('ONLINE');
 		});
 
 		it('should return null when status is not CAPTURED and metadata has no method', () => {

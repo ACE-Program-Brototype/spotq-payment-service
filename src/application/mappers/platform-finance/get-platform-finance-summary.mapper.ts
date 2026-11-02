@@ -5,12 +5,12 @@ export const GetPlatformFinanceSummaryMapper = {
 	toDto(query: PlatformFinanceSummaryReadModel): GetPlatformFinanceSummaryOutputDTO {
 		return {
 			currency: query.currency,
-			masterBalancePaise: query.masterBalancePaise,
-			todayTurnoverPaise: query.todayTurnoverPaise,
-			tonightEodPayoutQueuePaise: query.tonightEodPayoutQueuePaise,
-			lifetimeDisbursedPaise: query.lifetimeDisbursedPaise,
-			totalRefundsProcessedPaise: query.totalRefundsProcessedPaise,
-			saasSubscriptionMrrPaise: query.saasSubscriptionMrrPaise,
+			masterBalancePaise: query.masterBalancePaise.toString(),
+			todayTurnoverPaise: query.todayTurnoverPaise.toString(),
+			tonightEodPayoutQueuePaise: query.tonightEodPayoutQueuePaise.toString(),
+			lifetimeDisbursedPaise: query.lifetimeDisbursedPaise.toString(),
+			totalRefundsProcessedPaise: query.totalRefundsProcessedPaise.toString(),
+			saasSubscriptionMrrPaise: query.saasSubscriptionMrrPaise.toString(),
 			activeVenuesCount: query.activeVenuesCount,
 		};
 	},

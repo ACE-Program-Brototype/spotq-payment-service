@@ -1,0 +1,12 @@
+import type { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
+import type { SubscriptionController } from '@presentation/controllers/subscription.controller.ts';
+import { container } from './container.ts';
+import { TYPES } from './types.ts';
+
+export const subscriptionController = container.get<SubscriptionController>(
+	TYPES.Controllers.SubscriptionController,
+);
+
+export const platformFinanceController = container.get<PlatformFinanceController>(
+	TYPES.Controllers.PlatformFinanceController,
+);

@@ -21,8 +21,10 @@ export const TYPES = {
 		GetSubscriptionStatusUseCase: Symbol.for('IGetSubscriptionStatusUseCase'),
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
+		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 	},
 	Controllers: {
 		SubscriptionController: Symbol.for('SubscriptionController'),
+		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
 	},
 } as const;

@@ -14,6 +14,11 @@ export const SUBSCRIPTION_ROUTES = {
 	WEBHOOK: '/webhook',
 } as const;
 
+export const PLATFORM_FINANCE_ROUTES = {
+	ROOT: '/admin/finance',
+	SUMMARY: '/summary',
+} as const;
+
 export const ROUTES = {
 	ROOT: SYSTEM_ROUTES.ROOT,
 	HEALTH: SYSTEM_ROUTES.HEALTH,
@@ -26,7 +31,10 @@ export const ROUTES = {
 	STATUS_BY_RESTAURANT: SUBSCRIPTION_ROUTES.STATUS_BY_RESTAURANT,
 	WEBHOOK: SUBSCRIPTION_ROUTES.WEBHOOK,
 	SUBSCRIPTIONS: SUBSCRIPTION_ROUTES,
+	PLATFORM_FINANCE_SUMMARY: PLATFORM_FINANCE_ROUTES.SUMMARY,
 } as const;
 
 export type SystemRoute = (typeof SYSTEM_ROUTES)[keyof typeof SYSTEM_ROUTES];
 export type SubscriptionRoute = (typeof SUBSCRIPTION_ROUTES)[keyof typeof SUBSCRIPTION_ROUTES];
+export type PlatformFinanceRoute =
+	(typeof PLATFORM_FINANCE_ROUTES)[keyof typeof PLATFORM_FINANCE_ROUTES];

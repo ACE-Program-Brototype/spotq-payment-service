@@ -1,10 +1,10 @@
 export interface GetPlatformFinanceSummaryOutputDTO {
 	currency: string;
-	masterBalancePaise: bigint;
-	todayTurnoverPaise: bigint;
-	tonightEodPayoutQueuePaise: bigint;
-	lifetimeDisbursedPaise: bigint;
-	totalRefundsProcessedPaise: bigint;
-	saasSubscriptionMrrPaise: bigint;
+	masterBalancePaise: string;
+	todayTurnoverPaise: string;
+	tonightEodPayoutQueuePaise: string;
+	lifetimeDisbursedPaise: string;
+	totalRefundsProcessedPaise: string;
+	saasSubscriptionMrrPaise: string;
 	activeVenuesCount: number;
 }

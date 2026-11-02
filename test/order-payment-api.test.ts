@@ -91,7 +91,7 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 			expect(res.body.success).toBe(false);
 		});
 
-		it('should create gateway order successfully on /api/internal/v1/payments/orders/create-gateway-order (201 Created)', async () => {
+		it('should create gateway order successfully on /api/internal/v1/payments/orders (201 Created)', async () => {
 			jest.spyOn(paymentTransactionRepository, 'findByCustomerOrderId').mockResolvedValueOnce(null);
 			jest.spyOn(razorpayGateway, 'createOrder').mockResolvedValueOnce({
 				orderId: mockRazorpayOrderId,

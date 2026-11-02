@@ -16,7 +16,7 @@ export const SUBSCRIPTION_ROUTES = {
 
 export const INTERNAL_ROUTES = {
 	BASE: '/api/internal/v1',
-	CREATE_GATEWAY_ORDER: '/payments/orders/create-gateway-order',
+	CREATE_GATEWAY_ORDER: '/payments/orders',
 } as const;
 
 export const ORDER_PAYMENT_ROUTES = {

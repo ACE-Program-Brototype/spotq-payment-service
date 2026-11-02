@@ -1,5 +1,5 @@
 import type { PlatformLedgerTransactionType } from '@domain/constants/platform-ledger-transaction.constants.ts';
-import type { PlatformLedgerTransaction } from '@prisma/client';
+import type { PlatformLedgerTransaction } from '@domain/entities/platform-ledger-transaction.entity';
 
 export interface PlatformLedgerQuery {
 	page: number;

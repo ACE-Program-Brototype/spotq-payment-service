@@ -3,6 +3,7 @@ import type { PlatformLedgerTransactionType } from '@domain/constants/platform-l
 export interface PlatformLedgerTransactionProps {
 	id: string;
 	type: PlatformLedgerTransactionType;
+	platformWalletId: string;
 	amountPaise: bigint;
 	runningBalancePaise: bigint;
 	restaurantId: string | null;

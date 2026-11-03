@@ -3,8 +3,9 @@ import { GetPlatformFinanceSummaryMapper } from '@application/mappers/platform-f
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port';
 import { TYPES } from '@di/types';
 import type { IFinanceQueryRepository } from '@domain/repositories/finance-query.repository.interface';
-import { inject } from 'inversify';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class GetPlatformFinanceSummaryUseCase implements IGetPlatformFinanceSummaryUseCase {
 	constructor(
 		@inject(TYPES.Repositories.FinanceQueryRepository)

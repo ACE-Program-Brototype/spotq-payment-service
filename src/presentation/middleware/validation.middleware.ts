@@ -4,6 +4,22 @@ import type { NextFunction, Request, Response } from 'express';
 import type { ZodType } from 'zod';
 import { z } from 'zod';
 
+function sendValidationError(
+	res: Response,
+	error: z.ZodError,
+	statusCode: HttpStatusCode,
+	fallbackField: string,
+): void {
+	const formattedErrors = error.issues.map((issue) => ({
+		field: issue.path.length > 0 ? issue.path.join('.') : fallbackField,
+		message: issue.message,
+	}));
+
+	res
+		.status(statusCode)
+		.json(ApiResponse.error('VALIDATION_ERROR', MESSAGES.VALIDATION_ERROR, formattedErrors));
+}
+
 export const validate = (schema: ZodType) => {
 	return (req: Request, res: Response, next: NextFunction): void => {
 		const result = schema.safeParse(req.body);
@@ -31,14 +47,7 @@ export function validateRequestBody(schema: ZodType) {
 			next();
 		} catch (error) {
 			if (error instanceof z.ZodError) {
-				const formattedErrors = error.issues.map((issue) => ({
-					field: issue.path.length > 0 ? issue.path.join('.') : 'body',
-					message: issue.message,
-				}));
-
-				res
-					.status(HTTP_STATUS.UNPROCESSABLE_ENTITY)
-					.json(ApiResponse.error('VALIDATION_ERROR', MESSAGES.VALIDATION_ERROR, formattedErrors));
+				sendValidationError(res, error, HTTP_STATUS.UNPROCESSABLE_ENTITY, 'body');
 				return;
 			}
 			next(error);
@@ -57,14 +66,7 @@ export function validateRequestQuery(
 			next();
 		} catch (error) {
 			if (error instanceof z.ZodError) {
-				const formattedErrors = error.issues.map((issue) => ({
-					field: issue.path.length > 0 ? issue.path.join('.') : 'query',
-					message: issue.message,
-				}));
-
-				res
-					.status(errorStatusCode)
-					.json(ApiResponse.error('VALIDATION_ERROR', MESSAGES.VALIDATION_ERROR, formattedErrors));
+				sendValidationError(res, error, errorStatusCode, 'query');
 				return;
 			}
 			next(error);
@@ -81,14 +83,7 @@ export function validateRequestParams(schema: ZodType) {
 			next();
 		} catch (error) {
 			if (error instanceof z.ZodError) {
-				const formattedErrors = error.issues.map((issue) => ({
-					field: issue.path.length > 0 ? issue.path.join('.') : 'params',
-					message: issue.message,
-				}));
-
-				res
-					.status(HTTP_STATUS.UNPROCESSABLE_ENTITY)
-					.json(ApiResponse.error('VALIDATION_ERROR', MESSAGES.VALIDATION_ERROR, formattedErrors));
+				sendValidationError(res, error, HTTP_STATUS.UNPROCESSABLE_ENTITY, 'params');
 				return;
 			}
 			next(error);

@@ -2,10 +2,10 @@ import type { PlatformLedgerTransactionType } from '@domain/constants/platform-l
 import type { PlatformLedgerTransaction } from '@domain/entities/platform-ledger-transaction.entity';
 
 export interface PlatformLedgerQuery {
-	page: number;
-	limit: number;
+	page?: number;
+	limit?: number;
 	search?: string;
-	type?: 'ALL' | PlatformLedgerTransactionType;
+	type?: PlatformLedgerTransactionType;
 	restaurantId?: string;
 	startDate?: string;
 	endDate?: string;
@@ -13,11 +13,7 @@ export interface PlatformLedgerQuery {
 
 export interface PlatformLedgerPage {
 	entries: PlatformLedgerTransaction[];
-	pagination: {
-		page: number;
-		totalPages: number;
-		limit: number;
-	};
+	pagination: { page: number; totalPages: number; limit: number } | null;
 }
 
 export interface IPlatformLedgerTransactionRepository {

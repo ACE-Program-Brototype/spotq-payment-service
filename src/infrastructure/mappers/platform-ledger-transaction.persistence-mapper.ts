@@ -12,16 +12,16 @@ export const PlatformLedgerTransactionPersistenceMapper = {
 	toPaginatedDomain(
 		records: PlatformLedgerTransactionProps[],
 		totalRecords: number,
-		page: number,
-		limit: number,
+		page?: number,
+		limit?: number,
 	): PlatformLedgerPage {
+		const pagination =
+			limit === undefined
+				? null
+				: { page: page ?? 1, totalPages: Math.ceil(totalRecords / limit), limit };
 		return {
 			entries: records.map(PlatformLedgerTransactionPersistenceMapper.toDomain),
-			pagination: {
-				page,
-				totalPages: Math.ceil(totalRecords / limit),
-				limit,
-			},
+			pagination,
 		};
 	},
 };

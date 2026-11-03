@@ -5,7 +5,7 @@ export const TYPES = {
 		PaymentTransactionRepository: Symbol.for('IPaymentTransactionRepository'),
 		OutboxRepository: Symbol.for('IOutboxRepository'),
 		BillingInvoiceRepository: Symbol.for('IBillingInvoiceRepository'),
-		FinanceQueryRepository: Symbol.for('FinanceQueryRepository'),
+		FinanceQueryRepository: Symbol.for('IFinanceQueryRepository'),
 		PlatformLedgerTransactionRepository: Symbol.for('IPlatformLedgerTransactionRepository'),
 	},
 	Gateways: {

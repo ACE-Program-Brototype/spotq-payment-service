@@ -2,9 +2,13 @@ import type {
 	IFinanceQueryRepository,
 	PlatformFinanceSummaryReadModel,
 } from '@domain/repositories/finance-query.repository.interface';
+import { PersistenceError } from '@infrastructure/errors/persistence.error.ts';
 import { Prisma } from '@prisma/client';
+import { MESSAGES } from '@shared/constants/message.constants.ts';
+import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository';
 
+@injectable()
 export class PrismaFinanceQueryRepository
 	extends PrismaBaseRepository
 	implements IFinanceQueryRepository
@@ -125,7 +129,7 @@ export class PrismaFinanceQueryRepository
 		const [summary] = await this.prisma.$queryRaw<PlatformFinanceSummaryReadModel[]>(query);
 
 		if (!summary) {
-			throw new Error('Failed to retrieve platform finance summary');
+			throw new PersistenceError(MESSAGES.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED);
 		}
 
 		return summary;

@@ -34,6 +34,10 @@ export class PlatformLedgerTransaction {
 		return this.props.restaurantId;
 	}
 
+	get platformWalletId(): string {
+		return this.props.platformWalletId;
+	}
+
 	get referenceId(): string | null {
 		return this.props.referenceId;
 	}

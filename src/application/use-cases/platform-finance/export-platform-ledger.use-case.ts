@@ -1,4 +1,5 @@
-import type { ExportPlatfromLedgerInputDTO } from '@application/dtos/platform-finance/export-platform-ledger.dto';
+import type { ExportPlatformLedgerInputDTO } from '@application/dtos/platform-finance/export-platform-ledger.dto';
+import { PlatformLedgerEntryMapper } from '@application/mappers/platform-finance/platform-ledger-entry.mapper';
 import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port';
 import { TYPES } from '@di/types';
 import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/platform-ledger-transaction.repository.interface';
@@ -24,24 +25,18 @@ export class ExportPlatformLedgerUseCase implements IExportPlatformLedgerUseCase
 		private readonly repository: IPlatformLedgerTransactionRepository,
 	) {}
 
-	async execute(input: ExportPlatfromLedgerInputDTO): Promise<string> {
-		const result = await this.repository.findManyPaginated(input);
+	async execute(input: ExportPlatformLedgerInputDTO): Promise<string> {
+		const result = await this.repository.findManyPaginated({
+			search: input.search,
+			type: input.type,
+			restaurantId: input.restaurantId,
+			startDate: input.startDate,
+			endDate: input.endDate,
+		});
 
-		const rows = result.entries.map((entry) => ({
-			id: entry.id,
-			type: entry.type,
-			amountPaise: entry.amountPaise.toString(),
-			runningBalancePaise: entry.runningBalancePaise.toString(),
-			restaurantId: entry.restaurantId,
-			referenceId: entry.referenceId,
-			createdAt: entry.createdAt.toISOString(),
-		}));
+		const rows = result.entries.map(PlatformLedgerEntryMapper.toDto);
 
 		return [
-			['page', csvCell(result.pagination.page.toString())].join(','),
-			['limit', csvCell(result.pagination.limit.toString())].join(','),
-			['totalPages', csvCell(result.pagination.totalPages.toString())].join(','),
-			'',
 			columns.join(','),
 			...rows.map((row) => columns.map((key) => csvCell(row[key])).join(',')),
 		].join('\r\n');

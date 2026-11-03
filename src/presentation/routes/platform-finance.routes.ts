@@ -3,7 +3,8 @@ import { adminAuthMiddleware } from '@presentation/middleware/admin-auth.middlew
 import { validateRequestQuery } from '@presentation/middleware/validation.middleware';
 import { PLATFORM_FINANCE_ROUTES } from '@shared/constants/routes.constants.ts';
 import { Router } from 'express';
-import { getPlatformMasterLedgerQuerySchema } from '../validators/platform-finance/get-platform-master-ledger.validtor.ts';
+import { exportPlatformMasterLedgerQuerySchema } from '../validators/platform-finance/export-platform-master-ledger.validator.ts';
+import { getPlatformMasterLedgerQuerySchema } from '../validators/platform-finance/get-platform-master-ledger.validator.ts';
 
 export const platformFinanceRouter = Router();
 
@@ -19,6 +20,6 @@ platformFinanceRouter.get(
 
 platformFinanceRouter.get(
 	PLATFORM_FINANCE_ROUTES.LEDGER_CSV,
-	validateRequestQuery(getPlatformMasterLedgerQuerySchema),
+	validateRequestQuery(exportPlatformMasterLedgerQuerySchema),
 	platformFinanceController.exportLedgerCsv,
 );

@@ -1,18 +1,10 @@
-import { PLATFORM_LEDGER_TRANSACTION_TYPES } from '@domain/constants/platform-ledger-transaction.constants';
-
-export const PLATFORM_LEDGER_FILTER_TYPES = {
-	ALL: 'ALL',
-	...PLATFORM_LEDGER_TRANSACTION_TYPES,
-} as const;
-
-export type PlatformLedgerFilterType =
-	(typeof PLATFORM_LEDGER_FILTER_TYPES)[keyof typeof PLATFORM_LEDGER_FILTER_TYPES];
+import type { PlatformLedgerTransactionType } from '@domain/constants/platform-ledger-transaction.constants';
 
 export interface GetPlatformMasterLedgerInputDTO {
-	page: number;
-	limit: number;
+	page?: number;
+	limit?: number;
 	search?: string;
-	type?: PlatformLedgerFilterType;
+	type?: PlatformLedgerTransactionType;
 	restaurantId?: string;
 	startDate?: string;
 	endDate?: string;
@@ -28,9 +20,5 @@ export interface GetPlatformMasterLedgerOutputDTO {
 		referenceId: string | null;
 		createdAt: string;
 	}>;
-	pagination: {
-		page: number;
-		totalPages: number;
-		limit: number;
-	};
+	pagination: { page: number; totalPages: number; limit: number } | null;
 }

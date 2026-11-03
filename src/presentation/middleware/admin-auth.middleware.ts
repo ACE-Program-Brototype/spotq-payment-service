@@ -1,12 +1,6 @@
 import { HTTP_STATUS, MESSAGES } from '@shared/constants';
-import { ErrorResponse } from '@shared/index';
-import type { AuthenticatedUser } from '@shared/types/express';
+import { ErrorResponse, sendErrorResponse } from '@shared/index';
 import type { NextFunction, Request, Response } from 'express';
-
-export interface AuthenticatedAdminRequest extends Request {
-	user?: AuthenticatedUser;
-	userId?: string;
-}
 
 function getHeaderValue(header: string | string[] | undefined): string | undefined {
 	if (Array.isArray(header)) {
@@ -21,11 +15,7 @@ export function adminAuthMiddleware(req: Request, res: Response, next: NextFunct
 	const userId = getHeaderValue(req.headers['x-user-id']);
 
 	if (!userId) {
-		res
-			.status(HTTP_STATUS.UNAUTHORIZED)
-			.json(
-				new ErrorResponse(MESSAGES.GATEWAY_UNAUTHORIZED, 'UNAUTHORIZED', HTTP_STATUS.UNAUTHORIZED),
-			);
+		sendErrorResponse(res, 'UNAUTHORIZED', MESSAGES.GATEWAY_UNAUTHORIZED, HTTP_STATUS.UNAUTHORIZED);
 		return;
 	}
 
@@ -41,12 +31,12 @@ export function adminAuthMiddleware(req: Request, res: Response, next: NextFunct
 
 	const email = getHeaderValue(req.headers['x-user-email']);
 
-	(req as AuthenticatedAdminRequest).user = {
+	req.user = {
 		userId,
 		email: email || '',
 		role: normalizedRole,
 	};
-	(req as AuthenticatedAdminRequest).userId = userId;
+	req.userId = userId;
 
 	next();
 }

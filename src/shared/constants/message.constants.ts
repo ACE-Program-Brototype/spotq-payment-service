@@ -43,6 +43,14 @@ export enum MessageEnum {
 	PAYMENT_ALREADY_PROCESSED = 'Payment has already been processed',
 	UNAUTHORIZED_RESTAURANT = 'Unauthorized or missing restaurant identification',
 	VALIDATION_ERROR = 'Invalid request parameters',
+
+	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
+	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
+
+	// platform finance
+	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
+	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED = 'Failed to retrieve platform finance summary',
+	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
 }
 
 export const MESSAGES = {
@@ -92,12 +100,13 @@ export const MESSAGES = {
 	PAYMENT_ALREADY_PROCESSED: MessageEnum.PAYMENT_ALREADY_PROCESSED,
 	UNAUTHORIZED_RESTAURANT: MessageEnum.UNAUTHORIZED_RESTAURANT,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
-	GATEWAY_UNAUTHORIZED: 'Unauthorized request from gateway',
-	ADMIN_FORBIDDEN: 'Forbidden: Admin access required',
+	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
+	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
 
 	// platform finance
-	PLATFORM_FINANCE_SUMMARY_FETCHED: 'Platform finance summary retrieved successfully',
-	PLATFORM_MASTER_LEDGER_FETCHED: 'Platform ledger entries retrieved successfully',
+	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,
+	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED: MessageEnum.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED,
+	PLATFORM_MASTER_LEDGER_FETCHED: MessageEnum.PLATFORM_MASTER_LEDGER_FETCHED,
 } as const;
 
 export type Message = (typeof MESSAGES)[keyof typeof MESSAGES];

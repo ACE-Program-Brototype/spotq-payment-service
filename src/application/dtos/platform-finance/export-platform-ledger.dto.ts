@@ -1,3 +1,9 @@
-import type { GetPlatformMasterLedgerInputDTO } from './get-platform-master-ledger.dto';
+import type { PlatformLedgerTransactionType } from '@domain/constants/platform-ledger-transaction.constants';
 
-export type ExportPlatfromLedgerInputDTO = GetPlatformMasterLedgerInputDTO;
+export interface ExportPlatformLedgerInputDTO {
+	search?: string;
+	type?: PlatformLedgerTransactionType;
+	restaurantId?: string;
+	startDate?: string;
+	endDate?: string;
+}

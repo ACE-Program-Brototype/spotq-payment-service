@@ -3,11 +3,16 @@ import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-c
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
-import { CSV_FILENAME_TIMESTAMP_REGEX } from '@shared/constants/regex.constants.ts';
+import {
+	CSV_FILENAME_TIMESTAMP_REGEX,
+	UTF8_BOM,
+	UTF8_BOM_BYTE_LENGTH,
+} from '@shared/constants/regex.constants.ts';
 import { sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
-import type { GetPlatformMasterLedgerQuery } from '../validators/platform-finance/get-platform-master-ledger.validtor.ts';
+import type { ExportPlatformMasterLedgerQuery } from '../validators/platform-finance/export-platform-master-ledger.validator.ts';
+import type { GetPlatformMasterLedgerQuery } from '../validators/platform-finance/get-platform-master-ledger.validator.ts';
 
 @injectable()
 export class PlatformFinanceController {
@@ -34,7 +39,7 @@ export class PlatformFinanceController {
 	};
 
 	exportLedgerCsv = async (_req: Request, res: Response): Promise<void> => {
-		const input = res.locals.query as GetPlatformMasterLedgerQuery;
+		const input = res.locals.query as ExportPlatformMasterLedgerQuery;
 
 		const csv = await this.exportPlatformLedgerUseCase.execute(input);
 
@@ -44,7 +49,7 @@ export class PlatformFinanceController {
 		res.status(HTTP_STATUS.OK);
 		res.setHeader('Content-Type', 'text/csv; charset=utf-8');
 		res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-		res.setHeader('Content-Length', Buffer.byteLength(csv, 'utf8') + 3);
-		res.send(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(csv, 'utf8')]));
+		res.setHeader('Content-Length', Buffer.byteLength(csv, 'utf8') + UTF8_BOM_BYTE_LENGTH);
+		res.send(Buffer.concat([UTF8_BOM, Buffer.from(csv, 'utf8')]));
 	};
 }

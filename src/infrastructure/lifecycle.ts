@@ -12,11 +12,20 @@ import {
 import { databaseService } from './database/index.ts';
 import { logger } from './logger/index.ts';
 import { bullmqService } from './queue/index.ts';
+import type { RabbitMQService } from './rabbitmq/index.ts';
 import { redisService } from './redis/index.ts';
 
 export async function initInfrastructure(): Promise<void> {
 	await databaseService.connect();
 	await redisService.connect();
+
+	try {
+		const rabbitMQService = container.get<RabbitMQService>(TYPES.Services.RabbitMQService);
+		await rabbitMQService.connect();
+	} catch (error) {
+		logger.error({ err: error }, MESSAGES.RABBITMQ_INIT_FAILED);
+		throw error;
+	}
 
 	try {
 		await bullmqService.connect();
@@ -57,5 +66,6 @@ export async function shutdownInfrastructure(): Promise<void> {
 		databaseService.disconnect(),
 		redisService.disconnect(),
 		bullmqService.disconnect(),
+		container.get<RabbitMQService>(TYPES.Services.RabbitMQService).disconnect(),
 	]);
 }

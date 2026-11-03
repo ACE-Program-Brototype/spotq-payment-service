@@ -10,3 +10,4 @@ export * from './repositories/outbox.repository.interface.ts';
 export * from './repositories/payment-transaction.repository.interface.ts';
 export * from './repositories/subscription.repository.interface.ts';
 export * from './repositories/subscription-plan.repository.interface.ts';
+export * from './value-objects/index.ts';

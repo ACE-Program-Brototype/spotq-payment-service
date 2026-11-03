@@ -8,8 +8,9 @@ import { randomUUID } from 'node:crypto';
 import { PaymentStatus, RefundStatus } from '@prisma/client';
 import { prisma } from '../src/infrastructure/database/prisma.ts';
 
+const customRestaurantId = process.argv.slice(2).find((arg) => !arg.startsWith('-'));
 const TARGET_RESTAURANT_ID =
-	process.env.TARGET_RESTAURANT_ID || process.argv[2] || '7bdcbcc9-45dd-425f-92c0-b7b33121a3b1';
+	process.env.TARGET_RESTAURANT_ID || customRestaurantId || '7bdcbcc9-45dd-425f-92c0-b7b33121a3b1';
 
 interface SeedTransactionConfig {
 	orderNumber: string;

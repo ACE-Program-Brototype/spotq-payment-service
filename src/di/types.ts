@@ -5,6 +5,8 @@ export const TYPES = {
 		PaymentTransactionRepository: Symbol.for('IPaymentTransactionRepository'),
 		OutboxRepository: Symbol.for('IOutboxRepository'),
 		BillingInvoiceRepository: Symbol.for('IBillingInvoiceRepository'),
+		FinanceQueryRepository: Symbol.for('IFinanceQueryRepository'),
+		PlatformLedgerTransactionRepository: Symbol.for('IPlatformLedgerTransactionRepository'),
 	},
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
@@ -24,9 +26,13 @@ export const TYPES = {
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
 		VerifyOrderPaymentUseCase: Symbol.for('IVerifyOrderPaymentUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
+		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
+		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
+		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
 		SubscriptionController: Symbol.for('SubscriptionController'),
+		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
 	},
 } as const;

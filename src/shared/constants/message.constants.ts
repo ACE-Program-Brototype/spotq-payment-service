@@ -53,7 +53,14 @@ export enum MessageEnum {
 	ORDER_PAYMENT_STATUS_FETCHED = 'Payment status retrieved successfully',
 	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
-	GATEWAY_UNAUTHORIZED = 'Unauthorized: Missing user authentication',
+
+	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
+	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
+
+	// platform finance
+	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
+	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED = 'Failed to retrieve platform finance summary',
+	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -107,6 +114,7 @@ export const MESSAGES = {
 	SUBSCRIPTION_ORDER_CREATED: MessageEnum.SUBSCRIPTION_ORDER_CREATED,
 	PAYMENT_VERIFIED_SUCCESS: MessageEnum.PAYMENT_VERIFIED_SUCCESS,
 	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
+
 	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
 
 	ACTIVE_SUBSCRIPTION_EXISTS: MessageEnum.ACTIVE_SUBSCRIPTION_EXISTS,
@@ -122,6 +130,12 @@ export const MESSAGES = {
 	ORDER_PAYMENT_NOT_FOUND: MessageEnum.ORDER_PAYMENT_NOT_FOUND,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
+	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
+
+	// platform finance
+	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,
+	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED: MessageEnum.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED,
+	PLATFORM_MASTER_LEDGER_FETCHED: MessageEnum.PLATFORM_MASTER_LEDGER_FETCHED,
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,
 	ORDER_PAYMENT_ALREADY_CAPTURED: MessageEnum.ORDER_PAYMENT_ALREADY_CAPTURED,

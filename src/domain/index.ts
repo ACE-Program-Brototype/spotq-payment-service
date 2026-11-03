@@ -1,5 +1,6 @@
 export * from './entities/billing-invoice.entity.ts';
 export * from './entities/payment-transaction.entity.ts';
+export * from './entities/platform-ledger-transaction.entity.ts';
 export * from './entities/subscription.entity.ts';
 export * from './entities/subscription-plan.entity.ts';
 export * from './errors/payment.errors.ts';
@@ -8,6 +9,7 @@ export * from './repositories/base.repository.interface.ts';
 export * from './repositories/billing-invoice.repository.interface.ts';
 export * from './repositories/outbox.repository.interface.ts';
 export * from './repositories/payment-transaction.repository.interface.ts';
+export * from './repositories/platform-ledger-transaction.repository.interface.ts';
 export * from './repositories/subscription.repository.interface.ts';
 export * from './repositories/subscription-plan.repository.interface.ts';
 export * from './value-objects/index.ts';

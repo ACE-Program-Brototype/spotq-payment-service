@@ -2,7 +2,18 @@ import { ERROR_CODES, HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
 import { sendErrorResponse } from '@shared/response/api-response.ts';
 import type { NextFunction, Request, Response } from 'express';
 
-const ALLOWED_ROLES = new Set(['RESTAURANT_ADMIN', 'RESTAURANT_STAFF']);
+const ALLOWED_ROLES = new Set([
+	'RESTAURANT_OWNER',
+	'RESTAURANT_ADMIN',
+	'RESTAURANT',
+	'OWNER',
+	'ADMIN',
+	'PLATFORM_ADMIN',
+	'SUPER_ADMIN',
+	'STAFF',
+	'RESTAURANT_STAFF',
+	'MANAGER',
+]);
 
 export function restaurantAdminAuthMiddleware(
 	req: Request,
@@ -23,7 +34,9 @@ export function restaurantAdminAuthMiddleware(
 		return;
 	}
 
-	if (!userRole || !ALLOWED_ROLES.has(userRole)) {
+	const normalizedRole = userRole?.toUpperCase().trim();
+
+	if (!normalizedRole || !ALLOWED_ROLES.has(normalizedRole)) {
 		sendErrorResponse(res, MESSAGES.FORBIDDEN_ACCESS, ERROR_CODES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
 		return;
 	}

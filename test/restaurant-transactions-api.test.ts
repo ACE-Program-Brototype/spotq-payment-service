@@ -1,6 +1,6 @@
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
-import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
 import type {
 	PaginatedTransactionsResult,
 	TransactionDetail,

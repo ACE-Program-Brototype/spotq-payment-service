@@ -4,7 +4,7 @@ import {
 	InvalidDateRangeError,
 	TransactionNotFoundError,
 } from '../src/domain/errors/transaction.errors.ts';
-import type { ITransactionQueryRepository } from '../src/domain/repositories/transaction-query.repository.interface.ts';
+import type { ITransactionQueryRepository } from '../src/domain/repositories/i-transaction-query.repository.ts';
 import type {
 	PaginatedTransactionsResult,
 	TransactionDetail,

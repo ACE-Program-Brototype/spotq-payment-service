@@ -22,11 +22,11 @@ import { VerifyPaymentUseCase } from '@application/use-cases/verify-payment.use-
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { ISubscriptionEventProducer } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
-import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';

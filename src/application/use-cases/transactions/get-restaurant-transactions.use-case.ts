@@ -2,10 +2,11 @@ import type {
 	ListTransactionsOutputDTO,
 	ListTransactionsQueryDTO,
 } from '@application/dtos/transactions/list-transactions.dto.ts';
+import { ListTransactionsMapper } from '@application/mappers/transactions/list-transactions.mapper.ts';
 import type { IGetRestaurantTransactionsUseCase } from '@application/ports/use-cases/transactions/get-restaurant-transactions.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { InvalidDateRangeError } from '@domain/errors/transaction.errors.ts';
-import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -39,21 +40,6 @@ export class GetRestaurantTransactionsUseCase implements IGetRestaurantTransacti
 			sortOrder: query.sortOrder,
 		});
 
-		return {
-			transactions: result.transactions.map((tx) => ({
-				id: tx.id,
-				orderId: tx.orderId,
-				orderNumber: tx.orderNumber,
-				customerName: tx.customerName,
-				razorpayPaymentId: tx.razorpayPaymentId,
-				paymentMethod: tx.paymentMethod,
-				amountPaise: tx.amountPaise,
-				amountFormatted: tx.amountFormatted,
-				status: tx.status,
-				settlementStatus: tx.settlementStatus,
-				createdAt: tx.createdAt.toISOString(),
-			})),
-			pagination: result.pagination,
-		};
+		return ListTransactionsMapper.toDTO(result);
 	}
 }

@@ -2,6 +2,7 @@ import type { Config } from 'jest';
 
 const config: Config = {
 	testEnvironment: 'node',
+	maxWorkers: 1,
 	setupFiles: ['<rootDir>/test/setup.ts'],
 	extensionsToTreatAsEsm: ['.ts'],
 	moduleNameMapper: {

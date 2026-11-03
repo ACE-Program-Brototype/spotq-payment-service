@@ -1,16 +1,23 @@
+import type {
+	SortDirection,
+	TransactionPaymentMethod,
+	TransactionQueryStatus,
+	TransactionSortField,
+} from '../enums/transaction.enums.ts';
+
 export interface TransactionFilterParams {
 	restaurantId: string;
 	page: number;
 	limit: number;
 	search?: string | null;
-	status?: string | null;
-	method?: string | null;
+	status?: TransactionQueryStatus | string | null;
+	method?: TransactionPaymentMethod | string | null;
 	startDate?: string | null;
 	endDate?: string | null;
 	minAmount?: number | null;
 	maxAmount?: number | null;
-	sortBy?: 'createdAt' | 'amountPaise';
-	sortOrder?: 'asc' | 'desc';
+	sortBy?: TransactionSortField | 'createdAt' | 'amountPaise';
+	sortOrder?: SortDirection | 'asc' | 'desc';
 }
 
 export interface TransactionSummary {

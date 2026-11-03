@@ -43,6 +43,14 @@ export enum MessageEnum {
 	PAYMENT_ALREADY_PROCESSED = 'Payment has already been processed',
 	UNAUTHORIZED_RESTAURANT = 'Unauthorized or missing restaurant identification',
 	VALIDATION_ERROR = 'Invalid request parameters',
+	TRANSACTIONS_RETRIEVED = 'Transactions retrieved successfully',
+	TRANSACTION_DETAILS_RETRIEVED = 'Transaction details retrieved successfully',
+	TRANSACTION_NOT_FOUND = 'Transaction record not found.',
+	UNAUTHORIZED_ACCESS = 'Authentication token missing or invalid.',
+	FORBIDDEN_ACCESS = 'Access denied. Insufficient permissions.',
+	INVALID_TRANSACTION_ID = 'Invalid transaction ID format.',
+	INVALID_DATE_RANGE = 'Invalid date range: startDate cannot be after endDate',
+	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
 }
 
 export const MESSAGES = {
@@ -91,12 +99,22 @@ export const MESSAGES = {
 	PAYMENT_ALREADY_PROCESSED: MessageEnum.PAYMENT_ALREADY_PROCESSED,
 	UNAUTHORIZED_RESTAURANT: MessageEnum.UNAUTHORIZED_RESTAURANT,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
+	TRANSACTIONS_RETRIEVED: MessageEnum.TRANSACTIONS_RETRIEVED,
+	TRANSACTION_DETAILS_RETRIEVED: MessageEnum.TRANSACTION_DETAILS_RETRIEVED,
+	TRANSACTION_NOT_FOUND: MessageEnum.TRANSACTION_NOT_FOUND,
+	UNAUTHORIZED_ACCESS: MessageEnum.UNAUTHORIZED_ACCESS,
+	FORBIDDEN_ACCESS: MessageEnum.FORBIDDEN_ACCESS,
+	INVALID_TRANSACTION_ID: MessageEnum.INVALID_TRANSACTION_ID,
+	INVALID_DATE_RANGE: MessageEnum.INVALID_DATE_RANGE,
+	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
 } as const;
 
 export type Message = (typeof MESSAGES)[keyof typeof MESSAGES];
 
 export const ERROR_CODES = {
 	UNAUTHORIZED: 'UNAUTHORIZED',
+	FORBIDDEN: 'FORBIDDEN',
+	NOT_FOUND: 'NOT_FOUND',
 	VALIDATION_ERROR: 'VALIDATION_ERROR',
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',

@@ -1,0 +1,95 @@
+export interface TransactionFilterParams {
+	restaurantId: string;
+	page: number;
+	limit: number;
+	search?: string | null;
+	status?: string | null;
+	method?: string | null;
+	startDate?: string | null;
+	endDate?: string | null;
+	minAmount?: number | null;
+	maxAmount?: number | null;
+	sortBy?: 'createdAt' | 'amountPaise';
+	sortOrder?: 'asc' | 'desc';
+}
+
+export interface TransactionSummary {
+	id: string;
+	orderId: string | null;
+	orderNumber: string | null;
+	customerName: string | null;
+	razorpayPaymentId: string | null;
+	paymentMethod: string;
+	amountPaise: number;
+	amountFormatted: string;
+	status: string;
+	settlementStatus: string;
+	createdAt: Date;
+}
+
+export interface PaginationMetadata {
+	currentPage: number;
+	totalPages: number;
+	totalRecords: number;
+	limit: number;
+}
+
+export interface PaginatedTransactionsResult {
+	transactions: TransactionSummary[];
+	pagination: PaginationMetadata;
+}
+
+export interface CustomerContext {
+	name: string | null;
+	phoneMasked: string | null;
+	tableNumber: string | null;
+	tokenNumber: string | null;
+}
+
+export interface BillingBreakdown {
+	subtotalPaise: number;
+	gstPaise: number;
+	discountPaise: number;
+	grandTotalPaise: number;
+}
+
+export interface SettlementDetail {
+	status: string;
+	settlementId: string | null;
+	scheduledPayout: string | null;
+}
+
+export interface RefundDetail {
+	id: string;
+	razorpayRefundId: string;
+	amountPaise: number;
+	amountFormatted: string;
+	currency: string;
+	status: string;
+	reason: string | null;
+	processedAt: Date | null;
+	createdAt: Date;
+}
+
+export interface TransactionDetail {
+	id: string;
+	restaurantId: string;
+	orderId: string | null;
+	orderNumber: string | null;
+	customer: CustomerContext;
+	amountPaise: number;
+	amountFormatted: string;
+	currency: string;
+	status: string;
+	paymentMethod: string;
+	upiVpa: string | null;
+	card: Record<string, unknown> | null;
+	razorpayPaymentId: string | null;
+	razorpayOrderId: string;
+	bankReference: string | null;
+	billingBreakdown: BillingBreakdown;
+	settlement: SettlementDetail;
+	refund: RefundDetail | null;
+	createdAt: Date;
+	updatedAt: Date;
+}

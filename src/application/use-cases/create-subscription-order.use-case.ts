@@ -15,9 +15,9 @@ import type { IBillingInvoiceRepository } from '@domain/repositories/billing-inv
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
+import { ReceiptId } from '@domain/value-objects/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { PAYMENT_STATUS } from '@shared/constants/index.ts';
-import { HYPHEN_REGEX } from '@shared/constants/regex.constants.ts';
 import { inject, injectable, optional } from 'inversify';
 
 /**
@@ -95,7 +95,7 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 			};
 		}
 
-		const receiptId = `rcpt_${input.restaurantId.replace(HYPHEN_REGEX, '').slice(0, 10)}_${Date.now()}`;
+		const receiptId = ReceiptId.forSubscription(input.restaurantId);
 		const orderResult = await this.paymentGateway.createOrder({
 			amountInPaise: plan.pricePaise,
 			currency: plan.currency,
@@ -113,7 +113,7 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 			razorpayOrderId: orderResult.orderId,
 			amountPaise: plan.pricePaise,
 			currency: plan.currency,
-			status: 'CREATED',
+			status: PAYMENT_STATUS.CREATED,
 			metadata: {
 				receiptId,
 				planName: plan.name,

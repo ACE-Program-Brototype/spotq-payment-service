@@ -21,6 +21,10 @@ export enum MessageEnum {
 	BULLMQ_CONNECTION_FAILED = 'BullMQ Connection Failed',
 	BULLMQ_DISCONNECT_ERROR = 'BullMQ Disconnect Error',
 	BULLMQ_INIT_FAILED = 'Failed to initialize BullMQ infrastructure. Shutting down...',
+	RABBITMQ_CONNECTED = 'RabbitMQ Connected',
+	RABBITMQ_DISCONNECTED = 'RabbitMQ Disconnected',
+	RABBITMQ_CONNECTION_ERROR = 'RabbitMQ Connection Error',
+	RABBITMQ_INIT_FAILED = 'Failed to initialize RabbitMQ infrastructure. Shutting down...',
 	RAZORPAY_INITIALIZED = 'Razorpay Initialized',
 	RAZORPAY_INIT_FAILED = 'Failed to initialize Razorpay infrastructure. Shutting down...',
 	RAZORPAY_INITIALIZATION_FAILED = 'Razorpay Initialization Failed',
@@ -42,6 +46,12 @@ export enum MessageEnum {
 	INVALID_PAYMENT_SIGNATURE = 'Invalid payment signature provided',
 	PAYMENT_ALREADY_PROCESSED = 'Payment has already been processed',
 	UNAUTHORIZED_RESTAURANT = 'Unauthorized or missing restaurant identification',
+	CUSTOMER_AUTH_REQUIRED = 'Customer authentication required',
+	CUSTOMER_UNAUTHORIZED = 'Unauthorized customer access',
+	ORDER_GATEWAY_CREATED = 'Payment gateway order created successfully',
+	ORDER_PAYMENT_VERIFIED = 'Payment verified and order captured successfully',
+	ORDER_PAYMENT_STATUS_FETCHED = 'Payment status retrieved successfully',
+	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
@@ -51,6 +61,15 @@ export enum MessageEnum {
 	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED = 'Failed to retrieve platform finance summary',
 	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
+	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
+	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
+	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
+	CANNOT_CAPTURE_FAILED_PAYMENT = 'Cannot capture a payment that has already failed',
+	UNAUTHORIZED_ACCESS = 'Authentication credentials are missing or invalid',
+	FORBIDDEN_ACCESS = 'Access denied: insufficient permissions to perform this action',
+	BAD_REQUEST = 'Bad request: missing or invalid request parameters',
+	RESOURCE_NOT_FOUND = 'The requested resource could not be found',
+	CONFLICT = 'A conflict occurred with the current state of the resource',
 }
 
 export const MESSAGES = {
@@ -76,6 +95,10 @@ export const MESSAGES = {
 	BULLMQ_CONNECTION_FAILED: MessageEnum.BULLMQ_CONNECTION_FAILED,
 	BULLMQ_DISCONNECT_ERROR: MessageEnum.BULLMQ_DISCONNECT_ERROR,
 	BULLMQ_INIT_FAILED: MessageEnum.BULLMQ_INIT_FAILED,
+	RABBITMQ_CONNECTED: MessageEnum.RABBITMQ_CONNECTED,
+	RABBITMQ_DISCONNECTED: MessageEnum.RABBITMQ_DISCONNECTED,
+	RABBITMQ_CONNECTION_ERROR: MessageEnum.RABBITMQ_CONNECTION_ERROR,
+	RABBITMQ_INIT_FAILED: MessageEnum.RABBITMQ_INIT_FAILED,
 	RAZORPAY_INITIALIZED: MessageEnum.RAZORPAY_INITIALIZED,
 	RAZORPAY_INIT_FAILED: MessageEnum.RAZORPAY_INIT_FAILED,
 	RAZORPAY_INITIALIZATION_FAILED: MessageEnum.RAZORPAY_INITIALIZATION_FAILED,
@@ -99,6 +122,12 @@ export const MESSAGES = {
 	INVALID_PAYMENT_SIGNATURE: MessageEnum.INVALID_PAYMENT_SIGNATURE,
 	PAYMENT_ALREADY_PROCESSED: MessageEnum.PAYMENT_ALREADY_PROCESSED,
 	UNAUTHORIZED_RESTAURANT: MessageEnum.UNAUTHORIZED_RESTAURANT,
+	CUSTOMER_AUTH_REQUIRED: MessageEnum.CUSTOMER_AUTH_REQUIRED,
+	CUSTOMER_UNAUTHORIZED: MessageEnum.CUSTOMER_UNAUTHORIZED,
+	ORDER_GATEWAY_CREATED: MessageEnum.ORDER_GATEWAY_CREATED,
+	ORDER_PAYMENT_VERIFIED: MessageEnum.ORDER_PAYMENT_VERIFIED,
+	ORDER_PAYMENT_STATUS_FETCHED: MessageEnum.ORDER_PAYMENT_STATUS_FETCHED,
+	ORDER_PAYMENT_NOT_FOUND: MessageEnum.ORDER_PAYMENT_NOT_FOUND,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
@@ -107,13 +136,27 @@ export const MESSAGES = {
 	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED: MessageEnum.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED,
 	PLATFORM_MASTER_LEDGER_FETCHED: MessageEnum.PLATFORM_MASTER_LEDGER_FETCHED,
+	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
+	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,
+	ORDER_PAYMENT_ALREADY_CAPTURED: MessageEnum.ORDER_PAYMENT_ALREADY_CAPTURED,
+	CANNOT_CAPTURE_FAILED_PAYMENT: MessageEnum.CANNOT_CAPTURE_FAILED_PAYMENT,
+	UNAUTHORIZED_ACCESS: MessageEnum.UNAUTHORIZED_ACCESS,
+	FORBIDDEN_ACCESS: MessageEnum.FORBIDDEN_ACCESS,
+	BAD_REQUEST: MessageEnum.BAD_REQUEST,
+	RESOURCE_NOT_FOUND: MessageEnum.RESOURCE_NOT_FOUND,
+	CONFLICT: MessageEnum.CONFLICT,
 } as const;
+
+export const messages = MESSAGES;
 
 export type Message = (typeof MESSAGES)[keyof typeof MESSAGES];
 
 export const ERROR_CODES = {
 	UNAUTHORIZED: 'UNAUTHORIZED',
+	FORBIDDEN: 'FORBIDDEN',
+	NOT_FOUND: 'NOT_FOUND',
 	VALIDATION_ERROR: 'VALIDATION_ERROR',
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
+	CONFLICT: 'CONFLICT',
 } as const;

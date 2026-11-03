@@ -1,3 +1,4 @@
+import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
@@ -30,6 +31,7 @@ const billingInvoiceRepository = container.get<IBillingInvoiceRepository>(
 	TYPES.Repositories.BillingInvoiceRepository,
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
+const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
 
 describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	const mockPlan = new SubscriptionPlan({
@@ -50,6 +52,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		jest.spyOn(redisService, 'isHealthy').mockResolvedValue(true);
 		jest.spyOn(razorpayGateway, 'isHealthy').mockReturnValue(true);
 		jest.spyOn(bullmqService, 'isHealthy').mockResolvedValue(true);
+		jest.spyOn(outboxRelayService, 'processPendingEvents').mockResolvedValue();
 	});
 
 	afterEach(() => {

@@ -7,12 +7,13 @@ import type {
 } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import type { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
 import {
 	redisService as defaultRedisService,
 	type RedisService,
 } from '@infrastructure/redis/index.ts';
-import { SUBSCRIPTION_EVENTS } from '@shared/constants/index.ts';
-import { inject, injectable, unmanaged } from 'inversify';
+import { PAYMENT_EVENTS, RABBITMQ_QUEUES, SUBSCRIPTION_EVENTS } from '@shared/constants/index.ts';
+import { inject, injectable, optional, unmanaged } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
 export const BASE_RETRY_BACKOFF_MS = 2000;
@@ -32,6 +33,9 @@ export class OutboxRelayService implements IOutboxRelayService {
 		private readonly outboxRepository: IOutboxRepository,
 		@inject(TYPES.Services.SubscriptionEventProducer)
 		private readonly eventProducer: ISubscriptionEventProducer,
+		@inject(TYPES.Services.RabbitMQService)
+		@optional()
+		private readonly rabbitMQService?: RabbitMQService,
 		@unmanaged()
 		redisService?: RedisService,
 	) {
@@ -89,6 +93,29 @@ export class OutboxRelayService implements IOutboxRelayService {
 							...payload,
 							eventId: event.id,
 						});
+					} else if (
+						event.eventType === PAYMENT_EVENTS.ORDER_CAPTURED ||
+						event.eventType === PAYMENT_EVENTS.ORDER_FAILED
+					) {
+						if (!this.rabbitMQService) {
+							throw new Error(
+								`RabbitMQService is not configured to relay order event '${event.eventType}'`,
+							);
+						}
+						const published = await this.rabbitMQService.publishToQueue(
+							RABBITMQ_QUEUES.ORDER_EVENTS,
+							{
+								eventId: event.id,
+								eventType: event.eventType,
+								aggregateId: event.aggregateId,
+								...((event.payload as object) || {}),
+							},
+						);
+						if (!published) {
+							throw new Error(
+								`Failed to publish event '${event.eventType}' to RabbitMQ queue '${RABBITMQ_QUEUES.ORDER_EVENTS}'`,
+							);
+						}
 					} else {
 						logger.warn(
 							{ eventId: event.id, eventType: event.eventType },

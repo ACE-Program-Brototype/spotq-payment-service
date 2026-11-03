@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 import { validateEnv } from './validate-env.ts';
 
-const env = validateEnv();
+export const env = validateEnv();
 
 export const config = {
 	server: {
@@ -25,9 +25,20 @@ export const config = {
 		queuePrefix: env.QUEUE_PREFIX,
 	},
 
+	rabbitmq: {
+		url: env.RABBITMQ_URL,
+		prefetchCount: env.RABBITMQ_PREFETCH_COUNT,
+	},
+
 	razorpay: {
 		keyId: env.RAZORPAY_TEST_API_KEY,
 		keySecret: env.RAZORPAY_TEST_SECRET_KEY,
 		webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+	},
+
+	s2s: {
+		audience: env.S2S_AUDIENCE,
+		orderPublicKey: env.ORDER_S2S_PUBLIC_KEY,
+		privateKey: env.S2S_PRIVATE_KEY,
 	},
 } as const;

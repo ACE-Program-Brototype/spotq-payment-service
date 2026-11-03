@@ -4,7 +4,9 @@ import {
 	MAX_OUTBOX_RETRIES,
 	OutboxRelayService,
 } from '../src/infrastructure/outbox/outbox-relay.service';
+import type { RabbitMQService } from '../src/infrastructure/rabbitmq/rabbitmq.client';
 import type { RedisService } from '../src/infrastructure/redis/redis.service';
+import { RABBITMQ_QUEUES } from '../src/shared/constants';
 
 jest.mock('../src/infrastructure/logger', () => ({
 	logger: {
@@ -46,6 +48,7 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 		relayService = new OutboxRelayService(
 			mockOutboxRepository,
 			mockEventProducer,
+			undefined,
 			mockRedisService,
 		);
 	});
@@ -195,6 +198,153 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 			eventId: 'event-expired-1',
 		});
 		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-expired-1');
+	});
+
+	it('publishes payment.order.captured outbox events to RabbitMQ and marks them PUBLISHED (AC7)', async () => {
+		const mockRabbitMQService = {
+			publishToQueue: jest.fn().mockResolvedValue(true),
+		} as unknown as RabbitMQService;
+
+		const rmqRelayService = new OutboxRelayService(
+			mockOutboxRepository,
+			mockEventProducer,
+			mockRabbitMQService,
+			mockRedisService,
+		);
+
+		const mockEvents = [
+			{
+				id: 'event-order-1',
+				eventType: 'payment.order.captured',
+				aggregateId: 'ord-uuid-1',
+				payload: {
+					paymentId: 'pay-uuid-1',
+					orderId: 'ord-uuid-1',
+					amountPaise: 45000,
+				},
+				status: 'PENDING' as const,
+				retryCount: 0,
+				createdAt: new Date(),
+			},
+		];
+
+		mockOutboxRepository.findPendingEvents.mockResolvedValue(mockEvents);
+		mockOutboxRepository.markPublished.mockResolvedValue(undefined);
+
+		await rmqRelayService.processPendingEvents();
+
+		expect(mockRabbitMQService.publishToQueue).toHaveBeenCalledWith(RABBITMQ_QUEUES.ORDER_EVENTS, {
+			eventId: 'event-order-1',
+			eventType: 'payment.order.captured',
+			aggregateId: 'ord-uuid-1',
+			paymentId: 'pay-uuid-1',
+			orderId: 'ord-uuid-1',
+			amountPaise: 45000,
+		});
+		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-order-1');
+	});
+
+	it('records failure and does not mark published when RabbitMQ publish returns false', async () => {
+		const mockRabbitMQService = {
+			publishToQueue: jest.fn().mockResolvedValue(false),
+		} as unknown as RabbitMQService;
+
+		const rmqRelayService = new OutboxRelayService(
+			mockOutboxRepository,
+			mockEventProducer,
+			mockRabbitMQService,
+			mockRedisService,
+		);
+
+		mockOutboxRepository.findPendingEvents.mockResolvedValue([
+			{
+				id: 'event-order-fail-1',
+				eventType: 'payment.order.captured',
+				aggregateId: 'ord-uuid-1',
+				payload: { paymentId: 'pay-uuid-1', orderId: 'ord-uuid-1' },
+				status: 'PENDING' as const,
+				retryCount: 0,
+				createdAt: new Date(),
+			},
+		]);
+		mockOutboxRepository.recordFailure.mockResolvedValue({ isDeadLetter: false, retryCount: 1 });
+
+		await rmqRelayService.processPendingEvents();
+
+		expect(mockOutboxRepository.markPublished).not.toHaveBeenCalled();
+		expect(mockOutboxRepository.recordFailure).toHaveBeenCalledWith(
+			'event-order-fail-1',
+			expect.stringContaining('Failed to publish event'),
+			expect.any(Number),
+		);
+	});
+
+	it('records failure when rabbitMQService is not configured for order events', async () => {
+		const rmqRelayService = new OutboxRelayService(
+			mockOutboxRepository,
+			mockEventProducer,
+			undefined,
+			mockRedisService,
+		);
+
+		mockOutboxRepository.findPendingEvents.mockResolvedValue([
+			{
+				id: 'event-order-no-rmq',
+				eventType: 'payment.order.captured',
+				aggregateId: 'ord-uuid-1',
+				payload: { orderId: 'ord-uuid-1' },
+				status: 'PENDING' as const,
+				retryCount: 0,
+				createdAt: new Date(),
+			},
+		]);
+		mockOutboxRepository.recordFailure.mockResolvedValue({ isDeadLetter: false, retryCount: 1 });
+
+		await rmqRelayService.processPendingEvents();
+
+		expect(mockOutboxRepository.markPublished).not.toHaveBeenCalled();
+		expect(mockOutboxRepository.recordFailure).toHaveBeenCalledWith(
+			'event-order-no-rmq',
+			expect.stringContaining('RabbitMQService is not configured'),
+			expect.any(Number),
+		);
+	});
+
+	it('publishes payment.order.failed outbox events to RabbitMQ and marks them PUBLISHED', async () => {
+		const mockRabbitMQService = {
+			publishToQueue: jest.fn().mockResolvedValue(true),
+		} as unknown as RabbitMQService;
+
+		const rmqRelayService = new OutboxRelayService(
+			mockOutboxRepository,
+			mockEventProducer,
+			mockRabbitMQService,
+			mockRedisService,
+		);
+
+		mockOutboxRepository.findPendingEvents.mockResolvedValue([
+			{
+				id: 'event-order-failed-1',
+				eventType: 'payment.order.failed',
+				aggregateId: 'ord-uuid-fail-1',
+				payload: { orderId: 'ord-uuid-fail-1', failureReason: 'Payment cancelled by user' },
+				status: 'PENDING' as const,
+				retryCount: 0,
+				createdAt: new Date(),
+			},
+		]);
+		mockOutboxRepository.markPublished.mockResolvedValue(undefined);
+
+		await rmqRelayService.processPendingEvents();
+
+		expect(mockRabbitMQService.publishToQueue).toHaveBeenCalledWith(RABBITMQ_QUEUES.ORDER_EVENTS, {
+			eventId: 'event-order-failed-1',
+			eventType: 'payment.order.failed',
+			aggregateId: 'ord-uuid-fail-1',
+			orderId: 'ord-uuid-fail-1',
+			failureReason: 'Payment cancelled by user',
+		});
+		expect(mockOutboxRepository.markPublished).toHaveBeenCalledWith('event-order-failed-1');
 	});
 
 	it('skips dispatching when another replica holds the distributed lock', async () => {

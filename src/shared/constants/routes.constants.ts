@@ -32,6 +32,13 @@ export const ORDER_PAYMENT_ROUTES = {
 	STATUS: '/orders/:orderId/status',
 } as const;
 
+export const SUBSCRIBER_ROUTES = {
+	BASE: '/subscribers',
+	BY_ID: '/subscribers/:subscriberId',
+	API_V1_BASE: '/api/v1/subscribers',
+	API_V1_BY_ID: '/api/v1/subscribers/:subscriberId',
+} as const;
+
 export const ROUTES = {
 	ROOT: SYSTEM_ROUTES.ROOT,
 	HEALTH: SYSTEM_ROUTES.HEALTH,
@@ -47,6 +54,7 @@ export const ROUTES = {
 	PLATFORM_FINANCE_SUMMARY: PLATFORM_FINANCE_ROUTES.SUMMARY,
 	INTERNAL: INTERNAL_ROUTES,
 	ORDER_PAYMENTS: ORDER_PAYMENT_ROUTES,
+	SUBSCRIBERS: SUBSCRIBER_ROUTES,
 } as const;
 
 export type SystemRoute = (typeof SYSTEM_ROUTES)[keyof typeof SYSTEM_ROUTES];
@@ -55,3 +63,4 @@ export type PlatformFinanceRoute =
 	(typeof PLATFORM_FINANCE_ROUTES)[keyof typeof PLATFORM_FINANCE_ROUTES];
 export type InternalRoute = (typeof INTERNAL_ROUTES)[keyof typeof INTERNAL_ROUTES];
 export type OrderPaymentRoute = (typeof ORDER_PAYMENT_ROUTES)[keyof typeof ORDER_PAYMENT_ROUTES];
+export type SubscriberRoute = (typeof SUBSCRIBER_ROUTES)[keyof typeof SUBSCRIBER_ROUTES];

@@ -69,3 +69,9 @@ export class InvalidPaymentStateTransitionError extends DomainError {
 		super(message, 'INVALID_PAYMENT_STATE_TRANSITION');
 	}
 }
+
+export class SubscriberNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.SUBSCRIBER_NOT_FOUND) {
+		super(message, 'SUBSCRIBER_NOT_FOUND');
+	}
+}

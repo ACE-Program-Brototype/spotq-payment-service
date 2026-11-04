@@ -29,10 +29,13 @@ export const TYPES = {
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
+		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
+		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
 		SubscriptionController: Symbol.for('SubscriptionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
+		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
 	},
 } as const;

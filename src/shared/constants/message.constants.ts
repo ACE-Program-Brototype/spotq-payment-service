@@ -70,6 +70,12 @@ export enum MessageEnum {
 	BAD_REQUEST = 'Bad request: missing or invalid request parameters',
 	RESOURCE_NOT_FOUND = 'The requested resource could not be found',
 	CONFLICT = 'A conflict occurred with the current state of the resource',
+
+	// platform subscribers
+	SUBSCRIBERS_RETRIEVED = 'Subscribers retrieved successfully',
+	SUBSCRIBER_DETAILS_RETRIEVED = 'Subscriber details retrieved successfully',
+	SUBSCRIBER_NOT_FOUND = 'Subscriber not found',
+	INVALID_SUBSCRIBER_ID = 'Invalid subscriber ID format',
 }
 
 export const MESSAGES = {
@@ -145,6 +151,12 @@ export const MESSAGES = {
 	BAD_REQUEST: MessageEnum.BAD_REQUEST,
 	RESOURCE_NOT_FOUND: MessageEnum.RESOURCE_NOT_FOUND,
 	CONFLICT: MessageEnum.CONFLICT,
+
+	// platform subscribers
+	SUBSCRIBERS_RETRIEVED: MessageEnum.SUBSCRIBERS_RETRIEVED,
+	SUBSCRIBER_DETAILS_RETRIEVED: MessageEnum.SUBSCRIBER_DETAILS_RETRIEVED,
+	SUBSCRIBER_NOT_FOUND: MessageEnum.SUBSCRIBER_NOT_FOUND,
+	INVALID_SUBSCRIBER_ID: MessageEnum.INVALID_SUBSCRIBER_ID,
 } as const;
 
 export const messages = MESSAGES;

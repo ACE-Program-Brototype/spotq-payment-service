@@ -1,6 +1,12 @@
 import { healthRouter } from '@modules/health/index.ts';
-import { INTERNAL_ROUTES, PLATFORM_FINANCE_ROUTES, ROUTES } from '@shared/index.ts';
+import {
+	INTERNAL_ROUTES,
+	PLATFORM_FINANCE_ROUTES,
+	ROUTES,
+	SUBSCRIBER_ROUTES,
+} from '@shared/index.ts';
 import { Router } from 'express';
+import { adminSubscriberRouter } from './admin-subscriber.routes.ts';
 import { internalOrderPaymentRouter } from './internal-order-payment.routes.ts';
 import { metricsRouter } from './metrics.routes.ts';
 import { orderPaymentRouter } from './order-payment.routes.ts';
@@ -15,3 +21,5 @@ router.use(ROUTES.ROOT, subscriptionRouter);
 router.use(PLATFORM_FINANCE_ROUTES.ROOT, platformFinanceRouter);
 router.use(ROUTES.ROOT, orderPaymentRouter);
 router.use(INTERNAL_ROUTES.BASE, internalOrderPaymentRouter);
+router.use(SUBSCRIBER_ROUTES.BASE, adminSubscriberRouter);
+router.use(SUBSCRIBER_ROUTES.API_V1_BASE, adminSubscriberRouter);

@@ -41,6 +41,8 @@ describe('Subscription & Payment Use Cases', () => {
 		findById: jest.fn().mockResolvedValue(null),
 		create: jest.fn(),
 		activateSubscriptionWithOutbox: jest.fn(),
+		findSubscribersPaginated: jest.fn(),
+		findSubscriberDetailById: jest.fn(),
 	};
 
 	const mockTxRepo = {

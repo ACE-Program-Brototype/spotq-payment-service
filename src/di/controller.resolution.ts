@@ -1,3 +1,4 @@
+import type { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
 import type { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
 import type { SubscriptionController } from '@presentation/controllers/subscription.controller.ts';
 import { container } from './container.ts';
@@ -9,4 +10,8 @@ export const subscriptionController = container.get<SubscriptionController>(
 
 export const platformFinanceController = container.get<PlatformFinanceController>(
 	TYPES.Controllers.PlatformFinanceController,
+);
+
+export const adminSubscriberController = container.get<AdminSubscriberController>(
+	TYPES.Controllers.AdminSubscriberController,
 );

@@ -264,18 +264,19 @@ export class PrismaSubscriptionRepository
 		const limit = Math.max(1, Math.min(100, params.limit || 10));
 		const skip = (page - 1) * limit;
 
-		const [records, totalItems] = await Promise.all([
-			this.prisma.subscription.findMany({
-				where,
-				orderBy,
-				skip,
-				take: limit,
-				include: {
-					plan: true,
-				},
-			}),
-			this.prisma.subscription.count({ where }),
-		]);
+		const totalItems = await this.prisma.subscription.count({ where });
+		const records =
+			totalItems === 0
+				? []
+				: await this.prisma.subscription.findMany({
+						where,
+						orderBy,
+						skip,
+						take: limit,
+						include: {
+							plan: true,
+						},
+					});
 
 		const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / limit);
 

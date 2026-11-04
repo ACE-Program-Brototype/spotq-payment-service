@@ -41,6 +41,7 @@ export enum MessageEnum {
 	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
 	SUBSCRIPTION_STATUS_FETCHED = 'Subscription status retrieved successfully',
 	PLAN_NOT_FOUND = 'Subscription plan not found',
+	RESTAURANT_WALLET_NOT_FOUND = 'Restaurant wallet not found',
 	ACTIVE_SUBSCRIPTION_EXISTS = 'Restaurant already has an active subscription',
 	PAYMENT_ORDER_NOT_FOUND = 'Payment order not found',
 	INVALID_PAYMENT_SIGNATURE = 'Invalid payment signature provided',
@@ -116,6 +117,7 @@ export const MESSAGES = {
 	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
 
 	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
+	RESTAURANT_WALLET_NOT_FOUND: MessageEnum.RESTAURANT_WALLET_NOT_FOUND,
 
 	ACTIVE_SUBSCRIPTION_EXISTS: MessageEnum.ACTIVE_SUBSCRIPTION_EXISTS,
 	PAYMENT_ORDER_NOT_FOUND: MessageEnum.PAYMENT_ORDER_NOT_FOUND,

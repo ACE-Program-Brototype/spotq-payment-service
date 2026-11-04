@@ -7,6 +7,7 @@ export const TYPES = {
 		BillingInvoiceRepository: Symbol.for('IBillingInvoiceRepository'),
 		FinanceQueryRepository: Symbol.for('IFinanceQueryRepository'),
 		PlatformLedgerTransactionRepository: Symbol.for('IPlatformLedgerTransactionRepository'),
+		RestaurantWalletRepository: Symbol.for('IRestaurantWalletRepository'),
 	},
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
@@ -23,6 +24,7 @@ export const TYPES = {
 		GetOrderPaymentStatusUseCase: Symbol.for('IGetOrderPaymentStatusUseCase'),
 		GetSubscriptionPlansUseCase: Symbol.for('IGetSubscriptionPlansUseCase'),
 		GetSubscriptionStatusUseCase: Symbol.for('IGetSubscriptionStatusUseCase'),
+		GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
 		VerifyOrderPaymentUseCase: Symbol.for('IVerifyOrderPaymentUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),

@@ -3,6 +3,7 @@ import type { IPaymentSubscriptionExpiryService } from '@application/ports/servi
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
 import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases/get-order-payment-status.use-case.port.ts';
+import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use-cases/get-restaurant-wallet-overview.use-case.port.ts';
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
@@ -15,6 +16,7 @@ import {
 	CreateOrderPaymentUseCase,
 	CreateSubscriptionOrderUseCase,
 	GetOrderPaymentStatusUseCase,
+	GetRestaurantWalletOverviewUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
@@ -31,6 +33,7 @@ import type { IFinanceQueryRepository } from '@domain/repositories/finance-query
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/platform-ledger-transaction.repository.interface.ts';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
@@ -42,6 +45,7 @@ import { PrismaFinanceQueryRepository } from '@infrastructure/repositories/prism
 import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
 import { PrismaPaymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
 import { PrismaPlatformLedgerTransactionRepository } from '@infrastructure/repositories/prisma-platform-ledger-transaction.repository.ts';
+import { PrismaRestaurantWalletRepository } from '@infrastructure/repositories/prisma-restaurant-wallet.repository.ts';
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subscription-expiry.service.ts';
@@ -91,6 +95,11 @@ container
 	.inSingletonScope();
 
 container
+	.bind<IRestaurantWalletRepository>(TYPES.Repositories.RestaurantWalletRepository)
+	.to(PrismaRestaurantWalletRepository)
+	.inSingletonScope();
+
+container
 	.bind<IPaymentGateway>(TYPES.Gateways.PaymentGateway)
 	.to(RazorpayGateway)
 	.inSingletonScope();
@@ -126,6 +135,10 @@ container
 container
 	.bind<IGetSubscriptionStatusUseCase>(TYPES.UseCases.GetSubscriptionStatusUseCase)
 	.to(GetSubscriptionStatusUseCase);
+
+container
+	.bind<IGetRestaurantWalletOverviewUseCase>(TYPES.UseCases.GetRestaurantWalletOverviewUseCase)
+	.to(GetRestaurantWalletOverviewUseCase);
 
 container.bind<IHandleWebhookUseCase>(TYPES.UseCases.HandleWebhookUseCase).to(HandleWebhookUseCase);
 

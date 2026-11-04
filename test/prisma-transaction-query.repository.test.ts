@@ -108,7 +108,7 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 			});
 
 			expect(result.transactions).toHaveLength(1);
-			expect(result.transactions[0].amountFormatted).toBe('₹868.00');
+			expect(result.transactions[0].amountPaise).toBe(86800);
 			expect(result.pagination.totalPages).toBe(1);
 			expect(result.pagination.totalRecords).toBe(1);
 		});

@@ -12,7 +12,8 @@ export const GetTransactionDetailMapper = {
 				id: detail.refund.id,
 				razorpayRefundId: detail.refund.razorpayRefundId,
 				amountPaise: detail.refund.amountPaise,
-				amountFormatted: detail.refund.amountFormatted,
+				amountFormatted:
+					detail.refund.amountFormatted || `₹${(detail.refund.amountPaise / 100).toFixed(2)}`,
 				currency: detail.refund.currency,
 				status: detail.refund.status,
 				reason: detail.refund.reason,
@@ -29,7 +30,7 @@ export const GetTransactionDetailMapper = {
 				orderNumber: detail.orderNumber,
 				customer: detail.customer,
 				amountPaise: detail.amountPaise,
-				amountFormatted: detail.amountFormatted,
+				amountFormatted: detail.amountFormatted || `₹${(detail.amountPaise / 100).toFixed(2)}`,
 				currency: detail.currency,
 				status: detail.status,
 				paymentMethod: detail.paymentMethod,

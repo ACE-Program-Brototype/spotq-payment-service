@@ -6,7 +6,7 @@ import { GetTransactionDetailMapper } from '@application/mappers/transactions/ge
 import type { IGetTransactionDetailUseCase } from '@application/ports/use-cases/transactions/get-transaction-detail.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { TransactionNotFoundError } from '@domain/errors/transaction.errors.ts';
-import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()

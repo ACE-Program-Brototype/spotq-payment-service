@@ -28,7 +28,7 @@ export interface TransactionSummary {
 	razorpayPaymentId: string | null;
 	paymentMethod: string;
 	amountPaise: number;
-	amountFormatted: string;
+	amountFormatted?: string;
 	status: string;
 	settlementStatus: string;
 	createdAt: Date;
@@ -70,7 +70,7 @@ export interface RefundDetail {
 	id: string;
 	razorpayRefundId: string;
 	amountPaise: number;
-	amountFormatted: string;
+	amountFormatted?: string;
 	currency: string;
 	status: string;
 	reason: string | null;
@@ -85,7 +85,7 @@ export interface TransactionDetail {
 	orderNumber: string | null;
 	customer: CustomerContext;
 	amountPaise: number;
-	amountFormatted: string;
+	amountFormatted?: string;
 	currency: string;
 	status: string;
 	paymentMethod: string;

@@ -50,6 +50,8 @@ export enum MessageEnum {
 	FORBIDDEN_ACCESS = 'Access denied. Insufficient permissions.',
 	INVALID_TRANSACTION_ID = 'Invalid transaction ID format.',
 	INVALID_DATE_RANGE = 'Invalid date range: startDate cannot be after endDate',
+	INVALID_AMOUNT_RANGE = 'Invalid amount range: minAmount cannot be greater than maxAmount',
+	INVALID_DATE_FORMAT = 'Date must be a valid calendar date in YYYY-MM-DD format',
 	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
 }
 
@@ -106,6 +108,8 @@ export const MESSAGES = {
 	FORBIDDEN_ACCESS: MessageEnum.FORBIDDEN_ACCESS,
 	INVALID_TRANSACTION_ID: MessageEnum.INVALID_TRANSACTION_ID,
 	INVALID_DATE_RANGE: MessageEnum.INVALID_DATE_RANGE,
+	INVALID_AMOUNT_RANGE: MessageEnum.INVALID_AMOUNT_RANGE,
+	INVALID_DATE_FORMAT: MessageEnum.INVALID_DATE_FORMAT,
 	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
 } as const;
 

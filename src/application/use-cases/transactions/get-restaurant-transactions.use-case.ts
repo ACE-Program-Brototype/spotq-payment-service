@@ -6,7 +6,7 @@ import { ListTransactionsMapper } from '@application/mappers/transactions/list-t
 import type { IGetRestaurantTransactionsUseCase } from '@application/ports/use-cases/transactions/get-restaurant-transactions.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { InvalidDateRangeError } from '@domain/errors/transaction.errors.ts';
-import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()

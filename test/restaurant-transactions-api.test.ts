@@ -1,6 +1,6 @@
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
-import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type {
 	PaginatedTransactionsResult,
 	TransactionDetail,
@@ -223,6 +223,38 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			expect(res.body.success).toBe(false);
 			expect(res.body.error).toBe(ERROR_CODES.BAD_REQUEST);
 			expect(res.body.message).toBe(MESSAGES.INVALID_DATE_RANGE);
+		});
+
+		it('should succeed 200 OK when query parameters are empty strings and ignore them', async () => {
+			const res = await request(app)
+				.get(
+					`${TRANSACTION_ROUTES.BASE}?search=&startDate=&endDate=&minAmount=&maxAmount=&status=&method=`,
+				)
+				.set(validHeaders);
+
+			expect(res.status).toBe(HTTP_STATUS.OK);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.transactions).toHaveLength(1);
+		});
+
+		it('should return 422 Unprocessable Entity when minAmount is greater than maxAmount', async () => {
+			const res = await request(app)
+				.get(`${TRANSACTION_ROUTES.BASE}?minAmount=50000&maxAmount=10000`)
+				.set(validHeaders);
+
+			expect(res.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe(ERROR_CODES.VALIDATION_ERROR);
+		});
+
+		it('should return 422 Unprocessable Entity when date is not a valid calendar date', async () => {
+			const res = await request(app)
+				.get(`${TRANSACTION_ROUTES.BASE}?startDate=2026-02-31`)
+				.set(validHeaders);
+
+			expect(res.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe(ERROR_CODES.VALIDATION_ERROR);
 		});
 
 		it('should return 422 Unprocessable Entity when pagination parameters are invalid', async () => {

@@ -14,7 +14,7 @@ export const ListTransactionsMapper = {
 			razorpayPaymentId: tx.razorpayPaymentId,
 			paymentMethod: tx.paymentMethod,
 			amountPaise: tx.amountPaise,
-			amountFormatted: tx.amountFormatted,
+			amountFormatted: tx.amountFormatted || `₹${(tx.amountPaise / 100).toFixed(2)}`,
 			status: tx.status,
 			settlementStatus: tx.settlementStatus,
 			createdAt: tx.createdAt.toISOString(),

@@ -1,4 +1,4 @@
-import type { ITransactionQueryRepository } from '@domain/repositories/i-transaction-query.repository.ts';
+import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type {
 	CustomerContext,
 	PaginatedTransactionsResult,
@@ -11,6 +11,13 @@ import type { PaymentStatus, Prisma } from '@prisma/client';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
+/**
+ * Note on Metadata Contract:
+ * Customer dining snapshot metadata (orderNumber, customerName, billingBreakdown, settlement)
+ * is populated by order payment webhook flows. Real transactions created without this metadata
+ * will gracefully fallback to safe default values or nulls (e.g. customer name as null,
+ * billing subtotal/grandTotal as record.amountPaise, and settlement status as PENDING_EOD).
+ */
 interface TransactionMetadata {
 	orderNumber?: string;
 	customerName?: string;
@@ -89,26 +96,43 @@ export class PrismaTransactionQueryRepository
 
 		if (params.search && params.search.trim().length > 0) {
 			const searchTerm = params.search.trim();
-			where.OR = [
-				{
-					razorpayPaymentId: {
-						contains: searchTerm,
-						mode: 'insensitive',
+			const searchPattern = `%${searchTerm}%`;
+
+			try {
+				const matchingRecords = await this.prisma.$queryRaw<{ id: string }[]>`
+					SELECT id FROM "payment_transactions"
+					WHERE "restaurant_id" = ${params.restaurantId}::uuid
+					AND (
+						"razorpay_payment_id" ILIKE ${searchPattern}
+						OR "razorpay_order_id" ILIKE ${searchPattern}
+						OR "metadata"->>'orderNumber' ILIKE ${searchPattern}
+						OR "metadata"->>'customerName' ILIKE ${searchPattern}
+					)
+				`;
+				const matchedIds = matchingRecords.map((r) => r.id);
+				where.id = { in: matchedIds };
+			} catch {
+				where.OR = [
+					{
+						razorpayPaymentId: {
+							contains: searchTerm,
+							mode: 'insensitive',
+						},
 					},
-				},
-				{
-					metadata: {
-						path: ['orderNumber'],
-						string_contains: searchTerm,
+					{
+						metadata: {
+							path: ['orderNumber'],
+							string_contains: searchTerm,
+						},
 					},
-				},
-				{
-					metadata: {
-						path: ['customerName'],
-						string_contains: searchTerm,
+					{
+						metadata: {
+							path: ['customerName'],
+							string_contains: searchTerm,
+						},
 					},
-				},
-			];
+				];
+			}
 		}
 
 		const sortByField = params.sortBy === 'amountPaise' ? 'amountPaise' : 'createdAt';
@@ -145,7 +169,6 @@ export class PrismaTransactionQueryRepository
 				razorpayPaymentId: record.razorpayPaymentId,
 				paymentMethod,
 				amountPaise: record.amountPaise,
-				amountFormatted: `₹${(record.amountPaise / 100).toFixed(2)}`,
 				status: record.status,
 				settlementStatus,
 				createdAt: record.createdAt,
@@ -212,7 +235,6 @@ export class PrismaTransactionQueryRepository
 				id: firstRefund.id,
 				razorpayRefundId: firstRefund.razorpayRefundId,
 				amountPaise: firstRefund.amountPaise,
-				amountFormatted: `₹${(firstRefund.amountPaise / 100).toFixed(2)}`,
 				currency: firstRefund.currency,
 				status: firstRefund.status,
 				reason: firstRefund.reason,
@@ -228,7 +250,6 @@ export class PrismaTransactionQueryRepository
 			orderNumber: meta.orderNumber || null,
 			customer,
 			amountPaise: record.amountPaise,
-			amountFormatted: `₹${(record.amountPaise / 100).toFixed(2)}`,
 			currency: record.currency,
 			status: record.status,
 			paymentMethod: meta.paymentMethod || 'UPI',

@@ -27,8 +27,8 @@ export function restaurantAdminAuthMiddleware(
 	if (!restaurantId || !userId) {
 		sendErrorResponse(
 			res,
-			MESSAGES.UNAUTHORIZED_ACCESS,
 			ERROR_CODES.UNAUTHORIZED,
+			MESSAGES.UNAUTHORIZED_ACCESS,
 			HTTP_STATUS.UNAUTHORIZED,
 		);
 		return;
@@ -37,7 +37,7 @@ export function restaurantAdminAuthMiddleware(
 	const normalizedRole = userRole?.toUpperCase().trim();
 
 	if (!normalizedRole || !ALLOWED_ROLES.has(normalizedRole)) {
-		sendErrorResponse(res, MESSAGES.FORBIDDEN_ACCESS, ERROR_CODES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+		sendErrorResponse(res, ERROR_CODES.FORBIDDEN, MESSAGES.FORBIDDEN_ACCESS, HTTP_STATUS.FORBIDDEN);
 		return;
 	}
 

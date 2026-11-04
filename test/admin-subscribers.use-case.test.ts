@@ -1,3 +1,4 @@
+import { AdminSubscriberMapper } from '@application/mappers/admin-subscribers/admin-subscriber.mapper.ts';
 import { GetAdminSubscriberDetailsUseCase } from '@application/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.ts';
 import { GetAdminSubscribersUseCase } from '@application/use-cases/admin-subscribers/get-admin-subscribers.use-case.ts';
 import { SubscriberNotFoundError } from '@domain/errors/payment.errors.ts';
@@ -172,6 +173,54 @@ describe('Admin Subscribers Use Cases', () => {
 					subscriberId: 'non-existent-id',
 				}),
 			).rejects.toThrow(SubscriberNotFoundError);
+		});
+	});
+
+	describe('AdminSubscriberMapper', () => {
+		it('should map subscriber summary to DTO with ISO date strings', () => {
+			const dto = AdminSubscriberMapper.toSummaryDto(mockSubscriberSummary);
+
+			expect(dto.id).toBe(mockSubscriberSummary.id);
+			expect(dto.currentPeriodStart).toBe('2026-09-01T00:00:00.000Z');
+			expect(dto.currentPeriodEnd).toBe('2026-10-01T00:00:00.000Z');
+			expect(dto.canceledAt).toBeNull();
+			expect(dto.plan.code).toBe('QUEUE_PRO');
+		});
+
+		it('should map subscriber details including transactions and invoices to DTO', () => {
+			const detail = {
+				...mockSubscriberSummary,
+				transactions: [
+					{
+						id: 'tx-1',
+						amountPaise: 149900,
+						currency: 'INR',
+						status: 'SUCCESS',
+						razorpayOrderId: 'order-1',
+						razorpayPaymentId: 'pay-1',
+						createdAt: mockDate,
+					},
+				],
+				invoices: [
+					{
+						id: 'inv-1',
+						invoiceNumber: 'INV-001',
+						amountPaise: 149900,
+						currency: 'INR',
+						status: 'PAID',
+						paidAt: mockDate,
+						createdAt: mockDate,
+					},
+				],
+			};
+
+			const dto = AdminSubscriberMapper.toDetailsDto(detail);
+
+			expect(dto.id).toBe(detail.id);
+			expect(dto.transactions).toHaveLength(1);
+			expect(dto.transactions[0].id).toBe('tx-1');
+			expect(dto.invoices).toHaveLength(1);
+			expect(dto.invoices[0].invoiceNumber).toBe('INV-001');
 		});
 	});
 });

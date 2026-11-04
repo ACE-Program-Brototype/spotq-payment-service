@@ -21,6 +21,24 @@ export const TRANSACTION_ROUTES = {
 	API_V1_BY_ID: '/api/v1/payments/transactions/:id',
 } as const;
 
+export const PLATFORM_FINANCE_ROUTES = {
+	ROOT: '/admin/finance',
+	SUMMARY: '/summary',
+	LEDGER: '/ledger',
+	LEDGER_CSV: '/ledger/export.csv',
+} as const;
+
+export const INTERNAL_ROUTES = {
+	BASE: '/api/internal/v1',
+	CREATE_GATEWAY_ORDER: '/payments/orders',
+} as const;
+
+export const ORDER_PAYMENT_ROUTES = {
+	CREATE_GATEWAY_ORDER: `${INTERNAL_ROUTES.BASE}${INTERNAL_ROUTES.CREATE_GATEWAY_ORDER}`,
+	VERIFY: '/orders/verify',
+	STATUS: '/orders/:orderId/status',
+} as const;
+
 export const ROUTES = {
 	ROOT: SYSTEM_ROUTES.ROOT,
 	HEALTH: SYSTEM_ROUTES.HEALTH,
@@ -34,8 +52,15 @@ export const ROUTES = {
 	WEBHOOK: SUBSCRIPTION_ROUTES.WEBHOOK,
 	SUBSCRIPTIONS: SUBSCRIPTION_ROUTES,
 	TRANSACTIONS: TRANSACTION_ROUTES,
+	PLATFORM_FINANCE_SUMMARY: PLATFORM_FINANCE_ROUTES.SUMMARY,
+	INTERNAL: INTERNAL_ROUTES,
+	ORDER_PAYMENTS: ORDER_PAYMENT_ROUTES,
 } as const;
 
 export type SystemRoute = (typeof SYSTEM_ROUTES)[keyof typeof SYSTEM_ROUTES];
 export type SubscriptionRoute = (typeof SUBSCRIPTION_ROUTES)[keyof typeof SUBSCRIPTION_ROUTES];
 export type TransactionRoute = (typeof TRANSACTION_ROUTES)[keyof typeof TRANSACTION_ROUTES];
+export type PlatformFinanceRoute =
+	(typeof PLATFORM_FINANCE_ROUTES)[keyof typeof PLATFORM_FINANCE_ROUTES];
+export type InternalRoute = (typeof INTERNAL_ROUTES)[keyof typeof INTERNAL_ROUTES];
+export type OrderPaymentRoute = (typeof ORDER_PAYMENT_ROUTES)[keyof typeof ORDER_PAYMENT_ROUTES];

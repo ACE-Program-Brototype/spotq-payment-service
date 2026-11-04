@@ -45,3 +45,27 @@ export class UnauthorizedRestaurantError extends DomainError {
 		super(message, 'UNAUTHORIZED_RESTAURANT');
 	}
 }
+
+export class OrderPaymentNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.ORDER_PAYMENT_NOT_FOUND) {
+		super(message, 'ORDER_PAYMENT_NOT_FOUND');
+	}
+}
+
+export class CustomerUnauthorizedError extends DomainError {
+	constructor(message: string = MESSAGES.CUSTOMER_UNAUTHORIZED) {
+		super(message, 'CUSTOMER_UNAUTHORIZED');
+	}
+}
+
+export class OrderPaymentAlreadyCapturedError extends DomainError {
+	constructor(message: string = MESSAGES.ORDER_PAYMENT_ALREADY_CAPTURED) {
+		super(message, 'PAYMENT_ALREADY_PROCESSED');
+	}
+}
+
+export class InvalidPaymentStateTransitionError extends DomainError {
+	constructor(message: string = MESSAGES.CANNOT_CAPTURE_FAILED_PAYMENT) {
+		super(message, 'INVALID_PAYMENT_STATE_TRANSITION');
+	}
+}

@@ -1,4 +1,5 @@
 export * from './entities/billing-invoice.entity.ts';
+export * from './entities/payment-refund.entity.ts';
 export * from './entities/payment-transaction.entity.ts';
 export * from './entities/platform-ledger-transaction.entity.ts';
 export * from './entities/subscription.entity.ts';

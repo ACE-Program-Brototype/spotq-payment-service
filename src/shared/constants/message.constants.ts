@@ -70,6 +70,13 @@ export enum MessageEnum {
 	BAD_REQUEST = 'Bad request: missing or invalid request parameters',
 	RESOURCE_NOT_FOUND = 'The requested resource could not be found',
 	CONFLICT = 'A conflict occurred with the current state of the resource',
+	REFUND_PROCESSED = 'Refund processed successfully and reversal initiated',
+	PAYMENT_ALREADY_REFUNDED = 'Payment transaction has already been refunded',
+	CANNOT_REFUND_UNCAPTURED_PAYMENT = 'Cannot refund payment that is not captured',
+	REFUND_AMOUNT_EXCEEDS_BALANCE = 'Requested refund amount exceeds refundable balance',
+	REFUND_AMOUNT_INVALID = 'Refund amount does not match transaction amount',
+	REFUND_GATEWAY_ERROR = 'Payment gateway refund request failed',
+	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is required',
 }
 
 export const MESSAGES = {
@@ -145,6 +152,13 @@ export const MESSAGES = {
 	BAD_REQUEST: MessageEnum.BAD_REQUEST,
 	RESOURCE_NOT_FOUND: MessageEnum.RESOURCE_NOT_FOUND,
 	CONFLICT: MessageEnum.CONFLICT,
+	REFUND_PROCESSED: MessageEnum.REFUND_PROCESSED,
+	PAYMENT_ALREADY_REFUNDED: MessageEnum.PAYMENT_ALREADY_REFUNDED,
+	CANNOT_REFUND_UNCAPTURED_PAYMENT: MessageEnum.CANNOT_REFUND_UNCAPTURED_PAYMENT,
+	REFUND_AMOUNT_EXCEEDS_BALANCE: MessageEnum.REFUND_AMOUNT_EXCEEDS_BALANCE,
+	REFUND_AMOUNT_INVALID: MessageEnum.REFUND_AMOUNT_INVALID,
+	REFUND_GATEWAY_ERROR: MessageEnum.REFUND_GATEWAY_ERROR,
+	IDEMPOTENCY_KEY_REQUIRED: MessageEnum.IDEMPOTENCY_KEY_REQUIRED,
 } as const;
 
 export const messages = MESSAGES;
@@ -159,4 +173,6 @@ export const ERROR_CODES = {
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
 	CONFLICT: 'CONFLICT',
+	UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
+	BAD_GATEWAY: 'BAD_GATEWAY',
 } as const;

@@ -2,9 +2,11 @@ import crypto from 'node:crypto';
 import { config } from '@config/index.ts';
 import type {
 	CreateOrderParams,
+	CreateRefundParams,
 	IPaymentGateway,
 	PaymentDetailsResult,
 	PaymentOrderResult,
+	PaymentRefundResult,
 	VerifyPaymentSignatureParams,
 } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
@@ -130,5 +132,25 @@ export class RazorpayGateway implements IPaymentGateway {
 
 		const payment = await this.client.payments.fetch(paymentId);
 		return payment as unknown as PaymentDetailsResult;
+	}
+
+	async createRefund(params: CreateRefundParams): Promise<PaymentRefundResult> {
+		if (!this.client) {
+			throw new Error('Razorpay client is not initialized');
+		}
+
+		const refund = await this.client.payments.refund(params.paymentId, {
+			amount: params.amountInPaise,
+			notes: params.notes,
+		});
+
+		return {
+			refundId: refund.id,
+			paymentId: refund.payment_id,
+			amount: Number(refund.amount),
+			currency: refund.currency,
+			status: refund.status,
+			arn: (refund as unknown as { arn?: string }).arn,
+		};
 	}
 }

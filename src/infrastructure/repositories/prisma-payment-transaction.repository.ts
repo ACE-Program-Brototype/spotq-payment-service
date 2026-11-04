@@ -1,16 +1,30 @@
+import { PaymentRefund } from '@domain/entities/payment-refund.entity.ts';
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
-import { PaymentOrderNotFoundError } from '@domain/errors/payment.errors.ts';
+import {
+	PaymentAlreadyRefundedError,
+	PaymentOrderNotFoundError,
+} from '@domain/errors/payment.errors.ts';
 import type {
 	CaptureOrderPaymentWithOutboxParams,
 	CreatePaymentTransactionInput,
 	FailOrderPaymentWithOutboxParams,
 	IPaymentTransactionRepository,
+	ProcessOrderRefundParams,
+	ProcessOrderRefundResult,
+	SyncRefundFromWebhookParams,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
-import type { Prisma, PaymentTransaction as PrismaPaymentTransaction } from '@prisma/client';
+import type {
+	Prisma,
+	PaymentRefund as PrismaPaymentRefund,
+	PaymentTransaction as PrismaPaymentTransaction,
+} from '@prisma/client';
 import {
+	DEFAULT_PAYMENT_METHOD,
+	INVOICE_STATUS,
 	OUTBOX_STATUS,
 	PAYMENT_STATUS,
 	PENDING_ORDER_REUSE_WINDOW_MS,
+	REFUND_STATUS,
 } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
@@ -39,6 +53,32 @@ export class PrismaPaymentTransactionRepository
 			createdAt: record.createdAt,
 			updatedAt: record.updatedAt,
 		});
+	}
+
+	private mapRefundToDomain(record: PrismaPaymentRefund): PaymentRefund {
+		return new PaymentRefund({
+			id: record.id,
+			paymentTransactionId: record.paymentTransactionId,
+			razorpayRefundId: record.razorpayRefundId,
+			amountPaise: record.amountPaise,
+			currency: record.currency,
+			status: record.status,
+			reason: record.reason,
+			arn: record.arn,
+			paymentMethod: record.paymentMethod,
+			destination: record.destination,
+			createdAt: record.createdAt,
+			processedAt: record.processedAt,
+		});
+	}
+
+	async findById(id: string): Promise<PaymentTransaction | null> {
+		const record = await this.prisma.paymentTransaction.findUnique({
+			where: { id },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
 	}
 
 	async findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null> {
@@ -191,6 +231,142 @@ export class PrismaPaymentTransactionRepository
 			});
 
 			return this.mapToDomain(updated);
+		});
+	}
+
+	async processOrderRefund(params: ProcessOrderRefundParams): Promise<ProcessOrderRefundResult> {
+		return await this.prisma.$transaction(async (tx) => {
+			const existing = await tx.paymentTransaction.findUnique({
+				where: { id: params.transactionId },
+			});
+
+			if (!existing) {
+				throw new PaymentOrderNotFoundError();
+			}
+
+			if (existing.status === PAYMENT_STATUS.REFUNDED) {
+				throw new PaymentAlreadyRefundedError();
+			}
+
+			const updatedTx = await tx.paymentTransaction.update({
+				where: { id: params.transactionId },
+				data: {
+					status: PAYMENT_STATUS.REFUNDED,
+					updatedAt: new Date(),
+				},
+			});
+
+			const refundRecord = await tx.paymentRefund.create({
+				data: {
+					paymentTransactionId: params.transactionId,
+					razorpayRefundId: params.refund.razorpayRefundId,
+					amountPaise: params.refund.amountPaise,
+					currency: params.refund.currency,
+					status: params.refund.status,
+					reason: params.refund.reason ?? null,
+					arn: params.refund.arn ?? null,
+					paymentMethod: params.refund.paymentMethod ?? null,
+					processedAt: new Date(),
+				},
+			});
+
+			await tx.billingInvoice.updateMany({
+				where: { paymentTransactionId: params.transactionId },
+				data: {
+					status: INVOICE_STATUS.VOID,
+					invoicePdfKey: null,
+					updatedAt: new Date(),
+				},
+			});
+
+			return {
+				transaction: this.mapToDomain(updatedTx),
+				refund: this.mapRefundToDomain(refundRecord),
+			};
+		});
+	}
+
+	async syncRefundFromWebhook(params: SyncRefundFromWebhookParams): Promise<void> {
+		await this.prisma.$transaction(async (tx) => {
+			const existingRefund = await tx.paymentRefund.findUnique({
+				where: { razorpayRefundId: params.razorpayRefundId },
+			});
+
+			if (existingRefund) {
+				await tx.paymentRefund.update({
+					where: { id: existingRefund.id },
+					data: {
+						status: params.status,
+						...(params.arn ? { arn: params.arn } : {}),
+						...(params.status === REFUND_STATUS.PROCESSED ? { processedAt: new Date() } : {}),
+					},
+				});
+
+				if (params.status === REFUND_STATUS.PROCESSED) {
+					await tx.paymentTransaction.update({
+						where: { id: existingRefund.paymentTransactionId },
+						data: {
+							status: PAYMENT_STATUS.REFUNDED,
+							updatedAt: new Date(),
+						},
+					});
+
+					await tx.billingInvoice.updateMany({
+						where: { paymentTransactionId: existingRefund.paymentTransactionId },
+						data: {
+							status: INVOICE_STATUS.VOID,
+							invoicePdfKey: null,
+							updatedAt: new Date(),
+						},
+					});
+				}
+				return;
+			}
+
+			if (params.razorpayPaymentId) {
+				const txRecord = await tx.paymentTransaction.findUnique({
+					where: { razorpayPaymentId: params.razorpayPaymentId },
+				});
+
+				if (txRecord) {
+					const metadata = txRecord.metadata as Record<string, unknown> | null;
+					const paymentMethod =
+						typeof metadata?.method === 'string' ? metadata.method : DEFAULT_PAYMENT_METHOD;
+
+					await tx.paymentRefund.create({
+						data: {
+							paymentTransactionId: txRecord.id,
+							razorpayRefundId: params.razorpayRefundId,
+							amountPaise: params.amountPaise ?? txRecord.amountPaise,
+							currency: params.currency ?? txRecord.currency,
+							status: params.status,
+							reason: params.reason ?? null,
+							arn: params.arn ?? null,
+							paymentMethod,
+							processedAt: params.status === REFUND_STATUS.PROCESSED ? new Date() : null,
+						},
+					});
+
+					if (params.status === REFUND_STATUS.PROCESSED) {
+						await tx.paymentTransaction.update({
+							where: { id: txRecord.id },
+							data: {
+								status: PAYMENT_STATUS.REFUNDED,
+								updatedAt: new Date(),
+							},
+						});
+
+						await tx.billingInvoice.updateMany({
+							where: { paymentTransactionId: txRecord.id },
+							data: {
+								status: INVOICE_STATUS.VOID,
+								invoicePdfKey: null,
+								updatedAt: new Date(),
+							},
+						});
+					}
+				}
+			}
 		});
 	}
 

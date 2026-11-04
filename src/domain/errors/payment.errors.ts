@@ -69,3 +69,39 @@ export class InvalidPaymentStateTransitionError extends DomainError {
 		super(message, 'INVALID_PAYMENT_STATE_TRANSITION');
 	}
 }
+
+export class PaymentAlreadyRefundedError extends DomainError {
+	constructor(message: string = MESSAGES.PAYMENT_ALREADY_REFUNDED) {
+		super(message, 'PAYMENT_ALREADY_REFUNDED');
+	}
+}
+
+export class CannotRefundUncapturedPaymentError extends DomainError {
+	constructor(message: string = MESSAGES.CANNOT_REFUND_UNCAPTURED_PAYMENT) {
+		super(message, 'CANNOT_REFUND_UNCAPTURED_PAYMENT');
+	}
+}
+
+export class RefundAmountExceedsBalanceError extends DomainError {
+	constructor(message: string = MESSAGES.REFUND_AMOUNT_EXCEEDS_BALANCE) {
+		super(message, 'REFUND_AMOUNT_EXCEEDS_BALANCE');
+	}
+}
+
+export class RefundAmountInvalidError extends DomainError {
+	constructor(message: string = MESSAGES.REFUND_AMOUNT_INVALID) {
+		super(message, 'BAD_REQUEST');
+	}
+}
+
+export class PaymentGatewayError extends DomainError {
+	constructor(message: string = MESSAGES.REFUND_GATEWAY_ERROR) {
+		super(message, 'REFUND_GATEWAY_ERROR');
+	}
+}
+
+export class DuplicateRefundRequestError extends DomainError {
+	constructor(message: string = MESSAGES.CONFLICT) {
+		super(message, 'CONFLICT');
+	}
+}

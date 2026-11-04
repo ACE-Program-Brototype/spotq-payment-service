@@ -24,10 +24,12 @@ export const PLATFORM_FINANCE_ROUTES = {
 export const INTERNAL_ROUTES = {
 	BASE: '/api/internal/v1',
 	CREATE_GATEWAY_ORDER: '/payments/orders',
+	REFUND: '/payments/refunds',
 } as const;
 
 export const ORDER_PAYMENT_ROUTES = {
 	CREATE_GATEWAY_ORDER: `${INTERNAL_ROUTES.BASE}${INTERNAL_ROUTES.CREATE_GATEWAY_ORDER}`,
+	REFUND: `${INTERNAL_ROUTES.BASE}/payments/refunds`,
 	VERIFY: '/orders/verify',
 	STATUS: '/orders/:orderId/status',
 } as const;

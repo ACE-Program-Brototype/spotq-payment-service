@@ -1,3 +1,4 @@
+import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
@@ -9,6 +10,7 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port.ts';
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
+import type { IProcessOrderRefundUseCase } from '@application/ports/use-cases/process-order-refund.use-case.port.ts';
 import type { IVerifyOrderPaymentUseCase } from '@application/ports/use-cases/verify-order-payment.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import {
@@ -18,6 +20,7 @@ import {
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
+	ProcessOrderRefundUseCase,
 	VerifyOrderPaymentUseCase,
 	VerifyPaymentUseCase,
 } from '@application/use-cases/index.ts';
@@ -37,6 +40,7 @@ import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import { RedisService } from '@infrastructure/redis/redis.service.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';
 import { PrismaFinanceQueryRepository } from '@infrastructure/repositories/prisma-finance-query.repository.ts';
 import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
@@ -115,6 +119,8 @@ container
 	.to(RabbitMQService)
 	.inSingletonScope();
 
+container.bind<ICacheService>(TYPES.Services.CacheService).to(RedisService).inSingletonScope();
+
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)
 	.to(CreateSubscriptionOrderUseCase);
@@ -154,6 +160,10 @@ container
 container
 	.bind<IGetOrderPaymentStatusUseCase>(TYPES.UseCases.GetOrderPaymentStatusUseCase)
 	.to(GetOrderPaymentStatusUseCase);
+
+container
+	.bind<IProcessOrderRefundUseCase>(TYPES.UseCases.ProcessOrderRefundUseCase)
+	.to(ProcessOrderRefundUseCase);
 
 container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)

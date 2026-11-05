@@ -1,9 +1,9 @@
-import type { Subscription } from '../entities/subscription.entity.ts';
+import type { Subscription } from '@domain/entities/subscription.entity.ts';
 import type {
 	PaginatedSubscribersResult,
 	SubscriberDetail,
 	SubscriberFilterParams,
-} from '../types/subscriber-query.types.ts';
+} from '@domain/types/subscriber-query.types.ts';
 import type { IBaseRepository } from './base.repository.interface.ts';
 
 export interface CreateSubscriptionInput {

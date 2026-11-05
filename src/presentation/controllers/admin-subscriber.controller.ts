@@ -2,6 +2,8 @@ import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-c
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { DomainError } from '@domain/errors/payment.errors.ts';
+import { getAdminSubscriberDetailsParamsSchema } from '@presentation/validators/admin-subscribers/get-admin-subscriber-details.validator.ts';
+import { listAdminSubscribersQuerySchema } from '@presentation/validators/admin-subscribers/list-admin-subscribers.validator.ts';
 import {
 	ERROR_CODES,
 	getStatusCodeForDomainError,
@@ -12,8 +14,6 @@ import { sendErrorResponse, sendSuccessResponse } from '@shared/response/api-res
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
 import { ZodError } from 'zod';
-import { getAdminSubscriberDetailsParamsSchema } from '../validators/admin-subscribers/get-admin-subscriber-details.validator.ts';
-import { listAdminSubscribersQuerySchema } from '../validators/admin-subscribers/list-admin-subscribers.validator.ts';
 
 @injectable()
 export class AdminSubscriberController {

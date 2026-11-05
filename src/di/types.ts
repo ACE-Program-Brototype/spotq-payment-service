@@ -11,6 +11,9 @@ export const TYPES = {
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
 	},
+	Clients: {
+		RestaurantServiceClient: Symbol.for('IRestaurantServiceClient'),
+	},
 	Services: {
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),

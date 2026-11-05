@@ -27,6 +27,11 @@ export interface AdminSubscriberInvoiceDTO {
 export interface AdminSubscriberDetailsOutputDTO {
 	id: string;
 	restaurantId: string;
+	restaurantName?: string | null;
+	subscriberName?: string | null;
+	subscriberEmail?: string | null;
+	restaurantStatus?: string | null;
+	isRestaurantBlocked?: boolean;
 	planId: string;
 	status: string;
 	currentPeriodStart: string;

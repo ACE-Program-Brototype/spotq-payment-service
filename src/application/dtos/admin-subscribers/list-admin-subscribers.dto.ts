@@ -22,6 +22,11 @@ export interface AdminSubscriberPlanDTO {
 export interface AdminSubscriberSummaryDTO {
 	id: string;
 	restaurantId: string;
+	restaurantName?: string | null;
+	subscriberName?: string | null;
+	subscriberEmail?: string | null;
+	restaurantStatus?: string | null;
+	isRestaurantBlocked?: boolean;
 	planId: string;
 	status: string;
 	currentPeriodStart: string;

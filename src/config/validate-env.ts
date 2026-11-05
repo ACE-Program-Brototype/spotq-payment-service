@@ -1,3 +1,4 @@
+import { DB_POOL_DEFAULTS } from '@infrastructure/database/database.constants.ts';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -10,6 +11,12 @@ const envSchema = z.object({
 	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']),
 
 	DATABASE_URL: z.string().url(),
+	DB_POOL_MAX: z.coerce.number().positive().default(DB_POOL_DEFAULTS.MAX_CONNECTIONS),
+	DB_IDLE_TIMEOUT_MS: z.coerce.number().positive().default(DB_POOL_DEFAULTS.IDLE_TIMEOUT_MS),
+	DB_CONNECTION_TIMEOUT_MS: z.coerce
+		.number()
+		.positive()
+		.default(DB_POOL_DEFAULTS.CONNECTION_TIMEOUT_MS),
 
 	REDIS_URL: z.string().url(),
 

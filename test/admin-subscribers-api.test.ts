@@ -1,3 +1,4 @@
+import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
@@ -7,6 +8,9 @@ import app from '../src/app.ts';
 
 const subscriptionRepository = container.get<ISubscriptionRepository>(
 	TYPES.Repositories.SubscriptionRepository,
+);
+const restaurantServiceClient = container.get<IRestaurantServiceClient>(
+	TYPES.Clients.RestaurantServiceClient,
 );
 
 describe('Admin Subscribers API Routes (HTTP Integration)', () => {
@@ -48,6 +52,29 @@ describe('Admin Subscribers API Routes (HTTP Integration)', () => {
 
 	beforeEach(() => {
 		jest.clearAllMocks();
+		jest.spyOn(restaurantServiceClient, 'getRestaurants').mockResolvedValue(
+			new Map([
+				[
+					validRestaurantId,
+					{
+						id: validRestaurantId,
+						restaurantName: 'Biryani Blues',
+						ownerName: 'Rahul Sharma',
+						ownerEmail: 'rahul@biryaniblues.com',
+						status: 'ACTIVE',
+						isBlocked: false,
+					},
+				],
+			]),
+		);
+		jest.spyOn(restaurantServiceClient, 'getRestaurantById').mockResolvedValue({
+			id: validRestaurantId,
+			restaurantName: 'Biryani Blues',
+			ownerName: 'Rahul Sharma',
+			ownerEmail: 'rahul@biryaniblues.com',
+			status: 'ACTIVE',
+			isBlocked: false,
+		});
 	});
 
 	afterEach(() => {

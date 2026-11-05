@@ -3,6 +3,7 @@ import type {
 	GetAdminSubscriberDetailsInputDTO,
 } from '@application/dtos/admin-subscribers/get-admin-subscriber-details.dto.ts';
 import { AdminSubscriberMapper } from '@application/mappers/admin-subscribers/admin-subscriber.mapper.ts';
+import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
 import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { SubscriberNotFoundError } from '@domain/errors/payment.errors.ts';
@@ -14,6 +15,8 @@ export class GetAdminSubscriberDetailsUseCase implements IGetAdminSubscriberDeta
 	constructor(
 		@inject(TYPES.Repositories.SubscriptionRepository)
 		private readonly subscriptionRepository: ISubscriptionRepository,
+		@inject(TYPES.Clients.RestaurantServiceClient)
+		private readonly restaurantServiceClient: IRestaurantServiceClient,
 	) {}
 
 	async execute(
@@ -27,6 +30,10 @@ export class GetAdminSubscriberDetailsUseCase implements IGetAdminSubscriberDeta
 			throw new SubscriberNotFoundError();
 		}
 
-		return AdminSubscriberMapper.toDetailsDto(subscriber);
+		const restaurantInfo = await this.restaurantServiceClient.getRestaurantById(
+			subscriber.restaurantId,
+		);
+
+		return AdminSubscriberMapper.toDetailsDto(subscriber, restaurantInfo);
 	}
 }

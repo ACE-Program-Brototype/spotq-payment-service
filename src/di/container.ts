@@ -1,3 +1,4 @@
+import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
@@ -48,6 +49,7 @@ import { PrismaPaymentTransactionRepository } from '@infrastructure/repositories
 import { PrismaPlatformLedgerTransactionRepository } from '@infrastructure/repositories/prisma-platform-ledger-transaction.repository.ts';
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
+import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
 import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subscription-expiry.service.ts';
 import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
@@ -98,6 +100,11 @@ container
 container
 	.bind<IPaymentGateway>(TYPES.Gateways.PaymentGateway)
 	.to(RazorpayGateway)
+	.inSingletonScope();
+
+container
+	.bind<IRestaurantServiceClient>(TYPES.Clients.RestaurantServiceClient)
+	.to(RestaurantServiceClient)
 	.inSingletonScope();
 
 container

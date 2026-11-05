@@ -1,3 +1,4 @@
+import type { RestaurantInfoDTO } from '@application/dtos/external/restaurant-info.dto.ts';
 import type {
 	AdminSubscriberDetailsOutputDTO,
 	AdminSubscriberSummaryDTO,
@@ -10,10 +11,18 @@ import type {
 } from '@domain/types/subscriber-query.types.ts';
 
 export const AdminSubscriberMapper = {
-	toSummaryDto(sub: SubscriberSummary): AdminSubscriberSummaryDTO {
+	toSummaryDto(
+		sub: SubscriberSummary,
+		restaurantInfo?: RestaurantInfoDTO | null,
+	): AdminSubscriberSummaryDTO {
 		return {
 			id: sub.id,
 			restaurantId: sub.restaurantId,
+			restaurantName: restaurantInfo?.restaurantName ?? null,
+			subscriberName: restaurantInfo?.ownerName ?? null,
+			subscriberEmail: restaurantInfo?.ownerEmail ?? null,
+			restaurantStatus: restaurantInfo?.status ?? null,
+			isRestaurantBlocked: restaurantInfo?.isBlocked ?? false,
 			planId: sub.planId,
 			status: sub.status,
 			currentPeriodStart: sub.currentPeriodStart.toISOString(),
@@ -35,17 +44,30 @@ export const AdminSubscriberMapper = {
 		};
 	},
 
-	toListDto(result: PaginatedSubscribersResult): ListAdminSubscribersOutputDTO {
+	toListDto(
+		result: PaginatedSubscribersResult,
+		restaurantMap?: Map<string, RestaurantInfoDTO>,
+	): ListAdminSubscribersOutputDTO {
 		return {
-			subscribers: result.subscribers.map((sub) => this.toSummaryDto(sub)),
+			subscribers: result.subscribers.map((sub) =>
+				this.toSummaryDto(sub, restaurantMap?.get(sub.restaurantId)),
+			),
 			pagination: result.pagination,
 		};
 	},
 
-	toDetailsDto(subscriber: SubscriberDetail): AdminSubscriberDetailsOutputDTO {
+	toDetailsDto(
+		subscriber: SubscriberDetail,
+		restaurantInfo?: RestaurantInfoDTO | null,
+	): AdminSubscriberDetailsOutputDTO {
 		return {
 			id: subscriber.id,
 			restaurantId: subscriber.restaurantId,
+			restaurantName: restaurantInfo?.restaurantName ?? null,
+			subscriberName: restaurantInfo?.ownerName ?? null,
+			subscriberEmail: restaurantInfo?.ownerEmail ?? null,
+			restaurantStatus: restaurantInfo?.status ?? null,
+			isRestaurantBlocked: restaurantInfo?.isBlocked ?? false,
 			planId: subscriber.planId,
 			status: subscriber.status,
 			currentPeriodStart: subscriber.currentPeriodStart.toISOString(),

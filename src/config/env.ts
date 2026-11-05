@@ -18,6 +18,11 @@ export const config = {
 	database: {
 		url: env.DATABASE_URL,
 		directUrl: env.DATABASE_URL,
+		pool: {
+			max: env.DB_POOL_MAX,
+			idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
+			connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,
+		},
 	},
 
 	redis: {

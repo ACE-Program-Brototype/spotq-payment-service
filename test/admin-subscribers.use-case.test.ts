@@ -1,4 +1,5 @@
 import { AdminSubscriberMapper } from '@application/mappers/admin-subscribers/admin-subscriber.mapper.ts';
+import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
 import { GetAdminSubscriberDetailsUseCase } from '@application/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.ts';
 import { GetAdminSubscribersUseCase } from '@application/use-cases/admin-subscribers/get-admin-subscribers.use-case.ts';
 import { SubscriberNotFoundError } from '@domain/errors/payment.errors.ts';
@@ -6,6 +7,7 @@ import type { ISubscriptionRepository } from '@domain/repositories/subscription.
 
 describe('Admin Subscribers Use Cases', () => {
 	let mockSubscriptionRepository: jest.Mocked<ISubscriptionRepository>;
+	let mockRestaurantServiceClient: jest.Mocked<IRestaurantServiceClient>;
 
 	const mockDate = new Date('2026-09-01T00:00:00.000Z');
 	const mockEndDate = new Date('2026-10-01T00:00:00.000Z');
@@ -42,6 +44,32 @@ describe('Admin Subscribers Use Cases', () => {
 			findSubscribersPaginated: jest.fn(),
 			findSubscriberDetailById: jest.fn(),
 		} as unknown as jest.Mocked<ISubscriptionRepository>;
+
+		mockRestaurantServiceClient = {
+			getRestaurants: jest.fn().mockResolvedValue(
+				new Map([
+					[
+						'c2c1c3c4-2222-4222-8222-222222222222',
+						{
+							id: 'c2c1c3c4-2222-4222-8222-222222222222',
+							restaurantName: "Ajex's Bistro",
+							ownerName: 'Ajex Joshy',
+							ownerEmail: 'ajex@example.com',
+							status: 'ACTIVE',
+							isBlocked: false,
+						},
+					],
+				]),
+			),
+			getRestaurantById: jest.fn().mockResolvedValue({
+				id: 'c2c1c3c4-2222-4222-8222-222222222222',
+				restaurantName: "Ajex's Bistro",
+				ownerName: 'Ajex Joshy',
+				ownerEmail: 'ajex@example.com',
+				status: 'ACTIVE',
+				isBlocked: false,
+			}),
+		};
 	});
 
 	describe('GetAdminSubscribersUseCase', () => {
@@ -58,7 +86,10 @@ describe('Admin Subscribers Use Cases', () => {
 				},
 			});
 
-			const useCase = new GetAdminSubscribersUseCase(mockSubscriptionRepository);
+			const useCase = new GetAdminSubscribersUseCase(
+				mockSubscriptionRepository,
+				mockRestaurantServiceClient,
+			);
 			const result = await useCase.execute({});
 
 			expect(mockSubscriptionRepository.findSubscribersPaginated).toHaveBeenCalledWith({
@@ -73,6 +104,9 @@ describe('Admin Subscribers Use Cases', () => {
 			expect(result.subscribers).toHaveLength(1);
 			expect(result.subscribers[0].id).toBe(mockSubscriberSummary.id);
 			expect(result.subscribers[0].restaurantId).toBe(mockSubscriberSummary.restaurantId);
+			expect(result.subscribers[0].restaurantName).toBe("Ajex's Bistro");
+			expect(result.subscribers[0].subscriberName).toBe('Ajex Joshy');
+			expect(result.subscribers[0].subscriberEmail).toBe('ajex@example.com');
 			expect(result.subscribers[0].currentPeriodStart).toBe(mockDate.toISOString());
 			expect(result.subscribers[0].currentPeriodEnd).toBe(mockEndDate.toISOString());
 			expect(result.subscribers[0].plan.code).toBe('QUEUE_PRO');
@@ -92,7 +126,10 @@ describe('Admin Subscribers Use Cases', () => {
 				},
 			});
 
-			const useCase = new GetAdminSubscribersUseCase(mockSubscriptionRepository);
+			const useCase = new GetAdminSubscribersUseCase(
+				mockSubscriptionRepository,
+				mockRestaurantServiceClient,
+			);
 			const result = await useCase.execute({
 				page: 2,
 				limit: 20,
@@ -147,7 +184,10 @@ describe('Admin Subscribers Use Cases', () => {
 
 			mockSubscriptionRepository.findSubscriberDetailById.mockResolvedValue(mockSubscriberDetail);
 
-			const useCase = new GetAdminSubscriberDetailsUseCase(mockSubscriptionRepository);
+			const useCase = new GetAdminSubscriberDetailsUseCase(
+				mockSubscriptionRepository,
+				mockRestaurantServiceClient,
+			);
 			const result = await useCase.execute({
 				subscriberId: mockSubscriberSummary.id,
 			});
@@ -157,6 +197,8 @@ describe('Admin Subscribers Use Cases', () => {
 			);
 			expect(result.id).toBe(mockSubscriberSummary.id);
 			expect(result.restaurantId).toBe(mockSubscriberSummary.restaurantId);
+			expect(result.restaurantName).toBe("Ajex's Bistro");
+			expect(result.subscriberName).toBe('Ajex Joshy');
 			expect(result.transactions).toHaveLength(1);
 			expect(result.transactions[0].id).toBe('e2e1e3e4-4444-4444-8444-444444444444');
 			expect(result.invoices).toHaveLength(1);
@@ -166,7 +208,10 @@ describe('Admin Subscribers Use Cases', () => {
 		it('should throw SubscriberNotFoundError when subscriber does not exist', async () => {
 			mockSubscriptionRepository.findSubscriberDetailById.mockResolvedValue(null);
 
-			const useCase = new GetAdminSubscriberDetailsUseCase(mockSubscriptionRepository);
+			const useCase = new GetAdminSubscriberDetailsUseCase(
+				mockSubscriptionRepository,
+				mockRestaurantServiceClient,
+			);
 
 			await expect(
 				useCase.execute({
@@ -177,10 +222,20 @@ describe('Admin Subscribers Use Cases', () => {
 	});
 
 	describe('AdminSubscriberMapper', () => {
-		it('should map subscriber summary to DTO with ISO date strings', () => {
-			const dto = AdminSubscriberMapper.toSummaryDto(mockSubscriberSummary);
+		it('should map subscriber summary to DTO with ISO date strings and restaurant info', () => {
+			const dto = AdminSubscriberMapper.toSummaryDto(mockSubscriberSummary, {
+				id: mockSubscriberSummary.restaurantId,
+				restaurantName: 'The Grand Diner',
+				ownerName: 'Bob Smith',
+				ownerEmail: 'bob@example.com',
+				status: 'ACTIVE',
+				isBlocked: false,
+			});
 
 			expect(dto.id).toBe(mockSubscriberSummary.id);
+			expect(dto.restaurantName).toBe('The Grand Diner');
+			expect(dto.subscriberName).toBe('Bob Smith');
+			expect(dto.subscriberEmail).toBe('bob@example.com');
 			expect(dto.currentPeriodStart).toBe('2026-09-01T00:00:00.000Z');
 			expect(dto.currentPeriodEnd).toBe('2026-10-01T00:00:00.000Z');
 			expect(dto.canceledAt).toBeNull();
@@ -214,9 +269,18 @@ describe('Admin Subscribers Use Cases', () => {
 				],
 			};
 
-			const dto = AdminSubscriberMapper.toDetailsDto(detail);
+			const dto = AdminSubscriberMapper.toDetailsDto(detail, {
+				id: mockSubscriberSummary.restaurantId,
+				restaurantName: 'The Grand Diner',
+				ownerName: 'Bob Smith',
+				ownerEmail: 'bob@example.com',
+				status: 'ACTIVE',
+				isBlocked: false,
+			});
 
 			expect(dto.id).toBe(detail.id);
+			expect(dto.restaurantName).toBe('The Grand Diner');
+			expect(dto.subscriberName).toBe('Bob Smith');
 			expect(dto.transactions).toHaveLength(1);
 			expect(dto.transactions[0].id).toBe('tx-1');
 			expect(dto.invoices).toHaveLength(1);

@@ -62,9 +62,9 @@ process.env.DATABASE_URL = dbUrl.toString();
 const pool = new pg.Pool({
 	connectionString: dbUrl.toString(),
 	ssl,
-	max: Number(process.env.DB_POOL_MAX || 2),
-	idleTimeoutMillis: 10000,
-	connectionTimeoutMillis: 10000,
+	max: config.database.pool.max,
+	idleTimeoutMillis: config.database.pool.idleTimeoutMillis,
+	connectionTimeoutMillis: config.database.pool.connectionTimeoutMillis,
 });
 
 const adapter = new PrismaPg(pool);

@@ -45,5 +45,6 @@ export const config = {
 		audience: env.S2S_AUDIENCE,
 		orderPublicKey: env.ORDER_S2S_PUBLIC_KEY,
 		privateKey: env.S2S_PRIVATE_KEY,
+		tokenTtlMs: Number(process.env.S2S_TOKEN_TTL_MS) || 10 * 60 * 1000,
 	},
 } as const;

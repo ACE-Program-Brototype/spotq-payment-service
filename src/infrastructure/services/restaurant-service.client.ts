@@ -37,10 +37,11 @@ interface CachedToken {
 export class RestaurantServiceClient implements IRestaurantServiceClient {
 	private readonly baseUrl: string;
 	private cachedToken: CachedToken | null = null;
-	private readonly tokenTtlMs = 10 * 60 * 1000;
+	private readonly tokenTtlMs: number;
 
 	constructor() {
 		this.baseUrl = process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3001';
+		this.tokenTtlMs = config.s2s.tokenTtlMs;
 	}
 
 	private getS2SToken(): string {

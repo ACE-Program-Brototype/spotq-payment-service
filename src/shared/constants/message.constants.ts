@@ -57,6 +57,7 @@ export enum MessageEnum {
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
+	OWNER_FORBIDDEN = 'Forbidden: Restaurant owner access required',
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
@@ -136,6 +137,7 @@ export const MESSAGES = {
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
+	OWNER_FORBIDDEN: MessageEnum.OWNER_FORBIDDEN,
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,

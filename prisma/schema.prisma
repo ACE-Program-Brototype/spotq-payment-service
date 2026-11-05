@@ -229,7 +229,7 @@ model WalletLedgerEntry {
   walletId      String           @map("wallet_id") @db.Uuid
   settlementId  String?          @map("settlement_id") @db.Uuid
   type          WalletLedgerType
-  status        PayoutStatus?    @default(PROCESSED) // Default PROCESSED for settlements; set to PROCESSING for new withdrawals
+  status        PayoutStatus     @default(PROCESSED) // Default PROCESSED for settlements; set to PROCESSING for new withdrawals
   amountPaise   BigInt           @map("amount_paise")
   balanceBefore BigInt           @map("balance_before")
   balanceAfter  BigInt           @map("balance_after")

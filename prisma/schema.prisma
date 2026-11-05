@@ -240,6 +240,7 @@ model WalletLedgerEntry {
   wallet     RestaurantWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
   settlement Settlement?      @relation(fields: [settlementId], references: [id])
 
+  @@index([walletId, type, status])
   @@index([walletId, createdAt(sort: Desc)])
   @@map("wallet_ledger_entries")
 }

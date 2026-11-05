@@ -1,4 +1,4 @@
-import { ALLOWED_ROLES, HTTP_STATUS, MESSAGES } from '@shared/constants';
+import { ALLOWED_RESTAURANT_OWNER_ROLE, HTTP_STATUS, MESSAGES } from '@shared/constants';
 import { ApiResponse } from '@shared/index';
 import type { NextFunction, Request, Response } from 'express';
 
@@ -12,8 +12,6 @@ function getHeaderValue(header: string | string[] | undefined): string | undefin
 	return header;
 }
 
-const allowedRoles = new Set<string>(ALLOWED_ROLES);
-
 /**
  * Authentication and authorization middleware verifying that requests originating
  * from the API gateway carry a valid restaurant owner identity.
@@ -25,7 +23,7 @@ export function restaurantAdminAuthMiddleware(
 ): void {
 	const headerUserId = getHeaderValue(req.headers['x-user-id']);
 	const headerRestaurantId = getHeaderValue(req.headers['x-restaurant-id']);
-	const userId = headerUserId || headerRestaurantId;
+	const userId = headerUserId;
 
 	if (!userId) {
 		res
@@ -37,21 +35,19 @@ export function restaurantAdminAuthMiddleware(
 	}
 
 	const role = getHeaderValue(req.headers['x-user-role']);
-	const normalizedRole = role?.toLowerCase().trim();
+	const normalizedRole = role?.toUpperCase().trim();
 
-	if (!normalizedRole || !allowedRoles.has(normalizedRole)) {
+	if (!normalizedRole || ALLOWED_RESTAURANT_OWNER_ROLE !== normalizedRole) {
 		res
 			.status(HTTP_STATUS.FORBIDDEN)
 			.json(ApiResponse.error(MESSAGES.OWNER_FORBIDDEN, 'FORBIDDEN', HTTP_STATUS.FORBIDDEN));
 		return;
 	}
 
-	const paramRestaurantId = getHeaderValue(req.params?.restaurantId || req.params?.id)?.trim();
-
 	const email = getHeaderValue(req.headers['x-user-email']);
 	const restaurantId = headerRestaurantId || userId;
 
-	if (paramRestaurantId && restaurantId && paramRestaurantId !== restaurantId.trim()) {
+	if (userId && restaurantId && userId.trim() !== restaurantId.trim()) {
 		res
 			.status(HTTP_STATUS.FORBIDDEN)
 			.json(ApiResponse.error(MESSAGES.FORBIDDEN_ACCESS, 'FORBIDDEN', HTTP_STATUS.FORBIDDEN));
@@ -60,8 +56,8 @@ export function restaurantAdminAuthMiddleware(
 
 	req.user = {
 		userId,
-		restaurantId: restaurantId || '',
-		email: email || '',
+		restaurantId,
+		email,
 		role: role || 'RESTAURANT_OWNER',
 	};
 

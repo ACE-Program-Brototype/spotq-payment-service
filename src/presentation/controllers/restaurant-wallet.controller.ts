@@ -1,6 +1,6 @@
 import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use-cases/get-restaurant-wallet-overview.use-case.port';
 import { TYPES } from '@di/types';
-import type { RestaurantIdParams } from '@presentation/validators/common/restaurant-id-params.validator';
+import { RestaurantIdNotFound } from '@domain/errors/restaurant.errors';
 import { HTTP_STATUS, MESSAGES, sendSuccessResponse } from '@shared/index';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
@@ -13,7 +13,11 @@ export class RestaurantWalletController {
 	) {}
 
 	getWalletOverview = async (req: Request, res: Response) => {
-		const { restaurantId } = req.params as RestaurantIdParams;
+		const { restaurantId } = req.user ?? {};
+
+		if (!restaurantId) {
+			throw new RestaurantIdNotFound();
+		}
 
 		const response = await this.getRestaurantWalletOverviewUseCase.execute(restaurantId);
 

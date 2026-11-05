@@ -10,11 +10,9 @@ import type {
 	SubscriberFilterParams,
 } from '@domain/types/subscriber-query.types.ts';
 import type { Prisma, SubscriptionStatus } from '@prisma/client';
-import { PAYMENT_STATUS } from '@shared/constants/index.ts';
+import { PAYMENT_STATUS, UUID_REGEX } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 @injectable()
 export class PrismaSubscriptionRepository

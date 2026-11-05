@@ -1,3 +1,6 @@
+import type { SubscriptionStatus } from '../entities/subscription.entity.ts';
+import type { PlanBillingCycle } from '../entities/subscription-plan.entity.ts';
+
 export type SubscriberSortField =
 	| 'createdAt'
 	| 'currentPeriodEnd'
@@ -9,7 +12,7 @@ export type SortOrder = 'asc' | 'desc';
 export interface SubscriberFilterParams {
 	page: number;
 	limit: number;
-	status?: string | null;
+	status?: SubscriptionStatus | 'ALL' | null;
 	search?: string | null;
 	sortBy?: SubscriberSortField;
 	sortOrder?: SortOrder;
@@ -22,7 +25,7 @@ export interface SubscriberPlanSummary {
 	description?: string | null;
 	pricePaise: number;
 	currency: string;
-	billingCycle: string;
+	billingCycle: PlanBillingCycle;
 	features?: unknown;
 	isActive: boolean;
 }
@@ -31,7 +34,7 @@ export interface SubscriberSummary {
 	id: string;
 	restaurantId: string;
 	planId: string;
-	status: string;
+	status: SubscriptionStatus;
 	currentPeriodStart: Date;
 	currentPeriodEnd: Date;
 	canceledAt?: Date | null;

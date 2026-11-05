@@ -1,7 +1,10 @@
+import type { SubscriptionStatus } from '@domain/entities/subscription.entity.ts';
+import type { PlanBillingCycle } from '@domain/entities/subscription-plan.entity.ts';
+
 export interface ListAdminSubscribersQueryDTO {
 	page?: number;
 	limit?: number;
-	status?: string | null;
+	status?: SubscriptionStatus | 'ALL' | null;
 	search?: string | null;
 	sortBy?: 'createdAt' | 'currentPeriodEnd' | 'currentPeriodStart' | 'status';
 	sortOrder?: 'asc' | 'desc';
@@ -15,7 +18,7 @@ export interface AdminSubscriberPlanDTO {
 	description?: string | null;
 	pricePaise: number;
 	currency: string;
-	billingCycle: string;
+	billingCycle: PlanBillingCycle;
 	features?: unknown;
 	isActive: boolean;
 }
@@ -30,7 +33,7 @@ export interface AdminSubscriberSummaryDTO {
 	restaurantStatus?: string | null;
 	isRestaurantBlocked?: boolean;
 	planId: string;
-	status: string;
+	status: SubscriptionStatus;
 	currentPeriodStart: string;
 	currentPeriodEnd: string;
 	canceledAt: string | null;

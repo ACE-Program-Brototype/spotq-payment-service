@@ -73,6 +73,13 @@ enum PlatformTransactionType {
   REFUND_EXPENSE
 }
 
+enum PayoutStatus {
+  PROCESSING // Initial state on POST /withdraw while waiting for bank settlement
+  PROCESSED // Payout successful and UTR received via webhook
+  REVERSED // Bank transfer rejected/reversed and refunded to wallet
+  FAILED // Payout failed before banking clearance
+}
+
 // ----------------------------------------------------
 // Models
 // ----------------------------------------------------
@@ -222,6 +229,7 @@ model WalletLedgerEntry {
   walletId      String           @map("wallet_id") @db.Uuid
   settlementId  String?          @map("settlement_id") @db.Uuid
   type          WalletLedgerType
+  status        PayoutStatus?    @default(PROCESSED) // Default PROCESSED for settlements; set to PROCESSING for new withdrawals
   amountPaise   BigInt           @map("amount_paise")
   balanceBefore BigInt           @map("balance_before")
   balanceAfter  BigInt           @map("balance_after")

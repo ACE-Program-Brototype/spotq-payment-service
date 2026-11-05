@@ -14,6 +14,13 @@ export const SUBSCRIPTION_ROUTES = {
 	WEBHOOK: '/webhook',
 } as const;
 
+export const TRANSACTION_ROUTES = {
+	BASE: '/transactions',
+	BY_ID: '/transactions/:id',
+	API_V1_BASE: '/api/v1/payments/transactions',
+	API_V1_BY_ID: '/api/v1/payments/transactions/:id',
+} as const;
+
 export const PLATFORM_FINANCE_ROUTES = {
 	ROOT: '/admin/finance',
 	SUMMARY: '/summary',
@@ -51,6 +58,7 @@ export const ROUTES = {
 	STATUS_BY_RESTAURANT: SUBSCRIPTION_ROUTES.STATUS_BY_RESTAURANT,
 	WEBHOOK: SUBSCRIPTION_ROUTES.WEBHOOK,
 	SUBSCRIPTIONS: SUBSCRIPTION_ROUTES,
+	TRANSACTIONS: TRANSACTION_ROUTES,
 	PLATFORM_FINANCE_SUMMARY: PLATFORM_FINANCE_ROUTES.SUMMARY,
 	INTERNAL: INTERNAL_ROUTES,
 	ORDER_PAYMENTS: ORDER_PAYMENT_ROUTES,
@@ -58,6 +66,7 @@ export const ROUTES = {
 
 export type SystemRoute = (typeof SYSTEM_ROUTES)[keyof typeof SYSTEM_ROUTES];
 export type SubscriptionRoute = (typeof SUBSCRIPTION_ROUTES)[keyof typeof SUBSCRIPTION_ROUTES];
+export type TransactionRoute = (typeof TRANSACTION_ROUTES)[keyof typeof TRANSACTION_ROUTES];
 export type PlatformFinanceRoute =
 	(typeof PLATFORM_FINANCE_ROUTES)[keyof typeof PLATFORM_FINANCE_ROUTES];
 export type InternalRoute = (typeof INTERNAL_ROUTES)[keyof typeof INTERNAL_ROUTES];

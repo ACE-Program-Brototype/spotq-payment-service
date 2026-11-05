@@ -100,6 +100,9 @@ describe('Admin Subscribers Use Cases', () => {
 				sortBy: undefined,
 				sortOrder: undefined,
 			});
+			expect(mockRestaurantServiceClient.getRestaurants).toHaveBeenCalledWith([
+				mockSubscriberSummary.restaurantId,
+			]);
 
 			expect(result.subscribers).toHaveLength(1);
 			expect(result.subscribers[0].id).toBe(mockSubscriberSummary.id);

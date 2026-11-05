@@ -39,6 +39,10 @@ export const SUBSCRIBER_ROUTES = {
 	API_V1_BY_ID: '/api/v1/subscribers/:subscriberId',
 } as const;
 
+export const RESTAURANT_SERVICE_ROUTES = {
+	BATCH: '/api/internal/v1/restaurants/batch',
+} as const;
+
 export const ROUTES = {
 	ROOT: SYSTEM_ROUTES.ROOT,
 	HEALTH: SYSTEM_ROUTES.HEALTH,

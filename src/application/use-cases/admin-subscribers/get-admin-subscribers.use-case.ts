@@ -28,7 +28,8 @@ export class GetAdminSubscribersUseCase implements IGetAdminSubscribersUseCase {
 			sortOrder: query.sortOrder,
 		});
 
-		const restaurantMap = await this.restaurantServiceClient.getRestaurants();
+		const restaurantIds = result.subscribers.map((s) => s.restaurantId);
+		const restaurantMap = await this.restaurantServiceClient.getRestaurants(restaurantIds);
 
 		return AdminSubscriberMapper.toListDto(result, restaurantMap);
 	}

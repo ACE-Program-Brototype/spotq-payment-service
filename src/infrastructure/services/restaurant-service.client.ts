@@ -1,73 +1,118 @@
 import type { RestaurantInfoDTO } from '@application/dtos/external/restaurant-info.dto.ts';
 import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
+import { config } from '@config/env.ts';
 import { logger } from '@infrastructure/logger/logger.ts';
+import { S2S_CALLER_SERVICES } from '@shared/constants/auth.constants.ts';
+import { RESTAURANT_SERVICE_ROUTES } from '@shared/constants/routes.constants.ts';
+import { generateToken, type TokenIssuerConfig } from '@spotq-org/s2s-core';
 import { injectable } from 'inversify';
 
-interface RestaurantApiRecord {
+interface RestaurantBatchItemApiResponse {
 	id: string;
-	restaurant_name?: string;
-	restaurant?: string;
-	owner_name?: string;
-	owner?: string;
-	owner_email?: string;
-	email?: string;
-	contact?: {
-		email?: string;
-		owner_email?: string;
-	};
-	status?: string;
-	is_blocked?: boolean;
+	restaurantName: string;
+	ownerName: string;
+	ownerEmail: string;
+	email: string;
+	phone: string;
+	status: string;
+	onboardingStatus: string;
+	isBlocked: boolean;
+	blockReason: string | null;
+	isSubscriptionActive: boolean;
+	subscriptionPlanCode: string | null;
+	subscriptionEndsAt: string | null;
 }
 
 interface RestaurantApiResponse {
 	success: boolean;
-	data?:
-		| {
-				restaurants?: RestaurantApiRecord[];
-		  }
-		| RestaurantApiRecord;
+	data?: RestaurantBatchItemApiResponse[];
+}
+
+interface CachedToken {
+	token: string;
+	expiresAt: number;
 }
 
 @injectable()
 export class RestaurantServiceClient implements IRestaurantServiceClient {
 	private readonly baseUrl: string;
+	private cachedToken: CachedToken | null = null;
+	private readonly tokenTtlMs = 10 * 60 * 1000;
 
 	constructor() {
 		this.baseUrl = process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3001';
 	}
 
-	public async getRestaurants(): Promise<Map<string, RestaurantInfoDTO>> {
+	private getS2SToken(): string {
+		const now = Date.now();
+		if (this.cachedToken && this.cachedToken.expiresAt > now) {
+			return this.cachedToken.token;
+		}
+
+		const issuerConfig: TokenIssuerConfig = {
+			serviceName: 'payment-service',
+			privateKey: config.s2s.privateKey,
+		};
+
+		const token = generateToken(S2S_CALLER_SERVICES.RESTAURANT_SERVICE, issuerConfig);
+		this.cachedToken = {
+			token,
+			expiresAt: now + this.tokenTtlMs,
+		};
+
+		return token;
+	}
+
+	public async getRestaurants(restaurantIds?: string[]): Promise<Map<string, RestaurantInfoDTO>> {
 		const resultMap = new Map<string, RestaurantInfoDTO>();
-		const url = `${this.baseUrl}/admin/restaurants?limit=100`;
+
+		if (restaurantIds && restaurantIds.length === 0) {
+			return resultMap;
+		}
+
+		const uniqueIds = restaurantIds
+			? Array.from(new Set(restaurantIds.map((id) => id.trim()))).filter(Boolean)
+			: [];
+
+		if (restaurantIds && uniqueIds.length === 0) {
+			return resultMap;
+		}
+
+		const url = `${this.baseUrl}${RESTAURANT_SERVICE_ROUTES.BATCH}`;
 
 		try {
+			const s2sToken = this.getS2SToken();
 			const res = await fetch(url, {
+				method: 'POST',
 				headers: {
-					'x-user-id': 'system-admin',
-					'x-user-role': 'admin',
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					'x-caller-service': 'payment-service',
+					Authorization: `Bearer ${s2sToken}`,
 				},
+				body: JSON.stringify({ restaurantIds: uniqueIds }),
 				signal: AbortSignal.timeout(5000),
 			});
 
 			if (!res.ok) {
 				logger.warn(
 					{ status: res.status, url },
-					'Failed to fetch restaurants from restaurant service',
+					'Failed to fetch batch restaurants from restaurant service',
 				);
 				return resultMap;
 			}
 
 			const json = (await res.json()) as RestaurantApiResponse;
-			const list = (json?.data as { restaurants?: RestaurantApiRecord[] })?.restaurants || [];
+			const list = json?.data || [];
 
 			for (const r of list) {
 				resultMap.set(r.id, {
 					id: r.id,
-					restaurantName: r.restaurant_name || r.restaurant || 'SpotQ Restaurant',
-					ownerName: r.owner_name || r.owner || '-',
-					ownerEmail: r.owner_email || r.email || r.contact?.owner_email || r.contact?.email || '-',
+					restaurantName: r.restaurantName || 'SpotQ Restaurant',
+					ownerName: r.ownerName || '-',
+					ownerEmail: r.ownerEmail || r.email || '-',
 					status: r.status || 'ACTIVE',
-					isBlocked: Boolean(r.is_blocked),
+					isBlocked: Boolean(r.isBlocked),
 				});
 			}
 		} catch (error) {
@@ -81,44 +126,11 @@ export class RestaurantServiceClient implements IRestaurantServiceClient {
 	}
 
 	public async getRestaurantById(id: string): Promise<RestaurantInfoDTO | null> {
-		const url = `${this.baseUrl}/admin/restaurants/${id}`;
-
-		try {
-			const res = await fetch(url, {
-				headers: {
-					'x-user-id': 'system-admin',
-					'x-user-role': 'admin',
-				},
-				signal: AbortSignal.timeout(5000),
-			});
-
-			if (!res.ok) {
-				logger.warn(
-					{ status: res.status, url, id },
-					'Failed to fetch restaurant by ID from restaurant service',
-				);
-				return null;
-			}
-
-			const json = (await res.json()) as RestaurantApiResponse;
-			const r = json?.data as RestaurantApiRecord;
-
-			if (!r?.id) return null;
-
-			return {
-				id: r.id,
-				restaurantName: r.restaurant_name || r.restaurant || 'SpotQ Restaurant',
-				ownerName: r.owner_name || r.owner || '-',
-				ownerEmail: r.owner_email || r.email || r.contact?.owner_email || r.contact?.email || '-',
-				status: r.status || 'ACTIVE',
-				isBlocked: Boolean(r.is_blocked),
-			};
-		} catch (error) {
-			logger.warn(
-				{ error: error instanceof Error ? error.message : error, id },
-				'Error calling restaurant service in getRestaurantById',
-			);
+		if (!id?.trim()) {
 			return null;
 		}
+
+		const map = await this.getRestaurants([id.trim()]);
+		return map.get(id.trim()) || null;
 	}
 }

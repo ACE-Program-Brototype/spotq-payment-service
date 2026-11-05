@@ -21,7 +21,8 @@ export const RestaurantWalletOverviewMapper = {
 						}
 					: null,
 			todayStats: {
-				settledCreditsPaise: Number(overview.todayStats.settledCreditsPaise),
+				todayCreditsPaise: Number(overview.todayStats.todayCreditsPaise),
+				todayRefundsPaise: Number(overview.todayStats.todayRefundsPaise),
 				withdrawnPaise: Number(overview.todayStats.withdrawnPaise),
 				pendingPayoutsCount: overview.todayStats.pendingPayoutsCount,
 			},

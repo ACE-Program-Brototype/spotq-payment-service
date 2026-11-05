@@ -1,10 +1,13 @@
-import { WALLET_LEDGER_TYPES } from '@domain/constants/wallet-ledger.constants.ts';
 import type { RestaurantWallet } from '@domain/entities/restaurant-wallet.entity.ts';
 import type {
 	IRestaurantWalletRepository,
 	RestaurantWalletOverviewData,
 } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
-import { RestaurantWalletPersistenceMapper } from '@infrastructure/mappers/restaurant-wallet.persistence-mapper.ts';
+import {
+	type RestaurantWalletOverviewRecord,
+	RestaurantWalletPersistenceMapper,
+} from '@infrastructure/mappers/restaurant-wallet.persistence-mapper.ts';
+import { Prisma } from '@prisma/client';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -57,31 +60,66 @@ export class PrismaRestaurantWalletRepository
 	}
 
 	async getOverview(restaurantId: string): Promise<RestaurantWalletOverviewData | null> {
-		const todayStart = new Date();
-		todayStart.setHours(0, 0, 0, 0);
+		const query = Prisma.sql`
+			SELECT
+				-- Complete restaurant wallet record
+				jsonb_build_object(
+					'id', w.id,
+					'restaurantId', w.restaurant_id,
+					'balancePaise', w.balance_paise,
+					'currency', w.currency,
+					'isLocked', w.is_locked,
+					'razorpayFundAccountId', w.razorpay_fund_account_id,
+					'bankName', w.bank_name,
+					'bankAccountLast4', w.bank_account_last4,
+					'createdAt', w.created_at,
+					'updatedAt', w.updated_at
+				) AS wallet,
 
-		const tomorrowStart = new Date(todayStart);
-		tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+				-- Total customer order payments credited to the wallet today (IST)
+				COALESCE(SUM(le.amount_paise) FILTER (
+					WHERE le.type = 'CREDIT_ORDER_PAYMENT'
+						AND le.created_at >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Kolkata')
+											AT TIME ZONE 'Asia/Kolkata'
+						AND le.created_at < (date_trunc('day', NOW() AT TIME ZONE 'Asia/Kolkata') + INTERVAL '1 day')
+											AT TIME ZONE 'Asia/Kolkata'
+				), 0) AS "todayCreditsPaise",
 
-		const walletRecord = await this.prisma.restaurantWallet.findUnique({
-			where: { restaurantId },
-			include: {
-				ledgerEntries: {
-					where: {
-						createdAt: { gte: todayStart, lt: tomorrowStart },
-						type: {
-							in: [
-								WALLET_LEDGER_TYPES.CREDIT_SETTLEMENT,
-								WALLET_LEDGER_TYPES.DEBIT_PAYOUT_WITHDRAWAL,
-							],
-						},
-					},
-					select: { type: true, amountPaise: true },
-				},
-			},
-		});
+				-- Lifetime total of successfully processed bank withdrawals
+				COALESCE(SUM(le.amount_paise) FILTER (
+					WHERE le.type = 'DEBIT_PAYOUT_WITHDRAWAL'
+						AND le.status = 'PROCESSED'
+				), 0) AS "withdrawnPaise",
 
+				-- Total customer order refunds deducted from the wallet today (IST)
+				COALESCE(SUM(le.amount_paise) FILTER (
+					WHERE le.type = 'DEBIT_ORDER_REFUND'
+						AND le.created_at >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Kolkata')
+											AT TIME ZONE 'Asia/Kolkata'
+						AND le.created_at < (date_trunc('day', NOW() AT TIME ZONE 'Asia/Kolkata') + INTERVAL '1 day')
+											AT TIME ZONE 'Asia/Kolkata'
+				), 0) AS "todayRefundsPaise",
+
+				-- Number of withdrawals currently awaiting bank processing
+				COUNT(le.id) FILTER (
+					WHERE le.type = 'DEBIT_PAYOUT_WITHDRAWAL'
+						AND le.status = 'PROCESSING'
+				) AS "pendingPayoutCount"
+
+			FROM restaurant_wallets w
+
+			-- Include all ledger entries belonging to the restaurant wallet
+			LEFT JOIN wallet_ledger_entries le ON le.wallet_id = w.id
+
+			-- Fetch only the requested restaurant's wallet
+			WHERE w.restaurant_id = ${restaurantId}::uuid
+
+			-- Aggregate ledger metrics into a single wallet overview record
+			GROUP BY w.id;
+`;
+		const walletRecord = await this.prisma.$queryRaw<RestaurantWalletOverviewRecord[]>(query);
+		console.log(walletRecord);
 		if (!walletRecord) return null;
-		return RestaurantWalletPersistenceMapper.toOverview(walletRecord);
+		return RestaurantWalletPersistenceMapper.toOverview(walletRecord[0]);
 	}
 }

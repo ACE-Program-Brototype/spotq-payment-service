@@ -2,7 +2,8 @@ import type { RestaurantWallet } from '../entities/restaurant-wallet.entity.ts';
 import type { IBaseRepository } from './base.repository.interface.ts';
 
 export interface RestaurantWalletTodayStats {
-	settledCreditsPaise: bigint;
+	todayCreditsPaise: bigint;
+	todayRefundsPaise: bigint;
 	withdrawnPaise: bigint;
 	pendingPayoutsCount: number;
 }

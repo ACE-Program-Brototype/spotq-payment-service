@@ -10,7 +10,8 @@ export interface GetRestaurantWalletOverviewOutputDTO {
 		accountNumberMasked: string | null;
 	} | null;
 	todayStats: {
-		settledCreditsPaise: number;
+		todayCreditsPaise: number;
+		todayRefundsPaise: number;
 		withdrawnPaise: number;
 		pendingPayoutsCount: number;
 	};

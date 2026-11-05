@@ -65,8 +65,8 @@ export enum MessageEnum {
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
 	CANNOT_CAPTURE_FAILED_PAYMENT = 'Cannot capture a payment that has already failed',
-	UNAUTHORIZED_ACCESS = 'Authentication credentials are missing or invalid',
-	FORBIDDEN_ACCESS = 'Access denied: insufficient permissions to perform this action',
+	UNAUTHORIZED_ACCESS = 'Authentication token missing or invalid.',
+	FORBIDDEN_ACCESS = 'Access denied. Insufficient permissions.',
 	BAD_REQUEST = 'Bad request: missing or invalid request parameters',
 	RESOURCE_NOT_FOUND = 'The requested resource could not be found',
 	CONFLICT = 'A conflict occurred with the current state of the resource',
@@ -76,6 +76,16 @@ export enum MessageEnum {
 	SUBSCRIBER_DETAILS_RETRIEVED = 'Subscriber details retrieved successfully',
 	SUBSCRIBER_NOT_FOUND = 'Subscriber not found',
 	INVALID_SUBSCRIBER_ID = 'Invalid subscriber ID format',
+
+	// transactions
+	TRANSACTIONS_RETRIEVED = 'Transactions retrieved successfully',
+	TRANSACTION_DETAILS_RETRIEVED = 'Transaction details retrieved successfully',
+	TRANSACTION_NOT_FOUND = 'Transaction record not found.',
+	INVALID_TRANSACTION_ID = 'Invalid transaction ID format.',
+	INVALID_DATE_RANGE = 'Invalid date range: startDate cannot be after endDate',
+	INVALID_AMOUNT_RANGE = 'Invalid amount range: minAmount cannot be greater than maxAmount',
+	INVALID_DATE_FORMAT = 'Date must be a valid calendar date in YYYY-MM-DD format',
+	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
 }
 
 export const MESSAGES = {
@@ -135,6 +145,7 @@ export const MESSAGES = {
 	ORDER_PAYMENT_STATUS_FETCHED: MessageEnum.ORDER_PAYMENT_STATUS_FETCHED,
 	ORDER_PAYMENT_NOT_FOUND: MessageEnum.ORDER_PAYMENT_NOT_FOUND,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
+
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
 
@@ -157,6 +168,16 @@ export const MESSAGES = {
 	SUBSCRIBER_DETAILS_RETRIEVED: MessageEnum.SUBSCRIBER_DETAILS_RETRIEVED,
 	SUBSCRIBER_NOT_FOUND: MessageEnum.SUBSCRIBER_NOT_FOUND,
 	INVALID_SUBSCRIBER_ID: MessageEnum.INVALID_SUBSCRIBER_ID,
+
+	// transactions
+	TRANSACTIONS_RETRIEVED: MessageEnum.TRANSACTIONS_RETRIEVED,
+	TRANSACTION_DETAILS_RETRIEVED: MessageEnum.TRANSACTION_DETAILS_RETRIEVED,
+	TRANSACTION_NOT_FOUND: MessageEnum.TRANSACTION_NOT_FOUND,
+	INVALID_TRANSACTION_ID: MessageEnum.INVALID_TRANSACTION_ID,
+	INVALID_DATE_RANGE: MessageEnum.INVALID_DATE_RANGE,
+	INVALID_AMOUNT_RANGE: MessageEnum.INVALID_AMOUNT_RANGE,
+	INVALID_DATE_FORMAT: MessageEnum.INVALID_DATE_FORMAT,
+	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
 } as const;
 
 export const messages = MESSAGES;

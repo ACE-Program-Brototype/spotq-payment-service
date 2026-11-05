@@ -1,5 +1,7 @@
-import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use-cases/get-restaurant-wallet-overview.use-case.port.ts';
-import { GetRestaurantWalletOverviewUseCase } from '@application/use-cases/get-restaurant-wallet-overview.use-case.ts';
+import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use-cases/restaurant-wallet/get-restaurant-wallet-overview.use-case.port.ts';
+import type { ILinkBankAccountUseCase } from '@application/ports/use-cases/restaurant-wallet/link-bank-account.use-case.port.ts';
+import { GetRestaurantWalletOverviewUseCase } from '@application/use-cases/restaurant-wallet/get-restaurant-wallet-overview.use-case.ts';
+import { LinkBankAccountUseCase } from '@application/use-cases/restaurant-wallet/link-bank-account.use-case.ts';
 import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import { PrismaRestaurantWalletRepository } from '@infrastructure/repositories/prisma-restaurant-wallet.repository.ts';
 import { RestaurantWalletController } from '@presentation/controllers/restaurant-wallet.controller.ts';
@@ -15,6 +17,10 @@ export const restaurantWalletModule = new ContainerModule(({ bind }) => {
 		TYPES.UseCases.RestaurantWallet.GetRestaurantWalletOverviewUseCase,
 	)
 		.to(GetRestaurantWalletOverviewUseCase)
+		.inSingletonScope();
+
+	bind<ILinkBankAccountUseCase>(TYPES.UseCases.RestaurantWallet.LinkBankAccountUseCase)
+		.to(LinkBankAccountUseCase)
 		.inSingletonScope();
 
 	bind<RestaurantWalletController>(TYPES.Controllers.RestaurantWalletController)

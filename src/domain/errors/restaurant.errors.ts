@@ -12,3 +12,9 @@ export class RestaurantWalletNotFoundError extends DomainError {
 		super(message, 'RESTAURANT_WALLET_NOT_FOUND');
 	}
 }
+
+export class InvalidBankAccountDetailsError extends DomainError {
+	constructor(message = 'Invalid bank account details') {
+		super(message, 'BAD_REQUEST');
+	}
+}

@@ -35,6 +35,7 @@ export const TYPES = {
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
 		RestaurantWallet: {
 			GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
+			LinkBankAccountUseCase: Symbol.for('ILinkBankAccountUseCase'),
 		},
 	},
 	Controllers: {

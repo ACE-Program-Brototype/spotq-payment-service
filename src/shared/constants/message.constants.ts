@@ -67,6 +67,7 @@ export enum MessageEnum {
 
 	// restaurant wallet
 	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet recieved successfully',
+	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS = 'Bank account linked successfully',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -159,6 +160,8 @@ export const MESSAGES = {
 
 	// restaurant wallet
 	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS: MessageEnum.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
+	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS:
+		MessageEnum.LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS,
 
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,

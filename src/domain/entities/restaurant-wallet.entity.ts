@@ -1,3 +1,4 @@
+import { InvalidBankAccountDetailsError } from '@domain/errors/restaurant.errors.ts';
 import { DEFAULT_CURRENCY } from '@shared/constants/payment.constants.ts';
 
 export interface RestaurantWalletProps {
@@ -31,6 +32,25 @@ export class RestaurantWallet {
 			createdAt: now,
 			updatedAt: now,
 		});
+	}
+
+	linkBankAccount(bankName: string, accountNumber: string, ifsc: string): void {
+		const normalizedBankName = bankName.trim();
+		const normalizedIfsc = ifsc.trim().toUpperCase();
+
+		if (!normalizedBankName) {
+			throw new InvalidBankAccountDetailsError('Bank name is required');
+		}
+		if (!/^\d{9,18}$/.test(accountNumber)) {
+			throw new InvalidBankAccountDetailsError('Account number must contain 9 to 18 digits');
+		}
+		if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(normalizedIfsc)) {
+			throw new InvalidBankAccountDetailsError('IFSC code is invalid');
+		}
+
+		this.props.bankName = normalizedBankName;
+		this.props.bankAccountLast4 = accountNumber.slice(-4);
+		this.props.updatedAt = new Date();
 	}
 
 	get id(): string {

@@ -1,6 +1,6 @@
-import type { GetRestaurantWalletOverviewOutputDTO } from '@application/dtos/get-restaurant-wallet-overview.dto.ts';
+import type { GetRestaurantWalletOverviewOutputDTO } from '@application/dtos/restaurant-wallet/get-restaurant-wallet-overview.dto';
 import { RestaurantWalletOverviewMapper } from '@application/mappers/restaurant-wallet/restaurant-wallet-overview.mapper';
-import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use-cases/get-restaurant-wallet-overview.use-case.port.ts';
+import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use-cases/restaurant-wallet/get-restaurant-wallet-overview.use-case.port';
 import { TYPES } from '@di/types.ts';
 import { RestaurantWalletNotFoundError } from '@domain/errors/restaurant.errors.ts';
 import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';

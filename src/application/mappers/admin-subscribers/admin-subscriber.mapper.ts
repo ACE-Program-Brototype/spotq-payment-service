@@ -17,6 +17,7 @@ export const AdminSubscriberMapper = {
 	): AdminSubscriberSummaryDTO {
 		return {
 			id: sub.id,
+			subscriberId: sub.id,
 			restaurantId: sub.restaurantId,
 			restaurantName: restaurantInfo?.restaurantName ?? null,
 			subscriberName: restaurantInfo?.ownerName ?? null,
@@ -32,6 +33,7 @@ export const AdminSubscriberMapper = {
 			updatedAt: sub.updatedAt.toISOString(),
 			plan: {
 				id: sub.plan.id,
+				planId: sub.plan.id,
 				code: sub.plan.code,
 				name: sub.plan.name,
 				description: sub.plan.description,
@@ -62,6 +64,7 @@ export const AdminSubscriberMapper = {
 	): AdminSubscriberDetailsOutputDTO {
 		return {
 			id: subscriber.id,
+			subscriberId: subscriber.id,
 			restaurantId: subscriber.restaurantId,
 			restaurantName: restaurantInfo?.restaurantName ?? null,
 			subscriberName: restaurantInfo?.ownerName ?? null,
@@ -77,6 +80,7 @@ export const AdminSubscriberMapper = {
 			updatedAt: subscriber.updatedAt.toISOString(),
 			plan: {
 				id: subscriber.plan.id,
+				planId: subscriber.plan.id,
 				code: subscriber.plan.code,
 				name: subscriber.plan.name,
 				description: subscriber.plan.description,
@@ -88,6 +92,7 @@ export const AdminSubscriberMapper = {
 			},
 			transactions: subscriber.transactions.map((tx) => ({
 				id: tx.id,
+				transactionId: tx.id,
 				amountPaise: tx.amountPaise,
 				currency: tx.currency,
 				status: tx.status,
@@ -97,6 +102,7 @@ export const AdminSubscriberMapper = {
 			})),
 			invoices: subscriber.invoices.map((inv) => ({
 				id: inv.id,
+				invoiceId: inv.id,
 				invoiceNumber: inv.invoiceNumber,
 				amountPaise: inv.amountPaise,
 				currency: inv.currency,

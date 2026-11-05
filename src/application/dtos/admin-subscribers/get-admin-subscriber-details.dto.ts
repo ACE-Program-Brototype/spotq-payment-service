@@ -6,6 +6,7 @@ export interface GetAdminSubscriberDetailsInputDTO {
 
 export interface AdminSubscriberTransactionDTO {
 	id: string;
+	transactionId: string;
 	amountPaise: number;
 	currency: string;
 	status: string;
@@ -16,6 +17,7 @@ export interface AdminSubscriberTransactionDTO {
 
 export interface AdminSubscriberInvoiceDTO {
 	id: string;
+	invoiceId: string;
 	invoiceNumber: string;
 	amountPaise: number;
 	currency: string;
@@ -26,6 +28,7 @@ export interface AdminSubscriberInvoiceDTO {
 
 export interface AdminSubscriberDetailsOutputDTO {
 	id: string;
+	subscriberId: string;
 	restaurantId: string;
 	restaurantName?: string | null;
 	subscriberName?: string | null;

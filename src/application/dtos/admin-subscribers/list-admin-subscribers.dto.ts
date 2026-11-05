@@ -9,6 +9,7 @@ export interface ListAdminSubscribersQueryDTO {
 
 export interface AdminSubscriberPlanDTO {
 	id: string;
+	planId: string;
 	code: string;
 	name: string;
 	description?: string | null;
@@ -21,6 +22,7 @@ export interface AdminSubscriberPlanDTO {
 
 export interface AdminSubscriberSummaryDTO {
 	id: string;
+	subscriberId: string;
 	restaurantId: string;
 	restaurantName?: string | null;
 	subscriberName?: string | null;

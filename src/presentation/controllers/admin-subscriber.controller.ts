@@ -1,19 +1,11 @@
+import type { ListAdminSubscribersQueryDTO } from '@application/dtos/admin-subscribers/list-admin-subscribers.dto.ts';
 import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { DomainError } from '@domain/errors/payment.errors.ts';
-import { getAdminSubscriberDetailsParamsSchema } from '@presentation/validators/admin-subscribers/get-admin-subscriber-details.validator.ts';
-import { listAdminSubscribersQuerySchema } from '@presentation/validators/admin-subscribers/list-admin-subscribers.validator.ts';
-import {
-	ERROR_CODES,
-	getStatusCodeForDomainError,
-	HTTP_STATUS,
-	MESSAGES,
-} from '@shared/constants/index.ts';
-import { sendErrorResponse, sendSuccessResponse } from '@shared/response/api-response.ts';
+import { HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
+import { sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
-import { ZodError } from 'zod';
 
 @injectable()
 export class AdminSubscriberController {
@@ -25,61 +17,27 @@ export class AdminSubscriberController {
 	) {}
 
 	listSubscribers = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const query = listAdminSubscribersQuerySchema.parse(req.query);
+		const query = (res.locals.query ?? req.query) as unknown as ListAdminSubscribersQueryDTO;
 
-			const result = await this.getAdminSubscribersUseCase.execute({
-				page: query.page,
-				limit: query.limit,
-				status: query.status,
-				search: query.search,
-				sortBy: query.sortBy,
-				sortOrder: query.sortOrder,
-			});
+		const result = await this.getAdminSubscribersUseCase.execute({
+			page: Number(query.page),
+			limit: Number(query.limit),
+			status: query.status,
+			search: query.search,
+			sortBy: query.sortBy,
+			sortOrder: query.sortOrder,
+		});
 
-			sendSuccessResponse(res, result, MESSAGES.SUBSCRIBERS_RETRIEVED, HTTP_STATUS.OK);
-		} catch (error: unknown) {
-			this.handleError(res, error);
-		}
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIBERS_RETRIEVED, HTTP_STATUS.OK);
 	};
 
 	getSubscriberDetails = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const params = getAdminSubscriberDetailsParamsSchema.parse(req.params);
+		const params = (res.locals.params ?? req.params) as { subscriberId: string };
 
-			const result = await this.getAdminSubscriberDetailsUseCase.execute({
-				subscriberId: params.subscriberId,
-			});
+		const result = await this.getAdminSubscriberDetailsUseCase.execute({
+			subscriberId: params.subscriberId,
+		});
 
-			sendSuccessResponse(res, result, MESSAGES.SUBSCRIBER_DETAILS_RETRIEVED, HTTP_STATUS.OK);
-		} catch (error: unknown) {
-			this.handleError(res, error);
-		}
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIBER_DETAILS_RETRIEVED, HTTP_STATUS.OK);
 	};
-
-	private handleError(res: Response, error: unknown): void {
-		if (error instanceof DomainError) {
-			const statusCode = getStatusCodeForDomainError(error.code, HTTP_STATUS.BAD_REQUEST);
-			sendErrorResponse(res, error.code, error.message, statusCode);
-			return;
-		}
-
-		if (error instanceof ZodError) {
-			sendErrorResponse(
-				res,
-				ERROR_CODES.BAD_REQUEST,
-				error.issues[0]?.message || MESSAGES.VALIDATION_ERROR,
-				HTTP_STATUS.BAD_REQUEST,
-				error.issues,
-			);
-			return;
-		}
-
-		sendErrorResponse(
-			res,
-			ERROR_CODES.INTERNAL_SERVER_ERROR,
-			MESSAGES.INTERNAL_SERVER_ERROR,
-			HTTP_STATUS.INTERNAL_SERVER_ERROR,
-		);
-	}
 }

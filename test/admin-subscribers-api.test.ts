@@ -165,11 +165,11 @@ describe('Admin Subscribers API Routes (HTTP Integration)', () => {
 			});
 		});
 
-		it('should return 400 Bad Request on invalid pagination query parameters', async () => {
+		it('should return 422 Unprocessable Entity on invalid pagination query parameters', async () => {
 			const res = await request(app)
 				.get(`${SUBSCRIBER_ROUTES.API_V1_BASE}?page=0&limit=999`)
 				.set(adminHeaders)
-				.expect(HTTP_STATUS.BAD_REQUEST);
+				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
 			expect(res.body.success).toBe(false);
 		});
@@ -221,14 +221,14 @@ describe('Admin Subscribers API Routes (HTTP Integration)', () => {
 			expect(res.body.message).toBe(MESSAGES.ADMIN_FORBIDDEN);
 		});
 
-		it('should return 400 Bad Request when subscriberId is not a valid UUID', async () => {
+		it('should return 422 Unprocessable Entity when subscriberId is not a valid UUID', async () => {
 			const res = await request(app)
 				.get(`${SUBSCRIBER_ROUTES.API_V1_BASE}/invalid-not-a-uuid`)
 				.set(adminHeaders)
-				.expect(HTTP_STATUS.BAD_REQUEST);
+				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
 			expect(res.body.success).toBe(false);
-			expect(res.body.message).toBe(MESSAGES.INVALID_SUBSCRIBER_ID);
+			expect(res.body.message).toBe(MESSAGES.VALIDATION_ERROR);
 		});
 
 		it('should return 404 Not Found when subscriber does not exist', async () => {

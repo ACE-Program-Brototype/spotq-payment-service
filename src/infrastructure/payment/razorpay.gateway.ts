@@ -10,7 +10,7 @@ import type {
 	VerifyPaymentSignatureParams,
 } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { MESSAGES } from '@shared/constants/index.ts';
+import { DEFAULT_REFUND_SPEED, MESSAGES } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import Razorpay from 'razorpay';
 import { setRazorpayClient } from './razorpay.client.ts';
@@ -141,6 +141,7 @@ export class RazorpayGateway implements IPaymentGateway {
 
 		const refund = await this.client.payments.refund(params.paymentId, {
 			amount: params.amountInPaise,
+			speed: params.speed ?? DEFAULT_REFUND_SPEED,
 			notes: params.notes,
 		});
 

@@ -11,7 +11,7 @@ export const OrderRefundMapper = {
 			amountPaise: refund.amountPaise,
 			currency: refund.currency,
 			status: refund.status,
-			processedAt: (refund.processedAt ?? new Date()).toISOString(),
+			processedAt: refund.processedAt ? refund.processedAt.toISOString() : null,
 		};
 	},
 };

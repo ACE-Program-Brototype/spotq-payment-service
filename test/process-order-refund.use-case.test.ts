@@ -11,7 +11,11 @@ import {
 } from '@domain/errors/payment.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
-import { REFUND_STATUS } from '@shared/constants/index.ts';
+import {
+	DEFAULT_REFUND_SPEED,
+	RAZORPAY_REFUND_STATUS,
+	REFUND_STATUS,
+} from '@shared/constants/index.ts';
 
 describe('ProcessOrderRefundUseCase', () => {
 	let mockGateway: jest.Mocked<IPaymentGateway>;
@@ -50,7 +54,7 @@ describe('ProcessOrderRefundUseCase', () => {
 				paymentId: mockPaymentId,
 				amount: 86800,
 				currency: 'INR',
-				status: 'processed',
+				status: RAZORPAY_REFUND_STATUS.PROCESSED,
 				arn: '123456789012',
 			}),
 		} as unknown as jest.Mocked<IPaymentGateway>;
@@ -68,7 +72,7 @@ describe('ProcessOrderRefundUseCase', () => {
 				const tx = createMockTransaction('REFUNDED');
 				const refund = new PaymentRefund({
 					id: 'refund-db-id',
-					paymentTransactionId: params.transactionId,
+					paymentTransactionId: params.transaction.id,
 					razorpayRefundId: params.refund.razorpayRefundId,
 					amountPaise: params.refund.amountPaise,
 					currency: params.refund.currency,
@@ -110,6 +114,7 @@ describe('ProcessOrderRefundUseCase', () => {
 		expect(mockGateway.createRefund).toHaveBeenCalledWith({
 			paymentId: mockPaymentId,
 			amountInPaise: 86800,
+			speed: DEFAULT_REFUND_SPEED,
 			notes: {
 				orderId: mockOrderId,
 				transactionId: mockTransactionId,
@@ -119,7 +124,7 @@ describe('ProcessOrderRefundUseCase', () => {
 		});
 
 		expect(mockTxRepo.processOrderRefund).toHaveBeenCalledWith({
-			transactionId: mockTransactionId,
+			transaction: expect.objectContaining({ id: mockTransactionId }),
 			refund: {
 				razorpayRefundId: 'rfnd_OEd92m8F05s9jKa',
 				amountPaise: 86800,
@@ -211,5 +216,51 @@ describe('ProcessOrderRefundUseCase', () => {
 				orderId: mockOrderId,
 			}),
 		).rejects.toThrow(PaymentGatewayError);
+	});
+
+	it('should mark refund as PENDING and transition transaction to REFUNDED when gateway returns pending status', async () => {
+		const mockTx = createMockTransaction();
+		const markRefundedSpy = jest.spyOn(mockTx, 'markRefunded');
+		mockTxRepo.findByCustomerOrderId.mockResolvedValueOnce(mockTx);
+
+		mockGateway.createRefund.mockResolvedValueOnce({
+			refundId: 'rfnd_pending_123',
+			paymentId: mockPaymentId,
+			amount: 86800,
+			currency: 'INR',
+			status: RAZORPAY_REFUND_STATUS.PENDING,
+		});
+
+		mockTxRepo.processOrderRefund.mockImplementationOnce(async (params) => {
+			const refundedTx = createMockTransaction('REFUNDED');
+			const refund = new PaymentRefund({
+				id: 'refund-pending-id',
+				paymentTransactionId: params.transaction.id,
+				razorpayRefundId: params.refund.razorpayRefundId,
+				amountPaise: params.refund.amountPaise,
+				currency: params.refund.currency,
+				status: params.refund.status,
+				reason: params.refund.reason,
+				arn: params.refund.arn,
+				paymentMethod: params.refund.paymentMethod,
+				processedAt: null,
+			});
+			return { transaction: refundedTx, refund };
+		});
+
+		const result = await useCase.execute({
+			orderId: mockOrderId,
+		});
+
+		expect(result.status).toBe(REFUND_STATUS.PENDING);
+		expect(result.processedAt).toBeNull();
+		expect(markRefundedSpy).toHaveBeenCalled();
+		expect(mockTxRepo.processOrderRefund).toHaveBeenCalledWith(
+			expect.objectContaining({
+				refund: expect.objectContaining({
+					status: REFUND_STATUS.PENDING,
+				}),
+			}),
+		);
 	});
 });

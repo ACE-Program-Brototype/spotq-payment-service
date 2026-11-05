@@ -31,6 +31,25 @@ export const RAZORPAY_WEBHOOK_EVENTS = {
 export type RazorpayWebhookEvent =
 	(typeof RAZORPAY_WEBHOOK_EVENTS)[keyof typeof RAZORPAY_WEBHOOK_EVENTS];
 
+export const RAZORPAY_REFUND_STATUS = {
+	PENDING: 'pending',
+	PROCESSED: 'processed',
+	FAILED: 'failed',
+} as const;
+
+export type RazorpayRefundStatus =
+	(typeof RAZORPAY_REFUND_STATUS)[keyof typeof RAZORPAY_REFUND_STATUS];
+
+export const RAZORPAY_REFUND_SPEED = {
+	OPTIMUM: 'optimum',
+	NORMAL: 'normal',
+} as const;
+
+export type RazorpayRefundSpeed =
+	(typeof RAZORPAY_REFUND_SPEED)[keyof typeof RAZORPAY_REFUND_SPEED];
+
+export const DEFAULT_REFUND_SPEED = RAZORPAY_REFUND_SPEED.OPTIMUM;
+
 export const PAYMENT_EVENTS = {
 	ORDER_CAPTURED: 'payment.order.captured',
 	ORDER_FAILED: 'payment.order.failed',

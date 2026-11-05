@@ -12,5 +12,5 @@ export interface ProcessOrderRefundOutput {
 	amountPaise: number;
 	currency: string;
 	status: string;
-	processedAt: string;
+	processedAt: string | null;
 }

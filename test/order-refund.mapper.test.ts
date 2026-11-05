@@ -65,4 +65,30 @@ describe('OrderRefundMapper', () => {
 		const output = OrderRefundMapper.toResponse(tx, refund);
 		expect(output.orderId).toBe('');
 	});
+
+	it('should set processedAt to null when refund is in PENDING status', () => {
+		const tx = new PaymentTransaction({
+			id: 'tx-pending-order',
+			restaurantId: 'rest-123',
+			orderId: 'order-123',
+			razorpayOrderId: 'order_rzp_123',
+			amountPaise: 40000,
+			currency: 'INR',
+			status: 'CAPTURED',
+		});
+
+		const refund = new PaymentRefund({
+			id: 'rfnd-record-3',
+			paymentTransactionId: tx.id,
+			razorpayRefundId: 'rfnd_pending_123',
+			amountPaise: 40000,
+			currency: 'INR',
+			status: REFUND_STATUS.PENDING,
+			processedAt: null,
+		});
+
+		const output = OrderRefundMapper.toResponse(tx, refund);
+		expect(output.status).toBe(REFUND_STATUS.PENDING);
+		expect(output.processedAt).toBeNull();
+	});
 });

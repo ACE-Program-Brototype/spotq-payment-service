@@ -12,7 +12,12 @@ import type {
 } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { REFUND_STATUS } from '@shared/constants/index.ts';
+import {
+	DEFAULT_REFUND_SPEED,
+	RAZORPAY_REFUND_STATUS,
+	REFUND_STATUS,
+	type RefundStatus,
+} from '@shared/constants/index.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -40,6 +45,7 @@ export class ProcessOrderRefundUseCase implements IProcessOrderRefundUseCase {
 			gatewayRefund = await this.paymentGateway.createRefund({
 				paymentId: gatewayPaymentId,
 				amountInPaise: refundAmountPaise,
+				speed: DEFAULT_REFUND_SPEED,
 				notes: {
 					orderId: tx.orderId ?? input.orderId,
 					transactionId: tx.id,
@@ -55,17 +61,26 @@ export class ProcessOrderRefundUseCase implements IProcessOrderRefundUseCase {
 			throw new PaymentGatewayError();
 		}
 
+		const paymentMethod = tx.paymentMethod;
+
+		const refundStatus: RefundStatus =
+			gatewayRefund.status?.toLowerCase() === RAZORPAY_REFUND_STATUS.PROCESSED
+				? REFUND_STATUS.PROCESSED
+				: REFUND_STATUS.PENDING;
+
+		tx.markRefunded();
+
 		const { transaction: updatedTx, refund } =
 			await this.paymentTransactionRepository.processOrderRefund({
-				transactionId: tx.id,
+				transaction: tx,
 				refund: {
 					razorpayRefundId: gatewayRefund.refundId,
 					amountPaise: refundAmountPaise,
 					currency: tx.currency,
-					status: REFUND_STATUS.PROCESSED,
+					status: refundStatus,
 					reason: input.reason ?? null,
 					arn: gatewayRefund.arn ?? null,
-					paymentMethod: tx.paymentMethod,
+					paymentMethod,
 				},
 			});
 

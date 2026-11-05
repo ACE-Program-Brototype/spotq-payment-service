@@ -1,3 +1,5 @@
+import type { RazorpayRefundSpeed } from '@shared/constants';
+
 export interface CreateOrderParams {
 	amountInPaise: number;
 	currency: string;
@@ -38,6 +40,7 @@ export interface PaymentDetailsResult {
 export interface CreateRefundParams {
 	paymentId: string;
 	amountInPaise: number;
+	speed?: RazorpayRefundSpeed;
 	notes?: Record<string, string>;
 }
 

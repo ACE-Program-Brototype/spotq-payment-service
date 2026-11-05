@@ -237,7 +237,7 @@ export class PrismaPaymentTransactionRepository
 	async processOrderRefund(params: ProcessOrderRefundParams): Promise<ProcessOrderRefundResult> {
 		return await this.prisma.$transaction(async (tx) => {
 			const existing = await tx.paymentTransaction.findUnique({
-				where: { id: params.transactionId },
+				where: { id: params.transaction.id },
 			});
 
 			if (!existing) {
@@ -248,17 +248,19 @@ export class PrismaPaymentTransactionRepository
 				throw new PaymentAlreadyRefundedError();
 			}
 
+			const isProcessed = params.refund.status === REFUND_STATUS.PROCESSED;
+
 			const updatedTx = await tx.paymentTransaction.update({
-				where: { id: params.transactionId },
+				where: { id: params.transaction.id },
 				data: {
-					status: PAYMENT_STATUS.REFUNDED,
-					updatedAt: new Date(),
+					status: params.transaction.status,
+					updatedAt: params.transaction.updatedAt ?? new Date(),
 				},
 			});
 
 			const refundRecord = await tx.paymentRefund.create({
 				data: {
-					paymentTransactionId: params.transactionId,
+					paymentTransactionId: params.transaction.id,
 					razorpayRefundId: params.refund.razorpayRefundId,
 					amountPaise: params.refund.amountPaise,
 					currency: params.refund.currency,
@@ -266,12 +268,12 @@ export class PrismaPaymentTransactionRepository
 					reason: params.refund.reason ?? null,
 					arn: params.refund.arn ?? null,
 					paymentMethod: params.refund.paymentMethod ?? null,
-					processedAt: new Date(),
+					processedAt: isProcessed ? new Date() : null,
 				},
 			});
 
 			await tx.billingInvoice.updateMany({
-				where: { paymentTransactionId: params.transactionId },
+				where: { paymentTransactionId: params.transaction.id },
 				data: {
 					status: INVOICE_STATUS.VOID,
 					invoicePdfKey: null,

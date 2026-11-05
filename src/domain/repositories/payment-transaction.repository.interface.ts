@@ -32,7 +32,7 @@ export interface FailOrderPaymentWithOutboxParams {
 }
 
 export interface ProcessOrderRefundParams {
-	transactionId: string;
+	transaction: PaymentTransaction;
 	refund: {
 		razorpayRefundId: string;
 		amountPaise: number;

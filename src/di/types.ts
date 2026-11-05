@@ -24,17 +24,20 @@ export const TYPES = {
 		GetOrderPaymentStatusUseCase: Symbol.for('IGetOrderPaymentStatusUseCase'),
 		GetSubscriptionPlansUseCase: Symbol.for('IGetSubscriptionPlansUseCase'),
 		GetSubscriptionStatusUseCase: Symbol.for('IGetSubscriptionStatusUseCase'),
-		GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
 		VerifyOrderPaymentUseCase: Symbol.for('IVerifyOrderPaymentUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
+		RestaurantWallet: {
+			GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
+		},
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
 		SubscriptionController: Symbol.for('SubscriptionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
+		RestaurantWalletController: Symbol.for('RestaurantWalletController'),
 	},
 } as const;

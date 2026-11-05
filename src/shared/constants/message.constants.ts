@@ -62,6 +62,9 @@ export enum MessageEnum {
 	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED = 'Failed to retrieve platform finance summary',
 	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
+
+	// restaurant wallet
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet recieved successfully',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -138,6 +141,10 @@ export const MESSAGES = {
 	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED: MessageEnum.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED,
 	PLATFORM_MASTER_LEDGER_FETCHED: MessageEnum.PLATFORM_MASTER_LEDGER_FETCHED,
+
+	// restaurant wallet
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS: MessageEnum.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
+
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,
 	ORDER_PAYMENT_ALREADY_CAPTURED: MessageEnum.ORDER_PAYMENT_ALREADY_CAPTURED,

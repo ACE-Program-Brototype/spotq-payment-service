@@ -13,30 +13,10 @@ export function sendSuccessResponse<T>(
 
 export function sendErrorResponse(
 	res: Response,
-	arg1: string,
-	arg2: string,
+	message: string,
+	error: string,
 	statusCode: HttpStatus = HTTP_STATUS.BAD_REQUEST,
 	details?: unknown,
 ): void {
-	let error: string;
-	let message: string;
-
-	if (
-		arg1.includes(' ') ||
-		(arg2 && !arg2.includes(' ') && arg2 === arg2.toUpperCase() && arg1 !== arg1.toUpperCase())
-	) {
-		message = arg1;
-		error = arg2;
-	} else if (
-		arg2.includes(' ') ||
-		(arg1 && !arg1.includes(' ') && arg1 === arg1.toUpperCase() && arg2 !== arg2.toUpperCase())
-	) {
-		error = arg1;
-		message = arg2;
-	} else {
-		error = arg1;
-		message = arg2;
-	}
-
 	res.status(statusCode).json(ApiResponse.error(error, message, details));
 }

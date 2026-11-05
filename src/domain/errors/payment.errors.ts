@@ -69,3 +69,27 @@ export class InvalidPaymentStateTransitionError extends DomainError {
 		super(message, 'INVALID_PAYMENT_STATE_TRANSITION');
 	}
 }
+
+export class AlreadyPaidError extends DomainError {
+	constructor(message: string = MESSAGES.ALREADY_PAID) {
+		super(message, 'ALREADY_PAID');
+	}
+}
+
+export class OrderExpiredError extends DomainError {
+	constructor(message: string = MESSAGES.ORDER_EXPIRED) {
+		super(message, 'ORDER_EXPIRED');
+	}
+}
+
+export class PaymentNotRetryableError extends DomainError {
+	constructor(message: string = MESSAGES.NOT_RETRYABLE) {
+		super(message, 'NOT_RETRYABLE');
+	}
+}
+
+export class TransactionNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.TRANSACTION_NOT_FOUND) {
+		super(message, 'NOT_FOUND');
+	}
+}

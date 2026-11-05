@@ -2,6 +2,7 @@ import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.
 import {
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
+	PaymentNotRetryableError,
 	PaymentOrderNotFoundError,
 } from '@domain/errors/payment.errors.ts';
 
@@ -199,6 +200,41 @@ describe('PaymentTransaction Entity', () => {
 			tx.markFailed('Failure arrived late');
 			expect(tx.status).toBe('CAPTURED');
 			expect(tx.failureReason).toBeNull();
+		});
+	});
+
+	describe('resetToCreated', () => {
+		it('should reset FAILED transaction status to CREATED and clear failureReason', () => {
+			const tx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'FAILED',
+				failureReason: 'Card declined',
+			});
+
+			tx.resetToCreated();
+
+			expect(tx.status).toBe('CREATED');
+			expect(tx.failureReason).toBeNull();
+			expect(tx.updatedAt).toBeInstanceOf(Date);
+		});
+
+		it('should throw PaymentNotRetryableError when transaction status is not FAILED', () => {
+			const capturedTx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'CAPTURED',
+			});
+
+			expect(() => capturedTx.resetToCreated()).toThrow(PaymentNotRetryableError);
 		});
 	});
 });

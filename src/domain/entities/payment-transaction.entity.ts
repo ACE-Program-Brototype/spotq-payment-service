@@ -1,6 +1,7 @@
 import {
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
+	PaymentNotRetryableError,
 	PaymentOrderNotFoundError,
 } from '@domain/errors/payment.errors.ts';
 import { DEFAULT_PAYMENT_METHOD, PAYMENT_STATUS } from '@shared/constants/index.ts';
@@ -162,6 +163,15 @@ export class PaymentTransaction {
 		}
 		this.props.status = PAYMENT_STATUS.FAILED;
 		this.props.failureReason = reason;
+		this.props.updatedAt = new Date();
+	}
+
+	resetToCreated(): void {
+		if (this.props.status !== PAYMENT_STATUS.FAILED) {
+			throw new PaymentNotRetryableError();
+		}
+		this.props.status = PAYMENT_STATUS.CREATED;
+		this.props.failureReason = null;
 		this.props.updatedAt = new Date();
 	}
 

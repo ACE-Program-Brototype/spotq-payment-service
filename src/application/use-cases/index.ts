@@ -1,4 +1,5 @@
 export * from './create-subscription-order.use-case.ts';
+export * from './customer-payment/index.ts';
 export * from './get-subscription-plans.use-case.ts';
 export * from './get-subscription-status.use-case.ts';
 export * from './handle-webhook.use-case.ts';

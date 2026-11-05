@@ -1,4 +1,6 @@
 import type {
+	CustomerTransactionFilterParams,
+	PaginatedCustomerTransactionsResult,
 	PaginatedTransactionsResult,
 	TransactionDetail,
 	TransactionFilterParams,
@@ -9,4 +11,7 @@ export interface ITransactionQueryRepository {
 		params: TransactionFilterParams,
 	): Promise<PaginatedTransactionsResult>;
 	findTransactionById(id: string, restaurantId: string): Promise<TransactionDetail | null>;
+	findTransactionsByCustomer(
+		params: CustomerTransactionFilterParams,
+	): Promise<PaginatedCustomerTransactionsResult>;
 }

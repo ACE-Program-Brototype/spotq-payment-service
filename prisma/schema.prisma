@@ -47,14 +47,6 @@ enum OutboxStatus {
   FAILED
 }
 
-enum SettlementStatus {
-  PENDING
-  CALCULATING
-  CREDITED_TO_WALLET
-  FAILED
-  ON_HOLD
-}
-
 enum RefundStatus {
   PENDING
   PROCESSED
@@ -62,9 +54,10 @@ enum RefundStatus {
 }
 
 enum WalletLedgerType {
-  CREDIT_SETTLEMENT
-  DEBIT_PAYOUT_WITHDRAWAL
-  CREDIT_REFUND_ADJUSTMENT
+  CREDIT_ORDER_PAYMENT // Real-time credit from paid customer order
+  DEBIT_PAYOUT_WITHDRAWAL // Withdrawal to bank account
+  DEBIT_ORDER_REFUND // Deduction for customer refund
+  CREDIT_PAYOUT_REVERSAL // Refunded back to wallet if bank payout fails
 }
 
 enum PlatformTransactionType {
@@ -75,9 +68,9 @@ enum PlatformTransactionType {
 
 enum PayoutStatus {
   PROCESSING // Initial state, waiting for bank settlement
-  PROCESSED  // Payout successful and UTR received via webhook
-  REVERSED   // Bank transfer rejected/reversed and refunded to wallet
-  FAILED     // Payout failed before banking clearance
+  PROCESSED // Payout successful and UTR received via webhook
+  REVERSED // Bank transfer rejected/reversed and refunded to wallet
+  FAILED // Payout failed before banking clearance
 }
 
 // ----------------------------------------------------
@@ -227,7 +220,6 @@ model RestaurantWallet {
 model WalletLedgerEntry {
   id            String           @id @default(uuid()) @db.Uuid
   walletId      String           @map("wallet_id") @db.Uuid
-  settlementId  String?          @map("settlement_id") @db.Uuid
   type          WalletLedgerType
   status        PayoutStatus     @default(PROCESSED) // Default PROCESSED for settlements; set to PROCESSING for new withdrawals
   amountPaise   BigInt           @map("amount_paise")
@@ -237,33 +229,11 @@ model WalletLedgerEntry {
   utrNumber     String?          @map("utr_number") // Bank UTR reference from RazorpayX webhook
   createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
 
-  wallet     RestaurantWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
-  settlement Settlement?      @relation(fields: [settlementId], references: [id])
+  wallet RestaurantWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
 
   @@index([walletId, type, status])
   @@index([walletId, createdAt(sort: Desc)])
   @@map("wallet_ledger_entries")
-}
-
-model Settlement {
-  id                String           @id @default(uuid()) @db.Uuid
-  settlementNumber  String           @unique @map("settlement_number")
-  restaurantId      String           @map("restaurant_id") @db.Uuid
-  settlementDate    DateTime         @map("settlement_date") @db.Date
-  ordersCount       Int              @map("orders_count")
-  grossSalesPaise   BigInt           @map("gross_sales_paise")
-  totalRefundsPaise BigInt           @map("total_refunds_paise")
-  netCreditPaise    BigInt           @map("net_credit_paise")
-  status            SettlementStatus @default(PENDING)
-  creditedAt        DateTime?        @map("credited_at") @db.Timestamptz
-  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz
-
-  ledgerEntries WalletLedgerEntry[]
-
-  @@unique([restaurantId, settlementDate]) // Natural idempotency: 1 settlement per date
-  @@index([restaurantId, status])
-  @@map("settlements")
 }
 
 model PlatformWallet {

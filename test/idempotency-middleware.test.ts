@@ -1,6 +1,7 @@
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import { idempotencyMiddleware } from '@presentation/middleware/idempotency.middleware.ts';
-import { ERROR_CODES, HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
+import { HTTP_STATUS } from '@shared/constants/index.ts';
+import { BadRequestError, ConflictError } from '@shared/errors/index.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 describe('Idempotency Middleware', () => {
@@ -39,6 +40,17 @@ describe('Idempotency Middleware', () => {
 		nextFn = jest.fn();
 	});
 
+	it('should throw BadRequestError when idempotency key is missing or empty', async () => {
+		mockReq.headers = {};
+		const middleware = idempotencyMiddleware(mockCacheService);
+
+		await expect(middleware(mockReq as Request, mockRes as Response, nextFn)).rejects.toThrow(
+			BadRequestError,
+		);
+		expect(mockCacheService.acquireLock).not.toHaveBeenCalled();
+		expect(nextFn).not.toHaveBeenCalled();
+	});
+
 	it('should handle array header values using getHeaderValue', async () => {
 		mockReq.headers = { 'x-idempotency-key': ['test-key-arr'] as unknown as string };
 		const middleware = idempotencyMiddleware(mockCacheService);
@@ -66,25 +78,19 @@ describe('Idempotency Middleware', () => {
 		expect(nextFn).not.toHaveBeenCalled();
 	});
 
-	it('should return 409 Conflict if distributed lock cannot be acquired (concurrent request)', async () => {
+	it('should throw ConflictError if distributed lock cannot be acquired (concurrent request)', async () => {
 		mockCacheService.get.mockResolvedValue(null);
 		mockCacheService.acquireLock.mockResolvedValue(false);
 		mockReq.headers = { 'x-idempotency-key': 'test-key-concurrent' };
 
 		const middleware = idempotencyMiddleware(mockCacheService);
-		await middleware(mockReq as Request, mockRes as Response, nextFn);
 
+		await expect(middleware(mockReq as Request, mockRes as Response, nextFn)).rejects.toThrow(
+			ConflictError,
+		);
 		expect(mockCacheService.acquireLock).toHaveBeenCalledWith(
 			'lock:refund:test-key-concurrent',
 			15,
-		);
-		expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.CONFLICT);
-		expect(mockRes.json).toHaveBeenCalledWith(
-			expect.objectContaining({
-				success: false,
-				error: ERROR_CODES.CONFLICT,
-				message: MESSAGES.CONFLICT,
-			}),
 		);
 		expect(nextFn).not.toHaveBeenCalled();
 	});

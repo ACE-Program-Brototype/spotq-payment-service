@@ -5,12 +5,10 @@ import {
 
 describe('processOrderRefundSchema', () => {
 	const validOrderId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-	const validTxId = '8e329a17-6421-4f3a-bfda-90e94bb10022';
 
 	it('should accept valid refund payload with all fields', () => {
 		const result = processOrderRefundSchema.safeParse({
 			orderId: validOrderId,
-			transactionId: validTxId,
 			amountPaise: 86800,
 			reason: 'CUSTOMER_CANCELLED',
 			notes: 'Customer cancelled before kitchen acceptance',
@@ -30,15 +28,6 @@ describe('processOrderRefundSchema', () => {
 	it('should reject invalid UUID for orderId', () => {
 		const result = processOrderRefundSchema.safeParse({
 			orderId: 'not-a-uuid',
-		});
-
-		expect(result.success).toBe(false);
-	});
-
-	it('should reject invalid UUID for transactionId', () => {
-		const result = processOrderRefundSchema.safeParse({
-			orderId: validOrderId,
-			transactionId: 'invalid-id',
 		});
 
 		expect(result.success).toBe(false);

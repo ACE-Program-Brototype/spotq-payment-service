@@ -89,10 +89,9 @@ describe('ProcessOrderRefundUseCase', () => {
 		useCase = new ProcessOrderRefundUseCase(mockGateway, mockTxRepo);
 	});
 
-	it('should process refund successfully when given valid orderId and transactionId', async () => {
+	it('should process refund successfully when given valid orderId', async () => {
 		const result = await useCase.execute({
 			orderId: mockOrderId,
-			transactionId: mockTransactionId,
 			amountPaise: 86800,
 			reason: 'CUSTOMER_CANCELLED',
 			notes: 'Cancelled before kitchen acceptance',

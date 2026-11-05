@@ -63,11 +63,10 @@ export class OrderPaymentController {
 	};
 
 	processRefund = async (req: Request, res: Response): Promise<void> => {
-		const { orderId, transactionId, amountPaise, reason, notes } = req.body;
+		const { orderId, amountPaise, reason, notes } = req.body;
 
 		const result = await this.processOrderRefundUseCase.execute({
 			orderId,
-			transactionId,
 			amountPaise,
 			reason,
 			notes,

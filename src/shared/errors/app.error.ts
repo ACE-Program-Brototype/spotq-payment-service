@@ -24,3 +24,15 @@ export class ForbiddenError extends AppError {
 		super(message, HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN, details);
 	}
 }
+
+export class BadRequestError extends AppError {
+	constructor(message: string = MESSAGES.BAD_REQUEST, details?: unknown) {
+		super(message, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST, details);
+	}
+}
+
+export class ConflictError extends AppError {
+	constructor(message: string = MESSAGES.CONFLICT, details?: unknown) {
+		super(message, HTTP_STATUS.CONFLICT, ERROR_CODES.CONFLICT, details);
+	}
+}

@@ -61,7 +61,6 @@ describe('OrderPaymentController - processRefund', () => {
 
 		expect(mockRefundUseCase.execute).toHaveBeenCalledWith({
 			orderId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-			transactionId: undefined,
 			amountPaise: 86800,
 			reason: 'CUSTOMER_CANCELLED',
 			notes: undefined,

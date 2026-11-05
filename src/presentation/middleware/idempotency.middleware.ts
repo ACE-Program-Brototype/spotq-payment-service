@@ -3,7 +3,6 @@ import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import { getHeaderValue } from '@presentation/middleware/customer-auth.middleware.ts';
 import {
-	ERROR_CODES,
 	HTTP_HEADERS,
 	HTTP_STATUS,
 	IDEMPOTENCY_TTL_SECONDS,
@@ -12,13 +11,17 @@ import {
 	REFUND_LOCK_KEY_PREFIX,
 	REFUND_LOCK_TTL_SECONDS,
 } from '@shared/constants/index.ts';
-import { sendErrorResponse } from '@shared/response/api-response.ts';
+import { BadRequestError, ConflictError } from '@shared/errors/index.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 export function idempotencyMiddleware(cacheService?: ICacheService) {
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 		const rawKey = getHeaderValue(req.headers[HTTP_HEADERS.IDEMPOTENCY_KEY]);
 		const idempotencyKey = rawKey?.trim();
+
+		if (!idempotencyKey) {
+			throw new BadRequestError(MESSAGES.IDEMPOTENCY_KEY_REQUIRED);
+		}
 
 		const cache = cacheService ?? container.get<ICacheService>(TYPES.Services.CacheService);
 		const cacheKey = `${REFUND_IDEMPOTENCY_KEY_PREFIX}${idempotencyKey}`;
@@ -39,8 +42,7 @@ export function idempotencyMiddleware(cacheService?: ICacheService) {
 		// 2. Try acquiring distributed lock to prevent concurrent executions
 		const acquired = await cache.acquireLock(lockKey, REFUND_LOCK_TTL_SECONDS);
 		if (!acquired) {
-			sendErrorResponse(res, MESSAGES.CONFLICT, ERROR_CODES.CONFLICT, HTTP_STATUS.CONFLICT);
-			return;
+			throw new ConflictError(MESSAGES.CONFLICT);
 		}
 
 		// 3. Hook into response to cache successful (2xx) responses and release the lock

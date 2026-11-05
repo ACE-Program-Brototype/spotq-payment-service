@@ -22,7 +22,6 @@ export const getOrderPaymentStatusParamsSchema = z.object({
 
 export const processOrderRefundSchema = z.object({
 	orderId: z.uuid(),
-	transactionId: z.uuid().optional(),
 	amountPaise: z.number().int().positive().optional(),
 	reason: z.string().min(1).optional(),
 	notes: z.string().optional(),

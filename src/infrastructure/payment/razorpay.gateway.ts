@@ -59,7 +59,7 @@ export class RazorpayGateway implements IPaymentGateway {
 
 	async createOrder(params: CreateOrderParams): Promise<PaymentOrderResult> {
 		if (!this.client) {
-			throw new Error('Razorpay client is not initialized');
+			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
 		}
 
 		const order = await this.client.orders.create({
@@ -127,7 +127,7 @@ export class RazorpayGateway implements IPaymentGateway {
 
 	async getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult> {
 		if (!this.client) {
-			throw new Error('Razorpay client is not initialized');
+			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
 		}
 
 		const payment = await this.client.payments.fetch(paymentId);
@@ -136,7 +136,7 @@ export class RazorpayGateway implements IPaymentGateway {
 
 	async createRefund(params: CreateRefundParams): Promise<PaymentRefundResult> {
 		if (!this.client) {
-			throw new Error('Razorpay client is not initialized');
+			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
 		}
 
 		const refund = await this.client.payments.refund(params.paymentId, {

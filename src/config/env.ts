@@ -47,4 +47,8 @@ export const config = {
 		privateKey: env.S2S_PRIVATE_KEY,
 		tokenTtlMs: Number(process.env.S2S_TOKEN_TTL_MS) || 10 * 60 * 1000,
 	},
+
+	services: {
+		restaurantServiceUrl: env.RESTAURANT_SERVICE_URL,
+	},
 } as const;

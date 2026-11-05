@@ -40,7 +40,7 @@ export class RestaurantServiceClient implements IRestaurantServiceClient {
 	private readonly tokenTtlMs: number;
 
 	constructor() {
-		this.baseUrl = process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3001';
+		this.baseUrl = config.services.restaurantServiceUrl;
 		this.tokenTtlMs = config.s2s.tokenTtlMs;
 	}
 

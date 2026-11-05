@@ -74,10 +74,10 @@ enum PlatformTransactionType {
 }
 
 enum PayoutStatus {
-  PROCESSING // Initial state on POST /withdraw while waiting for bank settlement
-  PROCESSED // Payout successful and UTR received via webhook
-  REVERSED // Bank transfer rejected/reversed and refunded to wallet
-  FAILED // Payout failed before banking clearance
+  PROCESSING // Initial state, waiting for bank settlement
+  PROCESSED  // Payout successful and UTR received via webhook
+  REVERSED   // Bank transfer rejected/reversed and refunded to wallet
+  FAILED     // Payout failed before banking clearance
 }
 
 // ----------------------------------------------------

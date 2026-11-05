@@ -8,6 +8,7 @@ import type {
 	TransactionSummary,
 } from '@domain/types/transaction-query.types.ts';
 import type { PaymentStatus, Prisma } from '@prisma/client';
+import { DEFAULT_PAYMENT_METHOD } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -25,6 +26,7 @@ interface TransactionMetadata {
 	tableNumber?: string;
 	tokenNumber?: string;
 	paymentMethod?: string;
+	method?: string;
 	upiVpa?: string;
 	card?: Record<string, unknown>;
 	bankReference?: string;
@@ -159,7 +161,11 @@ export class PrismaTransactionQueryRepository
 		const transactions: TransactionSummary[] = records.map((record) => {
 			const meta = (record.metadata as TransactionMetadata) || {};
 			const settlementStatus = meta.settlement?.status || 'PENDING_EOD';
-			const paymentMethod = meta.paymentMethod || 'UPI';
+			const paymentMethod = (
+				meta.paymentMethod ||
+				meta.method ||
+				DEFAULT_PAYMENT_METHOD
+			).toUpperCase();
 
 			return {
 				id: record.id,
@@ -252,7 +258,7 @@ export class PrismaTransactionQueryRepository
 			amountPaise: record.amountPaise,
 			currency: record.currency,
 			status: record.status,
-			paymentMethod: meta.paymentMethod || 'UPI',
+			paymentMethod: (meta.paymentMethod || meta.method || DEFAULT_PAYMENT_METHOD).toUpperCase(),
 			upiVpa: meta.upiVpa || null,
 			card: meta.card || null,
 			razorpayPaymentId: record.razorpayPaymentId,

@@ -198,5 +198,49 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 
 			expect(result).toBeNull();
 		});
+
+		it('should fallback to DEFAULT_PAYMENT_METHOD (ONLINE) when metadata has no paymentMethod', async () => {
+			mockPrisma.paymentTransaction.findFirst.mockResolvedValueOnce({
+				id: mockTxId,
+				restaurantId: mockRestaurantId,
+				orderId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+				razorpayOrderId: 'order_ODj4KxM721PqRs',
+				razorpayPaymentId: 'pay_OEd1m8F05s9jKa',
+				amountPaise: 86800,
+				currency: 'INR',
+				status: 'SUCCESS',
+				metadata: null,
+				createdAt: new Date('2026-10-27T14:15:00.000Z'),
+				updatedAt: new Date('2026-10-27T14:15:03.000Z'),
+				refunds: [],
+			});
+
+			const result = await repository.findTransactionById(mockTxId, mockRestaurantId);
+
+			expect(result).not.toBeNull();
+			expect(result?.paymentMethod).toBe('ONLINE');
+		});
+
+		it('should normalize lowercase method from metadata to uppercase', async () => {
+			mockPrisma.paymentTransaction.findFirst.mockResolvedValueOnce({
+				id: mockTxId,
+				restaurantId: mockRestaurantId,
+				orderId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+				razorpayOrderId: 'order_ODj4KxM721PqRs',
+				razorpayPaymentId: 'pay_OEd1m8F05s9jKa',
+				amountPaise: 86800,
+				currency: 'INR',
+				status: 'SUCCESS',
+				metadata: { method: 'card' },
+				createdAt: new Date('2026-10-27T14:15:00.000Z'),
+				updatedAt: new Date('2026-10-27T14:15:03.000Z'),
+				refunds: [],
+			});
+
+			const result = await repository.findTransactionById(mockTxId, mockRestaurantId);
+
+			expect(result).not.toBeNull();
+			expect(result?.paymentMethod).toBe('CARD');
+		});
 	});
 });

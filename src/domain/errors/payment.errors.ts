@@ -93,3 +93,9 @@ export class TransactionNotFoundError extends DomainError {
 		super(message, 'NOT_FOUND');
 	}
 }
+
+export class SubscriberNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.SUBSCRIBER_NOT_FOUND) {
+		super(message, 'SUBSCRIBER_NOT_FOUND');
+	}
+}

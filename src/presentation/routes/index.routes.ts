@@ -3,9 +3,11 @@ import {
 	INTERNAL_ROUTES,
 	PLATFORM_FINANCE_ROUTES,
 	ROUTES,
+	SUBSCRIBER_ROUTES,
 	TRANSACTION_ROUTES,
 } from '@shared/index.ts';
 import { Router } from 'express';
+import { adminSubscriberRouter } from './admin-subscriber.routes.ts';
 import { customerPaymentRouter } from './customer-payment.routes.ts';
 import { internalOrderPaymentRouter } from './internal-order-payment.routes.ts';
 import { metricsRouter } from './metrics.routes.ts';
@@ -25,3 +27,5 @@ router.use(TRANSACTION_ROUTES.API_V1_BASE, restaurantTransactionRouter);
 router.use(PLATFORM_FINANCE_ROUTES.ROOT, platformFinanceRouter);
 router.use(ROUTES.ROOT, orderPaymentRouter);
 router.use(INTERNAL_ROUTES.BASE, internalOrderPaymentRouter);
+router.use(SUBSCRIBER_ROUTES.BASE, adminSubscriberRouter);
+router.use(SUBSCRIBER_ROUTES.API_V1_BASE, adminSubscriberRouter);

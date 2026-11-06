@@ -69,7 +69,7 @@ export class RestaurantTransactionController {
 	private handleError(res: Response, error: unknown): void {
 		if (error instanceof DomainError) {
 			const statusCode = getStatusCodeForDomainError(error.code, HTTP_STATUS.BAD_REQUEST);
-			sendErrorResponse(res, error.code, error.message, statusCode);
+			sendErrorResponse(res, error.message, error.code, statusCode);
 			return;
 		}
 
@@ -84,8 +84,8 @@ export class RestaurantTransactionController {
 			if (hasUuidError) {
 				sendErrorResponse(
 					res,
-					ERROR_CODES.BAD_REQUEST,
 					MESSAGES.INVALID_TRANSACTION_ID,
+					ERROR_CODES.BAD_REQUEST,
 					HTTP_STATUS.BAD_REQUEST,
 				);
 				return;
@@ -94,8 +94,8 @@ export class RestaurantTransactionController {
 			if (hasDateRangeError) {
 				sendErrorResponse(
 					res,
-					ERROR_CODES.BAD_REQUEST,
 					MESSAGES.INVALID_DATE_RANGE,
+					ERROR_CODES.BAD_REQUEST,
 					HTTP_STATUS.BAD_REQUEST,
 				);
 				return;
@@ -103,8 +103,8 @@ export class RestaurantTransactionController {
 
 			sendErrorResponse(
 				res,
-				ERROR_CODES.VALIDATION_ERROR,
 				MESSAGES.VALIDATION_ERROR,
+				ERROR_CODES.VALIDATION_ERROR,
 				HTTP_STATUS.UNPROCESSABLE_ENTITY,
 				error.issues,
 			);
@@ -114,8 +114,8 @@ export class RestaurantTransactionController {
 		const message = error instanceof Error ? error.message : MESSAGES.TRANSACTIONS_QUERY_FAILED;
 		sendErrorResponse(
 			res,
-			ERROR_CODES.INTERNAL_SERVER_ERROR,
 			message,
+			ERROR_CODES.INTERNAL_SERVER_ERROR,
 			HTTP_STATUS.INTERNAL_SERVER_ERROR,
 		);
 	}

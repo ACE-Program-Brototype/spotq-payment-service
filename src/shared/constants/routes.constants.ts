@@ -49,6 +49,17 @@ export const CUSTOMER_PAYMENT_ROUTES = {
 	RETRY: '/transactions/:id/retry',
 } as const;
 
+export const SUBSCRIBER_ROUTES = {
+	BASE: '/subscribers',
+	BY_ID: '/subscribers/:subscriberId',
+	API_V1_BASE: '/api/v1/subscribers',
+	API_V1_BY_ID: '/api/v1/subscribers/:subscriberId',
+} as const;
+
+export const RESTAURANT_SERVICE_ROUTES = {
+	BATCH: '/api/internal/v1/restaurants/batch',
+} as const;
+
 export const ROUTES = {
 	ROOT: SYSTEM_ROUTES.ROOT,
 	HEALTH: SYSTEM_ROUTES.HEALTH,
@@ -66,6 +77,7 @@ export const ROUTES = {
 	INTERNAL: INTERNAL_ROUTES,
 	ORDER_PAYMENTS: ORDER_PAYMENT_ROUTES,
 	CUSTOMER_PAYMENTS: CUSTOMER_PAYMENT_ROUTES,
+	SUBSCRIBERS: SUBSCRIBER_ROUTES,
 } as const;
 
 export type SystemRoute = (typeof SYSTEM_ROUTES)[keyof typeof SYSTEM_ROUTES];
@@ -77,3 +89,4 @@ export type InternalRoute = (typeof INTERNAL_ROUTES)[keyof typeof INTERNAL_ROUTE
 export type OrderPaymentRoute = (typeof ORDER_PAYMENT_ROUTES)[keyof typeof ORDER_PAYMENT_ROUTES];
 export type CustomerPaymentRoute =
 	(typeof CUSTOMER_PAYMENT_ROUTES)[keyof typeof CUSTOMER_PAYMENT_ROUTES];
+export type SubscriberRoute = (typeof SUBSCRIBER_ROUTES)[keyof typeof SUBSCRIBER_ROUTES];

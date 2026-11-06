@@ -1,5 +1,8 @@
+import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
+import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
+import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
 import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases/get-order-payment-status.use-case.port.ts';
@@ -16,6 +19,8 @@ import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-
 import {
 	CreateOrderPaymentUseCase,
 	CreateSubscriptionOrderUseCase,
+	GetAdminSubscriberDetailsUseCase,
+	GetAdminSubscribersUseCase,
 	GetOrderPaymentStatusUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
@@ -50,7 +55,9 @@ import { PrismaPlatformLedgerTransactionRepository } from '@infrastructure/repos
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PrismaTransactionQueryRepository } from '@infrastructure/repositories/prisma-transaction-query.repository.ts';
+import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
 import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subscription-expiry.service.ts';
+import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
 import { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
 import { RestaurantTransactionController } from '@presentation/controllers/restaurant-transaction.controller.ts';
@@ -105,6 +112,11 @@ container
 container
 	.bind<IPaymentGateway>(TYPES.Gateways.PaymentGateway)
 	.to(RazorpayGateway)
+	.inSingletonScope();
+
+container
+	.bind<IRestaurantServiceClient>(TYPES.Clients.RestaurantServiceClient)
+	.to(RestaurantServiceClient)
 	.inSingletonScope();
 
 container
@@ -176,6 +188,14 @@ container
 	.to(GetOrderPaymentStatusUseCase);
 
 container
+	.bind<IGetAdminSubscribersUseCase>(TYPES.UseCases.GetAdminSubscribersUseCase)
+	.to(GetAdminSubscribersUseCase);
+
+container
+	.bind<IGetAdminSubscriberDetailsUseCase>(TYPES.UseCases.GetAdminSubscriberDetailsUseCase)
+	.to(GetAdminSubscriberDetailsUseCase);
+
+container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)
 	.to(SubscriptionController)
 	.inSingletonScope();
@@ -192,4 +212,9 @@ container
 container
 	.bind<OrderPaymentController>(TYPES.Controllers.OrderPaymentController)
 	.to(OrderPaymentController)
+	.inSingletonScope();
+
+container
+	.bind<AdminSubscriberController>(TYPES.Controllers.AdminSubscriberController)
+	.to(AdminSubscriberController)
 	.inSingletonScope();

@@ -12,6 +12,9 @@ export const TYPES = {
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
 	},
+	Clients: {
+		RestaurantServiceClient: Symbol.for('IRestaurantServiceClient'),
+	},
 	Services: {
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),
@@ -32,11 +35,14 @@ export const TYPES = {
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
+		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
+		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
 		SubscriptionController: Symbol.for('SubscriptionController'),
 		RestaurantTransactionController: Symbol.for('RestaurantTransactionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
+		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
 	},
 } as const;

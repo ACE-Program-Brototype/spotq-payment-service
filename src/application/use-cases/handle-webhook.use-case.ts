@@ -248,14 +248,10 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_PROCESSED ||
 			eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_FAILED
 		) {
-			const refundEntity = params.parsedPayload.payload?.refund?.entity as
-				| Record<string, unknown>
-				| undefined;
-			const paymentEntity = params.parsedPayload.payload?.payment?.entity as
-				| Record<string, unknown>
-				| undefined;
+			const refundEntity = params.parsedPayload.payload?.refund?.entity;
+			const paymentEntity = params.parsedPayload.payload?.payment?.entity;
 
-			const refundId = typeof refundEntity?.id === 'string' ? refundEntity.id : null;
+			const refundId = refundEntity?.id;
 			if (!refundId) {
 				logger.warn('Refund webhook received without valid refund entity id; acknowledging');
 				return { received: true };
@@ -266,16 +262,11 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 					? REFUND_STATUS.PROCESSED
 					: REFUND_STATUS.FAILED;
 
-			const paymentId =
-				(typeof refundEntity?.payment_id === 'string' ? refundEntity.payment_id : null) ||
-				(typeof paymentEntity?.id === 'string' ? paymentEntity.id : null);
-
-			const amountPaise =
-				typeof refundEntity?.amount === 'number' ? refundEntity.amount : undefined;
-			const currency =
-				typeof refundEntity?.currency === 'string' ? refundEntity.currency : undefined;
-			const arn = typeof refundEntity?.arn === 'string' ? refundEntity.arn : null;
-			const notes = refundEntity?.notes as Record<string, unknown> | undefined;
+			const paymentId = refundEntity.payment_id || paymentEntity?.id || null;
+			const amountPaise = refundEntity.amount;
+			const currency = refundEntity.currency;
+			const arn = refundEntity.arn ?? null;
+			const notes = refundEntity.notes;
 			const reason = typeof notes?.reason === 'string' ? notes.reason : null;
 
 			await this.paymentTransactionRepository.syncRefundFromWebhook({

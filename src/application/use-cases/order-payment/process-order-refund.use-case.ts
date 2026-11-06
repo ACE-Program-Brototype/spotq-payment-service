@@ -5,7 +5,11 @@ import type {
 import { OrderRefundMapper } from '@application/mappers/index.ts';
 import type { IProcessOrderRefundUseCase } from '@application/ports/use-cases/process-order-refund.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { PaymentGatewayError, PaymentOrderNotFoundError } from '@domain/errors/payment.errors.ts';
+import {
+	CannotRefundUncapturedPaymentError,
+	PaymentGatewayError,
+	PaymentOrderNotFoundError,
+} from '@domain/errors/payment.errors.ts';
 import type {
 	IPaymentGateway,
 	PaymentRefundResult,
@@ -37,8 +41,12 @@ export class ProcessOrderRefundUseCase implements IProcessOrderRefundUseCase {
 
 		tx.assertCanRefund(input.amountPaise);
 
-		const refundAmountPaise = tx.amountPaise;
-		const gatewayPaymentId = tx.razorpayPaymentId as string;
+		if (!tx.razorpayPaymentId) {
+			throw new CannotRefundUncapturedPaymentError();
+		}
+
+		const refundAmountPaise = input.amountPaise ?? tx.amountPaise;
+		const gatewayPaymentId = tx.razorpayPaymentId;
 
 		let gatewayRefund: PaymentRefundResult;
 		try {

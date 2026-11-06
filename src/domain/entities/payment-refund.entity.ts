@@ -71,22 +71,4 @@ export class PaymentRefund {
 	get processedAt(): Date | null | undefined {
 		return this.props.processedAt;
 	}
-
-	toJSON() {
-		return {
-			id: this.id,
-			paymentTransactionId: this.paymentTransactionId,
-			razorpayRefundId: this.razorpayRefundId,
-			amountPaise: this.amountPaise,
-			amountInRupees: this.amountInRupees,
-			currency: this.currency,
-			status: this.status,
-			reason: this.reason,
-			arn: this.arn,
-			paymentMethod: this.paymentMethod,
-			destination: this.destination,
-			createdAt: this.createdAt,
-			processedAt: this.processedAt,
-		};
-	}
 }

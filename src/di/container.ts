@@ -163,7 +163,8 @@ container
 
 container
 	.bind<IProcessOrderRefundUseCase>(TYPES.UseCases.ProcessOrderRefundUseCase)
-	.to(ProcessOrderRefundUseCase);
+	.to(ProcessOrderRefundUseCase)
+	.inSingletonScope();
 
 container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)

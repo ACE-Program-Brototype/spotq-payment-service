@@ -1,4 +1,4 @@
-import { PaymentRefund } from '@domain/entities/payment-refund.entity.ts';
+import type { PaymentRefund } from '@domain/entities/payment-refund.entity.ts';
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import {
 	PaymentAlreadyRefundedError,
@@ -13,6 +13,7 @@ import type {
 	ProcessOrderRefundResult,
 	SyncRefundFromWebhookParams,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import { PaymentRefundPersistenceMapper } from '@infrastructure/mappers/payment-refund.persistence-mapper.ts';
 import type {
 	Prisma,
 	PaymentRefund as PrismaPaymentRefund,
@@ -56,20 +57,7 @@ export class PrismaPaymentTransactionRepository
 	}
 
 	private mapRefundToDomain(record: PrismaPaymentRefund): PaymentRefund {
-		return new PaymentRefund({
-			id: record.id,
-			paymentTransactionId: record.paymentTransactionId,
-			razorpayRefundId: record.razorpayRefundId,
-			amountPaise: record.amountPaise,
-			currency: record.currency,
-			status: record.status,
-			reason: record.reason,
-			arn: record.arn,
-			paymentMethod: record.paymentMethod,
-			destination: record.destination,
-			createdAt: record.createdAt,
-			processedAt: record.processedAt,
-		});
+		return PaymentRefundPersistenceMapper.toDomain(record);
 	}
 
 	async findById(id: string): Promise<PaymentTransaction | null> {

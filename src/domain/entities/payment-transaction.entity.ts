@@ -186,7 +186,7 @@ export class PaymentTransaction {
 			if (requestedAmountPaise > this.props.amountPaise) {
 				throw new RefundAmountExceedsBalanceError();
 			}
-			if (requestedAmountPaise !== this.props.amountPaise) {
+			if (requestedAmountPaise < this.props.amountPaise) {
 				throw new RefundAmountInvalidError();
 			}
 		}

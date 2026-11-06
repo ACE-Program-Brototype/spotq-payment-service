@@ -147,4 +147,32 @@ describe('Idempotency Middleware', () => {
 
 		expect(mockCacheService.releaseLock).toHaveBeenCalledWith('lock:refund:test-key-error');
 	});
+
+	it('should support custom key prefixes and lock TTL via options object', async () => {
+		mockCacheService.get.mockResolvedValue(null);
+		mockCacheService.acquireLock.mockResolvedValue(true);
+		mockReq.headers = { 'x-idempotency-key': 'order-123' };
+
+		const middleware = idempotencyMiddleware({
+			cacheService: mockCacheService,
+			prefix: 'idemp:order:',
+			lockPrefix: 'lock:order:',
+			lockTtlSeconds: 30,
+		});
+
+		await middleware(mockReq as Request, mockRes as Response, nextFn);
+
+		expect(mockCacheService.get).toHaveBeenCalledWith('idemp:order:order-123');
+		expect(mockCacheService.acquireLock).toHaveBeenCalledWith('lock:order:order-123', 30);
+		expect(nextFn).toHaveBeenCalledTimes(1);
+	});
+
+	it('should throw Error when CacheService is not provided', async () => {
+		mockReq.headers = { 'x-idempotency-key': 'any-key' };
+		const middleware = idempotencyMiddleware({});
+
+		await expect(middleware(mockReq as Request, mockRes as Response, nextFn)).rejects.toThrow(
+			'CacheService must be configured for idempotencyMiddleware',
+		);
+	});
 });

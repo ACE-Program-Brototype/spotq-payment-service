@@ -1,6 +1,4 @@
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
-import { container } from '@di/container.ts';
-import { TYPES } from '@di/types.ts';
 import { getHeaderValue } from '@presentation/middleware/customer-auth.middleware.ts';
 import {
 	HTTP_HEADERS,
@@ -14,7 +12,28 @@ import {
 import { BadRequestError, ConflictError } from '@shared/errors/index.ts';
 import type { NextFunction, Request, Response } from 'express';
 
-export function idempotencyMiddleware(cacheService?: ICacheService) {
+export interface IdempotencyMiddlewareOptions {
+	prefix?: string;
+	lockPrefix?: string;
+	ttlSeconds?: number;
+	lockTtlSeconds?: number;
+	cacheService?: ICacheService;
+}
+
+export function idempotencyMiddleware(
+	optionsOrCacheService?: IdempotencyMiddlewareOptions | ICacheService,
+) {
+	const options: IdempotencyMiddlewareOptions =
+		optionsOrCacheService && 'get' in optionsOrCacheService
+			? { cacheService: optionsOrCacheService as ICacheService }
+			: ((optionsOrCacheService as IdempotencyMiddlewareOptions) ?? {});
+
+	const cache = options.cacheService;
+	const keyPrefix = options.prefix ?? REFUND_IDEMPOTENCY_KEY_PREFIX;
+	const lockPrefix = options.lockPrefix ?? REFUND_LOCK_KEY_PREFIX;
+	const ttl = options.ttlSeconds ?? IDEMPOTENCY_TTL_SECONDS;
+	const lockTtl = options.lockTtlSeconds ?? REFUND_LOCK_TTL_SECONDS;
+
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 		const rawKey = getHeaderValue(req.headers[HTTP_HEADERS.IDEMPOTENCY_KEY]);
 		const idempotencyKey = rawKey?.trim();
@@ -23,9 +42,12 @@ export function idempotencyMiddleware(cacheService?: ICacheService) {
 			throw new BadRequestError(MESSAGES.IDEMPOTENCY_KEY_REQUIRED);
 		}
 
-		const cache = cacheService ?? container.get<ICacheService>(TYPES.Services.CacheService);
-		const cacheKey = `${REFUND_IDEMPOTENCY_KEY_PREFIX}${idempotencyKey}`;
-		const lockKey = `${REFUND_LOCK_KEY_PREFIX}${idempotencyKey}`;
+		if (!cache) {
+			throw new Error('CacheService must be configured for idempotencyMiddleware');
+		}
+
+		const cacheKey = `${keyPrefix}${idempotencyKey}`;
+		const lockKey = `${lockPrefix}${idempotencyKey}`;
 
 		// 1. Check if response is already cached (Tape-recorder replay)
 		const cached = await cache.get(cacheKey);
@@ -40,7 +62,7 @@ export function idempotencyMiddleware(cacheService?: ICacheService) {
 		}
 
 		// 2. Try acquiring distributed lock to prevent concurrent executions
-		const acquired = await cache.acquireLock(lockKey, REFUND_LOCK_TTL_SECONDS);
+		const acquired = await cache.acquireLock(lockKey, lockTtl);
 		if (!acquired) {
 			throw new ConflictError(MESSAGES.CONFLICT);
 		}
@@ -58,7 +80,7 @@ export function idempotencyMiddleware(cacheService?: ICacheService) {
 
 		res.json = (body: unknown): Response => {
 			if (res.statusCode >= HTTP_STATUS.OK && res.statusCode < HTTP_STATUS.BAD_REQUEST) {
-				cache.set(cacheKey, JSON.stringify(body), IDEMPOTENCY_TTL_SECONDS).catch(() => {});
+				cache.set(cacheKey, JSON.stringify(body), ttl).catch(() => {});
 			}
 			return originalJson(body);
 		};

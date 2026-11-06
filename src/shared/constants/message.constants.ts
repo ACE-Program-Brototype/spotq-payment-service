@@ -55,6 +55,7 @@ export enum MessageEnum {
 	ORDER_PAYMENT_STATUS_FETCHED = 'Payment status retrieved successfully',
 	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
+	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is required',
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
@@ -154,6 +155,7 @@ export const MESSAGES = {
 	ORDER_PAYMENT_STATUS_FETCHED: MessageEnum.ORDER_PAYMENT_STATUS_FETCHED,
 	ORDER_PAYMENT_NOT_FOUND: MessageEnum.ORDER_PAYMENT_NOT_FOUND,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
+	IDEMPOTENCY_KEY_REQUIRED: MessageEnum.IDEMPOTENCY_KEY_REQUIRED,
 
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
@@ -208,4 +210,6 @@ export const ERROR_CODES = {
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
 	CONFLICT: 'CONFLICT',
+	UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
+	BAD_GATEWAY: 'BAD_GATEWAY',
 } as const;

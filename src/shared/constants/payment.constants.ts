@@ -51,3 +51,9 @@ export const OUTBOX_STATUS = {
 } as const;
 
 export type OutboxStatus = (typeof OUTBOX_STATUS)[keyof typeof OUTBOX_STATUS];
+
+
+export const IDEMPOTENCY_TTL_SECONDS = 60 * 60 * 24;
+export const REFUND_IDEMPOTENCY_KEY_PREFIX = 'refund:idempotency:';
+export const REFUND_LOCK_KEY_PREFIX = 'refund:lock:';
+export const REFUND_LOCK_TTL_SECONDS = 30;

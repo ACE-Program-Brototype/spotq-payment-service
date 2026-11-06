@@ -53,6 +53,8 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			create: jest.fn(),
 			update: jest.fn(),
 			activateSubscriptionWithOutbox: jest.fn(),
+			findSubscribersPaginated: jest.fn(),
+			findSubscriberDetailById: jest.fn(),
 		};
 
 		mockOutboxRelay = {

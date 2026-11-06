@@ -36,6 +36,7 @@ export const TYPES = {
 		RestaurantWallet: {
 			GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
 			LinkBankAccountUseCase: Symbol.for('ILinkBankAccountUseCase'),
+			WithdrawFromRestaurantWalletUseCase: Symbol.for('IWithdrawFromRestaurantWalletUseCase'),
 		},
 	},
 	Controllers: {

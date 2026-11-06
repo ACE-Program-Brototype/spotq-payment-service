@@ -6,5 +6,6 @@ export * from './get-subscription-status.use-case.port.ts';
 export * from './handle-webhook.use-case.port.ts';
 export * from './restaurant-wallet/get-restaurant-wallet-overview.use-case.port.ts';
 export * from './restaurant-wallet/link-bank-account.use-case.port.ts';
+export * from './restaurant-wallet/withdraw-from-restaurant-wallet.use-case.port.ts';
 export * from './verify-order-payment.use-case.port.ts';
 export * from './verify-payment.use-case.port.ts';

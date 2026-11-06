@@ -5,5 +5,6 @@ export * from './get-subscription-status.dto.ts';
 export * from './handle-webhook.dto.ts';
 export * from './restaurant-wallet/get-restaurant-wallet-overview.dto.ts';
 export * from './restaurant-wallet/link-restaurant-wallet-bank-account.dto.ts';
+export * from './restaurant-wallet/withdraw-from-restaurant-wallet.dto.ts';
 export * from './verify-order-payment.dto.ts';
 export * from './verify-payment.dto.ts';

@@ -6,5 +6,6 @@ export * from './message.constants.ts';
 export * from './payment.constants.ts';
 export * from './razorpay.constants.ts';
 export * from './regex.constants.ts';
+export * from './restaurant-wallet.constants.ts';
 export * from './routes.constants.ts';
 export * from './subscription.constants.ts';

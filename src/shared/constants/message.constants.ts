@@ -72,6 +72,8 @@ export enum MessageEnum {
 	INVALID_BANK_ACCOUNT_NUMBER = 'Account number must contain 9 to 18 digits',
 	INVALID_IFSC_CODE = 'IFSC code is invalid',
 	INVALID_BANK_ACCOUNT_DETAILS = 'Invalid bank account details',
+	WITHDRAWAL_AMOUNT_REQUIRED = 'Withdrawal amount must be a positive whole number of paise',
+	INVALID_WITHDRAWAL_MODE = 'Withdrawal mode must be one of: IMPS, NEFT, RTGS, UPI',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -170,6 +172,8 @@ export const MESSAGES = {
 	INVALID_BANK_ACCOUNT_NUMBER: MessageEnum.INVALID_BANK_ACCOUNT_NUMBER,
 	INVALID_IFSC_CODE: MessageEnum.INVALID_IFSC_CODE,
 	INVALID_BANK_ACCOUNT_DETAILS: MessageEnum.INVALID_BANK_ACCOUNT_DETAILS,
+	WITHDRAWAL_AMOUNT_REQUIRED: MessageEnum.WITHDRAWAL_AMOUNT_REQUIRED,
+	INVALID_WITHDRAWAL_MODE: MessageEnum.INVALID_WITHDRAWAL_MODE,
 
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,

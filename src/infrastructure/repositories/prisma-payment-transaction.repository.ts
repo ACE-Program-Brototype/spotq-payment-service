@@ -90,10 +90,31 @@ export class PrismaPaymentTransactionRepository
 		return this.mapToDomain(record);
 	}
 
+	async findPendingRenewalBySubscriptionAndPlan(
+		subscriptionId: string,
+		planId: string,
+	): Promise<PaymentTransaction | null> {
+		const reusableWindowStart = new Date(Date.now() - PENDING_ORDER_REUSE_WINDOW_MS);
+
+		const record = await this.prisma.paymentTransaction.findFirst({
+			where: {
+				subscriptionId,
+				planId,
+				status: { in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.FAILED] },
+				createdAt: { gte: reusableWindowStart },
+			},
+			orderBy: { createdAt: 'desc' },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
+	}
+
 	async create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction> {
 		const record = await this.prisma.paymentTransaction.create({
 			data: {
 				restaurantId: data.restaurantId,
+				subscriptionId: data.subscriptionId || undefined,
 				planId: data.planId,
 				orderId: data.orderId,
 				customerId: data.customerId,

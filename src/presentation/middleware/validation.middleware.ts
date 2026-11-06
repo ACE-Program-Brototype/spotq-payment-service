@@ -30,3 +30,11 @@ export function validateRequestQuery(schema: ZodType) {
 		next();
 	};
 }
+
+export function validateRequestHeaders(schema: ZodType) {
+	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+		const parsed = await schema.parseAsync(req.headers ?? {});
+		res.locals.headers = parsed;
+		next();
+	};
+}

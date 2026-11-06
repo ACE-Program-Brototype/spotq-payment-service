@@ -81,7 +81,10 @@ export class OutboxRelayService implements IOutboxRelayService {
 
 			for (const event of pendingEvents) {
 				try {
-					if (event.eventType === SUBSCRIPTION_EVENTS.ACTIVATED) {
+					if (
+						event.eventType === SUBSCRIPTION_EVENTS.ACTIVATED ||
+						event.eventType === SUBSCRIPTION_EVENTS.RENEWED
+					) {
 						const payload = event.payload as unknown as SubscriptionActivatedEventPayload;
 						await this.eventProducer.publishSubscriptionActivated({
 							...payload,

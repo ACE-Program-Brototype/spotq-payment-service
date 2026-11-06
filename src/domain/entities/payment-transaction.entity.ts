@@ -104,16 +104,18 @@ export class PaymentTransaction {
 
 	isOwnedBy(customerId: string): boolean {
 		if (!this.props.customerId) {
-			return true;
+			return false;
 		}
 		return this.props.customerId === customerId;
 	}
 
 	assertOwnership(customerId?: string): void {
-		if (this.props.customerId) {
-			if (!customerId || !this.isOwnedBy(customerId)) {
+		if (customerId) {
+			if (!this.isOwnedBy(customerId)) {
 				throw new CustomerUnauthorizedError();
 			}
+		} else if (this.props.customerId) {
+			throw new CustomerUnauthorizedError();
 		}
 	}
 

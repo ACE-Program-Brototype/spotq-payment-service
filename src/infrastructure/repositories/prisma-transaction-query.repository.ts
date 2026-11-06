@@ -322,11 +322,7 @@ export class PrismaTransactionQueryRepository
 	): Promise<Set<string>> {
 		const capturedOrderIds = new Set(
 			records
-				.filter(
-					(r) =>
-						(r.status === PAYMENT_STATUS.CAPTURED || r.status === PAYMENT_STATUS.SUCCESS) &&
-						Boolean(r.orderId),
-				)
+				.filter((r) => r.status === PAYMENT_STATUS.CAPTURED && Boolean(r.orderId))
 				.map((r) => r.orderId as string),
 		);
 
@@ -348,7 +344,7 @@ export class PrismaTransactionQueryRepository
 			const capturedSiblings = await this.prisma.paymentTransaction.findMany({
 				where: {
 					orderId: { in: pendingCheckOrderIds },
-					status: { in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.SUCCESS] },
+					status: PAYMENT_STATUS.CAPTURED,
 				},
 				select: { orderId: true },
 			});
@@ -380,9 +376,7 @@ export class PrismaTransactionQueryRepository
 			: null;
 
 		const hasInvoice =
-			record.status === PAYMENT_STATUS.CAPTURED ||
-			record.status === PAYMENT_STATUS.SUCCESS ||
-			record.status === PAYMENT_STATUS.REFUNDED;
+			record.status === PAYMENT_STATUS.CAPTURED || record.status === PAYMENT_STATUS.REFUNDED;
 		const invoiceUrl = hasInvoice ? buildTransactionInvoiceUrl(record.id) : null;
 
 		let refundDetails: CustomerRefundSummary | null = null;
@@ -469,7 +463,7 @@ export class PrismaTransactionQueryRepository
 			this.mapCustomerTransactionRecord(record, now, capturedOrderIds),
 		);
 
-		const totalPages = Math.ceil(total / limit) || 1;
+		const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
 		return {
 			transactions,
 			pagination: {

@@ -74,6 +74,15 @@ describe('RetryCustomerPaymentUseCase (SCRUM-35)', () => {
 		);
 	});
 
+	it('should throw CustomerUnauthorizedError when transaction has no customerId (e.g. B2B SaaS subscription)', async () => {
+		const tx = createMockTransaction({ customerId: null });
+		mockRepo.findById.mockResolvedValueOnce(tx);
+
+		await expect(useCase.execute({ transactionId, customerId })).rejects.toThrow(
+			CustomerUnauthorizedError,
+		);
+	});
+
 	it('should throw PaymentNotRetryableError when transaction status is not FAILED', async () => {
 		const tx = createMockTransaction({ status: PAYMENT_STATUS.CAPTURED });
 		mockRepo.findById.mockResolvedValueOnce(tx);

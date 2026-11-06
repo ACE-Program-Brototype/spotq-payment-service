@@ -402,5 +402,39 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 			expect(mockPrisma.paymentTransaction.findMany).toHaveBeenCalledTimes(1);
 			expect(result.transactions[0].retryEligible).toBe(false); // marked ineligible because order is captured in-page
 		});
+
+		it('should return totalPages: 0 when total records is 0', async () => {
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(0);
+			mockPrisma.paymentTransaction.findMany.mockResolvedValueOnce([]);
+
+			const result = await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				page: 1,
+				limit: 10,
+			});
+
+			expect(result.pagination.total).toBe(0);
+			expect(result.pagination.totalPages).toBe(0);
+			expect(result.pagination.hasNext).toBe(false);
+			expect(result.pagination.hasPrev).toBe(false);
+		});
+
+		it('should query status=CAPTURED in where clause', async () => {
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(0);
+			mockPrisma.paymentTransaction.findMany.mockResolvedValueOnce([]);
+
+			await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				status: 'CAPTURED',
+				page: 1,
+				limit: 10,
+			});
+
+			expect(mockPrisma.paymentTransaction.count).toHaveBeenCalledWith({
+				where: expect.objectContaining({
+					status: 'CAPTURED',
+				}),
+			});
+		});
 	});
 });

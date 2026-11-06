@@ -1,5 +1,4 @@
-import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
-import { container } from '@di/container.ts';
+import { cacheService, container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import {
 	idempotencyMiddleware,
@@ -26,8 +25,6 @@ export const internalOrderPaymentRouter = Router();
 const orderPaymentController = container.get<OrderPaymentController>(
 	TYPES.Controllers.OrderPaymentController,
 );
-
-const cacheService = container.get<ICacheService>(TYPES.Services.CacheService);
 
 internalOrderPaymentRouter.use(internalS2SAuthMiddleware());
 

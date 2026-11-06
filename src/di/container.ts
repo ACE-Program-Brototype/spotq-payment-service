@@ -178,3 +178,5 @@ container
 	.bind<OrderPaymentController>(TYPES.Controllers.OrderPaymentController)
 	.to(OrderPaymentController)
 	.inSingletonScope();
+
+export const cacheService = container.get<ICacheService>(TYPES.Services.CacheService);

@@ -20,4 +20,3 @@ restaurantWalletRoutes.post(
 	validateRequestBody(linkBankAccountBodySchema),
 	restaurantWalletController.linkBankAccount,
 );
-

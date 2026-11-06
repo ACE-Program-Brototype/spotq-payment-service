@@ -68,6 +68,10 @@ export enum MessageEnum {
 	// restaurant wallet
 	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet recieved successfully',
 	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS = 'Bank account linked successfully',
+	BANK_NAME_REQUIRED = 'Bank name is required',
+	INVALID_BANK_ACCOUNT_NUMBER = 'Account number must contain 9 to 18 digits',
+	INVALID_IFSC_CODE = 'IFSC code is invalid',
+	INVALID_BANK_ACCOUNT_DETAILS = 'Invalid bank account details',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -162,6 +166,10 @@ export const MESSAGES = {
 	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS: MessageEnum.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
 	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS:
 		MessageEnum.LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS,
+	BANK_NAME_REQUIRED: MessageEnum.BANK_NAME_REQUIRED,
+	INVALID_BANK_ACCOUNT_NUMBER: MessageEnum.INVALID_BANK_ACCOUNT_NUMBER,
+	INVALID_IFSC_CODE: MessageEnum.INVALID_IFSC_CODE,
+	INVALID_BANK_ACCOUNT_DETAILS: MessageEnum.INVALID_BANK_ACCOUNT_DETAILS,
 
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,

@@ -41,6 +41,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findById: jest.fn().mockResolvedValue(null),
 		create: jest.fn(),
 		activateSubscriptionWithOutbox: jest.fn(),
+		renewSubscriptionWithOutbox: jest.fn(),
 		findSubscribersPaginated: jest.fn(),
 		findSubscriberDetailById: jest.fn(),
 	};
@@ -50,6 +51,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findByCustomerOrderId: jest.fn().mockResolvedValue(null),
 		findByPaymentId: jest.fn().mockResolvedValue(null),
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
+		findPendingRenewalBySubscriptionAndPlan: jest.fn().mockResolvedValue(null),
 		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
 		captureOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
 		failOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
@@ -277,6 +279,133 @@ describe('Subscription & Payment Use Cases', () => {
 					restaurantId: '99999999-9999-9999-9999-999999999999',
 				}),
 			).rejects.toThrow(UnauthorizedRestaurantError);
+		});
+
+		it('should renew an expired subscription via renewSubscriptionWithOutbox starting from now', async () => {
+			const expiredSub = new Subscription({
+				id: 'sub-expired-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+				status: 'EXPIRED',
+				currentPeriodStart: new Date(Date.now() - 60 * 86400000),
+				currentPeriodEnd: new Date(Date.now() - 10 * 86400000),
+			});
+
+			const renewalTx = new PaymentTransaction({
+				id: 'tx-renewal-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				subscriptionId: 'sub-expired-1',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_renew_expired_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'CREATED',
+				metadata: { isRenewal: true, targetSubscriptionId: 'sub-expired-1' },
+			});
+
+			mockTxRepo.findByOrderId.mockResolvedValueOnce(renewalTx);
+			mockPlanRepo.findById.mockResolvedValueOnce(mockPlan);
+			mockSubRepo.findById.mockResolvedValueOnce(expiredSub);
+
+			const renewedSub = new Subscription({
+				id: 'sub-expired-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+				status: 'ACTIVE',
+				currentPeriodStart: new Date(),
+				currentPeriodEnd: new Date(Date.now() + 30 * 86400000),
+			});
+			mockSubRepo.renewSubscriptionWithOutbox.mockResolvedValueOnce(renewedSub);
+
+			const useCase = new VerifyPaymentUseCase(
+				mockGateway,
+				mockTxRepo,
+				mockPlanRepo,
+				mockSubRepo,
+				mockOutboxRelay,
+			);
+
+			const result = await useCase.execute({
+				razorpayOrderId: 'order_renew_expired_123',
+				razorpayPaymentId: 'pay_renew_123',
+				razorpaySignature: 'sig_renew_123',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+			});
+
+			expect(result.subscriptionId).toBe('sub-expired-1');
+			expect(result.status).toBe('ACTIVE');
+			expect(mockSubRepo.renewSubscriptionWithOutbox).toHaveBeenCalledWith(
+				expect.objectContaining({
+					subscription: expect.objectContaining({
+						subscriptionId: 'sub-expired-1',
+						status: 'ACTIVE',
+					}),
+				}),
+			);
+		});
+
+		it('should extend an active expiring subscription via renewSubscriptionWithOutbox from currentPeriodEnd', async () => {
+			const futureEndDate = new Date(Date.now() + 10 * 86400000);
+			const activeExpiringSub = new Subscription({
+				id: 'sub-active-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+				status: 'ACTIVE',
+				currentPeriodStart: new Date(Date.now() - 20 * 86400000),
+				currentPeriodEnd: futureEndDate,
+			});
+
+			const renewalTx = new PaymentTransaction({
+				id: 'tx-renewal-2',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				subscriptionId: 'sub-active-1',
+				planId: mockPlan.id,
+				razorpayOrderId: 'order_renew_active_123',
+				amountPaise: 149900,
+				currency: 'INR',
+				status: 'CREATED',
+				metadata: { isRenewal: true, targetSubscriptionId: 'sub-active-1' },
+			});
+
+			mockTxRepo.findByOrderId.mockResolvedValueOnce(renewalTx);
+			mockPlanRepo.findById.mockResolvedValueOnce(mockPlan);
+			mockSubRepo.findById.mockResolvedValueOnce(activeExpiringSub);
+
+			const extendedSub = new Subscription({
+				id: 'sub-active-1',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+				planId: mockPlan.id,
+				status: 'ACTIVE',
+				currentPeriodStart: activeExpiringSub.currentPeriodStart,
+				currentPeriodEnd: mockPlan.calculatePeriodEnd(futureEndDate),
+			});
+			mockSubRepo.renewSubscriptionWithOutbox.mockResolvedValueOnce(extendedSub);
+
+			const useCase = new VerifyPaymentUseCase(
+				mockGateway,
+				mockTxRepo,
+				mockPlanRepo,
+				mockSubRepo,
+				mockOutboxRelay,
+			);
+
+			const result = await useCase.execute({
+				razorpayOrderId: 'order_renew_active_123',
+				razorpayPaymentId: 'pay_renew_456',
+				razorpaySignature: 'sig_renew_456',
+				restaurantId: '22222222-2222-2222-2222-222222222222',
+			});
+
+			expect(result.subscriptionId).toBe('sub-active-1');
+			expect(result.status).toBe('ACTIVE');
+			expect(mockSubRepo.renewSubscriptionWithOutbox).toHaveBeenCalledWith(
+				expect.objectContaining({
+					subscription: expect.objectContaining({
+						subscriptionId: 'sub-active-1',
+						currentPeriodStart: activeExpiringSub.currentPeriodStart,
+					}),
+				}),
+			);
 		});
 	});
 

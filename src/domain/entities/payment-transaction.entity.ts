@@ -126,6 +126,23 @@ export class PaymentTransaction {
 		}
 	}
 
+	isFailed(): boolean {
+		return this.props.status === PAYMENT_STATUS.FAILED;
+	}
+
+	isSubscriptionRenewal(): boolean {
+		const metadata = this.props.metadata as Record<string, unknown> | null | undefined;
+		return metadata?.isRenewal === true || Boolean(this.props.subscriptionId);
+	}
+
+	get renewalTargetSubscriptionId(): string | null {
+		const metadata = this.props.metadata as Record<string, unknown> | null | undefined;
+		if (typeof metadata?.targetSubscriptionId === 'string') {
+			return metadata.targetSubscriptionId;
+		}
+		return this.props.subscriptionId ?? null;
+	}
+
 	capture(params: {
 		paymentId?: string | null;
 		signature?: string | null;

@@ -1,4 +1,15 @@
-export type SubscriptionStatus = 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED' | 'PAST_DUE';
+import {
+	MILLISECONDS_PER_DAY,
+	SUBSCRIPTION_RENEWAL_WINDOW_DAYS,
+} from '@domain/constants/subscription.constants.ts';
+import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
+import { SubscriptionStatusEnum } from '@domain/enums/subscription.enums.ts';
+import {
+	ForbiddenSubscriptionAccessError,
+	SubscriptionNotEligibleForRenewalError,
+} from '@domain/errors/payment.errors.ts';
+
+export type SubscriptionStatus = `${SubscriptionStatusEnum}`;
 
 export interface SubscriptionProps {
 	id: string;
@@ -10,6 +21,11 @@ export interface SubscriptionProps {
 	canceledAt?: Date | null;
 	createdAt?: Date;
 	updatedAt?: Date;
+}
+
+export interface SubscriptionPeriodRange {
+	currentPeriodStart: Date;
+	currentPeriodEnd: Date;
 }
 
 export class Subscription {
@@ -43,8 +59,83 @@ export class Subscription {
 		return this.props.canceledAt;
 	}
 
-	isActive(): boolean {
-		return this.props.status === 'ACTIVE' && new Date() <= this.props.currentPeriodEnd;
+	get createdAt(): Date | undefined {
+		return this.props.createdAt;
+	}
+
+	get updatedAt(): Date | undefined {
+		return this.props.updatedAt;
+	}
+
+	isOwnedByRestaurant(restaurantId: string): boolean {
+		return Boolean(restaurantId) && this.props.restaurantId === restaurantId;
+	}
+
+	assertOwnedByRestaurant(restaurantId: string): void {
+		if (!this.isOwnedByRestaurant(restaurantId)) {
+			throw new ForbiddenSubscriptionAccessError();
+		}
+	}
+
+	isActive(now: Date = new Date()): boolean {
+		return (
+			this.props.status === SubscriptionStatusEnum.ACTIVE && now <= this.props.currentPeriodEnd
+		);
+	}
+
+	isExpired(now: Date = new Date()): boolean {
+		return (
+			this.props.status === SubscriptionStatusEnum.EXPIRED ||
+			this.props.status === SubscriptionStatusEnum.PAST_DUE ||
+			now > this.props.currentPeriodEnd
+		);
+	}
+
+	isEligibleForRenewal(
+		now: Date = new Date(),
+		windowDays: number = SUBSCRIPTION_RENEWAL_WINDOW_DAYS,
+	): boolean {
+		if (
+			this.props.status === SubscriptionStatusEnum.CANCELLED ||
+			this.props.status === SubscriptionStatusEnum.PENDING
+		) {
+			return false;
+		}
+
+		if (this.isExpired(now)) {
+			return true;
+		}
+
+		if (this.props.status === SubscriptionStatusEnum.ACTIVE) {
+			const windowMs = windowDays * MILLISECONDS_PER_DAY;
+			const timeRemainingMs = this.props.currentPeriodEnd.getTime() - now.getTime();
+			return timeRemainingMs <= windowMs;
+		}
+
+		return false;
+	}
+
+	assertEligibleForRenewal(
+		now: Date = new Date(),
+		windowDays: number = SUBSCRIPTION_RENEWAL_WINDOW_DAYS,
+	): void {
+		if (!this.isEligibleForRenewal(now, windowDays)) {
+			throw new SubscriptionNotEligibleForRenewalError();
+		}
+	}
+
+	calculateRenewalPeriod(plan: SubscriptionPlan, now: Date = new Date()): SubscriptionPeriodRange {
+		if (this.isExpired(now)) {
+			return {
+				currentPeriodStart: now,
+				currentPeriodEnd: plan.calculatePeriodEnd(now),
+			};
+		}
+
+		return {
+			currentPeriodStart: this.props.currentPeriodStart,
+			currentPeriodEnd: plan.calculatePeriodEnd(this.props.currentPeriodEnd),
+		};
 	}
 
 	toJSON() {

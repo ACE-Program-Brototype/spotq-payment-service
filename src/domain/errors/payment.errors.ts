@@ -75,3 +75,51 @@ export class SubscriberNotFoundError extends DomainError {
 		super(message, 'SUBSCRIBER_NOT_FOUND');
 	}
 }
+
+export class SubscriptionNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.SUBSCRIPTION_NOT_FOUND) {
+		super(message, 'SUBSCRIPTION_NOT_FOUND');
+	}
+}
+
+export class SubscriptionNotEligibleForRenewalError extends DomainError {
+	constructor(message: string = MESSAGES.SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL) {
+		super(message, 'SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL');
+	}
+}
+
+export class ForbiddenSubscriptionAccessError extends DomainError {
+	constructor(message: string = MESSAGES.FORBIDDEN_SUBSCRIPTION_ACCESS) {
+		super(message, 'FORBIDDEN_SUBSCRIPTION_ACCESS');
+	}
+}
+
+export class PaymentGatewayUnavailableError extends DomainError {
+	constructor(message: string = MESSAGES.PAYMENT_GATEWAY_UNAVAILABLE) {
+		super(message, 'PAYMENT_GATEWAY_UNAVAILABLE');
+	}
+}
+
+export class MissingIdempotencyKeyError extends DomainError {
+	constructor(message: string = MESSAGES.MISSING_IDEMPOTENCY_KEY) {
+		super(message, 'MISSING_IDEMPOTENCY_KEY');
+	}
+}
+
+export class IdempotencyKeyPayloadMismatchError extends DomainError {
+	constructor(message: string = MESSAGES.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH) {
+		super(message, 'IDEMPOTENCY_KEY_PAYLOAD_MISMATCH');
+	}
+}
+
+export class IdempotencyRequestInProgressError extends DomainError {
+	constructor(message: string = MESSAGES.IDEMPOTENCY_REQUEST_IN_PROGRESS) {
+		super(message, 'IDEMPOTENCY_REQUEST_IN_PROGRESS');
+	}
+}
+
+export class RenewalAlreadyInProgressError extends DomainError {
+	constructor(message: string = MESSAGES.RENEWAL_ALREADY_IN_PROGRESS) {
+		super(message, 'RENEWAL_ALREADY_IN_PROGRESS');
+	}
+}

@@ -2,12 +2,19 @@ import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cas
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
+import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { DomainError } from '@domain/errors/payment.errors.ts';
+import type {
+	RenewSubscriptionBodyDTO,
+	RenewSubscriptionHeadersDTO,
+	RenewSubscriptionParamsDTO,
+} from '@presentation/validators/subscriptions/renew-subscription.validator.ts';
 import {
 	ERROR_CODES,
 	getStatusCodeForDomainError,
+	HTTP_HEADERS,
 	HTTP_STATUS,
 	MESSAGES,
 } from '@shared/constants/index.ts';
@@ -30,6 +37,8 @@ export class SubscriptionController {
 		private readonly getSubscriptionPlansUseCase: IGetSubscriptionPlansUseCase,
 		@inject(TYPES.UseCases.CreateSubscriptionOrderUseCase)
 		private readonly createSubscriptionOrderUseCase: ICreateSubscriptionOrderUseCase,
+		@inject(TYPES.UseCases.RenewSubscriptionUseCase)
+		private readonly renewSubscriptionUseCase: IRenewSubscriptionUseCase,
 		@inject(TYPES.UseCases.VerifyPaymentUseCase)
 		private readonly verifyPaymentUseCase: IVerifyPaymentUseCase,
 		@inject(TYPES.UseCases.GetSubscriptionStatusUseCase)
@@ -80,6 +89,34 @@ export class SubscriptionController {
 		} catch (error: unknown) {
 			this.handleError(res, error);
 		}
+	};
+
+	renewSubscription = async (req: Request, res: Response): Promise<void> => {
+		const params = (res.locals.params ?? req.params) as RenewSubscriptionParamsDTO;
+		const headers = (res.locals.headers ?? req.headers) as RenewSubscriptionHeadersDTO;
+		const body = (req.body ?? {}) as RenewSubscriptionBodyDTO;
+		const restaurantId = (req.headers['x-restaurant-id'] as string) || '';
+
+		const { replayed, ...renewalOrder } = await this.renewSubscriptionUseCase.execute({
+			subscriptionId: params.subscriptionId,
+			restaurantId,
+			idempotencyKey: headers[HTTP_HEADERS.IDEMPOTENCY_KEY],
+			planId: body.planId,
+			restaurantName: req.headers['x-restaurant-name'] as string,
+			restaurantEmail: req.headers['x-user-email'] as string,
+			restaurantPhone: req.headers['x-user-phone'] as string,
+		});
+
+		if (replayed) {
+			res.setHeader(HTTP_HEADERS.IDEMPOTENCY_REPLAYED, 'true');
+		}
+
+		sendSuccessResponse(
+			res,
+			renewalOrder,
+			MESSAGES.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
+			HTTP_STATUS.CREATED,
+		);
 	};
 
 	verifyPayment = async (req: Request, res: Response): Promise<void> => {

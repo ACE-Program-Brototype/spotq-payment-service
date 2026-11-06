@@ -2,6 +2,7 @@ import type { PaymentStatus, PaymentTransaction } from '../entities/payment-tran
 
 export interface CreatePaymentTransactionInput {
 	restaurantId: string;
+	subscriptionId?: string | null;
 	planId?: string | null;
 	orderId?: string | null;
 	customerId?: string | null;
@@ -36,6 +37,10 @@ export interface IPaymentTransactionRepository {
 	findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null>;
 	findPendingByRestaurantAndPlan(
 		restaurantId: string,
+		planId: string,
+	): Promise<PaymentTransaction | null>;
+	findPendingRenewalBySubscriptionAndPlan(
+		subscriptionId: string,
 		planId: string,
 	): Promise<PaymentTransaction | null>;
 	create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction>;

@@ -1,4 +1,5 @@
 import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
+import type { IIdempotencyService } from '@application/ports/services/idempotency.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
@@ -12,6 +13,7 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port.ts';
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
+import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IGetRestaurantTransactionsUseCase } from '@application/ports/use-cases/transactions/get-restaurant-transactions.use-case.port.ts';
 import type { IGetTransactionDetailUseCase } from '@application/ports/use-cases/transactions/get-transaction-detail.use-case.port.ts';
 import type { IVerifyOrderPaymentUseCase } from '@application/ports/use-cases/verify-order-payment.use-case.port.ts';
@@ -25,6 +27,7 @@ import {
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
+	RenewSubscriptionUseCase,
 	VerifyOrderPaymentUseCase,
 	VerifyPaymentUseCase,
 } from '@application/use-cases/index.ts';
@@ -47,6 +50,7 @@ import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import { RedisIdempotencyService } from '@infrastructure/redis/index.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';
 import { PrismaFinanceQueryRepository } from '@infrastructure/repositories/prisma-finance-query.repository.ts';
 import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
@@ -120,6 +124,11 @@ container
 	.inSingletonScope();
 
 container
+	.bind<IIdempotencyService>(TYPES.Services.IdempotencyService)
+	.to(RedisIdempotencyService)
+	.inSingletonScope();
+
+container
 	.bind<IOutboxRelayService>(TYPES.Services.OutboxRelayService)
 	.to(OutboxRelayService)
 	.inSingletonScope();
@@ -142,6 +151,10 @@ container
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)
 	.to(CreateSubscriptionOrderUseCase);
+
+container
+	.bind<IRenewSubscriptionUseCase>(TYPES.UseCases.RenewSubscriptionUseCase)
+	.to(RenewSubscriptionUseCase);
 
 container
 	.bind<IGetSubscriptionPlansUseCase>(TYPES.UseCases.GetSubscriptionPlansUseCase)

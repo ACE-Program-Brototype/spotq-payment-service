@@ -206,6 +206,7 @@ model RestaurantWallet {
 
   // RazorpayX Tokenized Payout Vault (Zero raw account numbers or IFSC stored)
   razorpayFundAccountId String? @map("razorpay_fund_account_id")
+  razorpayContactId     String? @map("razorpay_contact_id")
   bankName              String? @map("bank_name")
   bankAccountLast4      String? @map("bank_account_last4")
 

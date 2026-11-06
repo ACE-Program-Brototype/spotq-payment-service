@@ -15,7 +15,7 @@ export function adminAuthMiddleware(req: Request, res: Response, next: NextFunct
 	const userId = getHeaderValue(req.headers['x-user-id']);
 
 	if (!userId) {
-		sendErrorResponse(res, 'UNAUTHORIZED', MESSAGES.GATEWAY_UNAUTHORIZED, HTTP_STATUS.UNAUTHORIZED);
+		sendErrorResponse(res, MESSAGES.GATEWAY_UNAUTHORIZED, 'UNAUTHORIZED', HTTP_STATUS.UNAUTHORIZED);
 		return;
 	}
 
@@ -23,7 +23,7 @@ export function adminAuthMiddleware(req: Request, res: Response, next: NextFunct
 	const normalizedRole = role?.toLowerCase().trim();
 
 	if (!normalizedRole || !ALLOWED_ADMIN_ROLES.has(normalizedRole)) {
-		sendErrorResponse(res, 'FORBIDDEN', MESSAGES.ADMIN_FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+		sendErrorResponse(res, MESSAGES.ADMIN_FORBIDDEN, 'FORBIDDEN', HTTP_STATUS.FORBIDDEN);
 		return;
 	}
 

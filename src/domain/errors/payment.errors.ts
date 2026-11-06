@@ -105,3 +105,9 @@ export class DuplicateRefundRequestError extends DomainError {
 		super(message, 'CONFLICT');
 	}
 }
+
+export class SubscriberNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.SUBSCRIBER_NOT_FOUND) {
+		super(message, 'SUBSCRIBER_NOT_FOUND');
+	}
+}

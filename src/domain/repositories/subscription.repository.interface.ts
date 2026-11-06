@@ -1,4 +1,9 @@
-import type { Subscription } from '../entities/subscription.entity.ts';
+import type { Subscription } from '@domain/entities/subscription.entity.ts';
+import type {
+	PaginatedSubscribersResult,
+	SubscriberDetail,
+	SubscriberFilterParams,
+} from '@domain/types/subscriber-query.types.ts';
 import type { IBaseRepository } from './base.repository.interface.ts';
 
 export interface CreateSubscriptionInput {
@@ -47,4 +52,6 @@ export interface ISubscriptionRepository
 	activateSubscriptionWithOutbox(
 		params: ActivateSubscriptionWithOutboxParams,
 	): Promise<Subscription>;
+	findSubscribersPaginated(params: SubscriberFilterParams): Promise<PaginatedSubscribersResult>;
+	findSubscriberDetailById(subscriberId: string): Promise<SubscriberDetail | null>;
 }

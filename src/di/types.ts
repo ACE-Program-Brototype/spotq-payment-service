@@ -3,6 +3,7 @@ export const TYPES = {
 		SubscriptionRepository: Symbol.for('ISubscriptionRepository'),
 		SubscriptionPlanRepository: Symbol.for('ISubscriptionPlanRepository'),
 		PaymentTransactionRepository: Symbol.for('IPaymentTransactionRepository'),
+		TransactionQueryRepository: Symbol.for('ITransactionQueryRepository'),
 		OutboxRepository: Symbol.for('IOutboxRepository'),
 		BillingInvoiceRepository: Symbol.for('IBillingInvoiceRepository'),
 		FinanceQueryRepository: Symbol.for('IFinanceQueryRepository'),
@@ -10,6 +11,9 @@ export const TYPES = {
 	},
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
+	},
+	Clients: {
+		RestaurantServiceClient: Symbol.for('IRestaurantServiceClient'),
 	},
 	Services: {
 		CacheService: Symbol.for('ICacheService'),
@@ -27,14 +31,20 @@ export const TYPES = {
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
 		VerifyOrderPaymentUseCase: Symbol.for('IVerifyOrderPaymentUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
+		GetRestaurantTransactionsUseCase: Symbol.for('IGetRestaurantTransactionsUseCase'),
+		GetTransactionDetailUseCase: Symbol.for('IGetTransactionDetailUseCase'),
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
 		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
+		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
+		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
 		SubscriptionController: Symbol.for('SubscriptionController'),
+		RestaurantTransactionController: Symbol.for('RestaurantTransactionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
+		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
 	},
 } as const;

@@ -28,18 +28,7 @@ export class PrismaRestaurantWalletRepository
 
 	async create(wallet: RestaurantWallet): Promise<RestaurantWallet> {
 		const record = await this.prisma.restaurantWallet.create({
-			data: {
-				id: wallet.id,
-				restaurantId: wallet.restaurantId,
-				balancePaise: wallet.balancePaise,
-				currency: wallet.currency,
-				isLocked: wallet.isLocked,
-				razorpayFundAccountId: wallet.razorpayFundAccountId,
-				bankName: wallet.bankName,
-				bankAccountLast4: wallet.bankAccountLast4,
-				createdAt: wallet.createdAt,
-				updatedAt: wallet.updatedAt,
-			},
+			data: RestaurantWalletPersistenceMapper.toPersistance(wallet),
 		});
 		return RestaurantWalletPersistenceMapper.toDomain(record);
 	}
@@ -47,14 +36,7 @@ export class PrismaRestaurantWalletRepository
 	async update(id: string, wallet: RestaurantWallet): Promise<RestaurantWallet> {
 		const record = await this.prisma.restaurantWallet.update({
 			where: { id },
-			data: {
-				balancePaise: wallet.balancePaise,
-				currency: wallet.currency,
-				isLocked: wallet.isLocked,
-				razorpayFundAccountId: wallet.razorpayFundAccountId,
-				bankName: wallet.bankName,
-				bankAccountLast4: wallet.bankAccountLast4,
-			},
+			data: RestaurantWalletPersistenceMapper.toUpdatePersistance(wallet),
 		});
 		return RestaurantWalletPersistenceMapper.toDomain(record);
 	}

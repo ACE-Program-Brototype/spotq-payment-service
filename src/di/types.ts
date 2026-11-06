@@ -45,4 +45,5 @@ export const TYPES = {
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
 		RestaurantWalletController: Symbol.for('RestaurantWalletController'),
 	},
+	Logger: Symbol.for('ILogger'),
 } as const;

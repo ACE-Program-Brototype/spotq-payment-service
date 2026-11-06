@@ -2,10 +2,10 @@ import type { IGetRestaurantWalletOverviewUseCase } from '@application/ports/use
 import type { ILinkBankAccountUseCase } from '@application/ports/use-cases/restaurant-wallet/link-bank-account.use-case.port.ts';
 import { TYPES } from '@di/types';
 import { RestaurantIdNotFound } from '@domain/errors/restaurant.errors';
+import type { LinkBankAccountBody } from '@presentation/validators/restaurant-wallet/link-bank-account.validator';
 import { HTTP_STATUS, MESSAGES, sendSuccessResponse } from '@shared/index';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
-import { z } from 'zod';
 
 @injectable()
 export class RestaurantWalletController {
@@ -34,11 +34,16 @@ export class RestaurantWalletController {
 	};
 
 	linkBankAccount = async (req: Request, res: Response) => {
-		const restaurantIdHeader = req.get('x-restaurant-id');
-		if (!restaurantIdHeader) throw new RestaurantIdNotFound();
+		const { restaurantId } = req.user ?? {};
+		const { accountHolderName, accountNumber, ifsc } = req.body as LinkBankAccountBody;
+		if (!restaurantId) throw new RestaurantIdNotFound();
 
-		const restaurantId = z.uuid().parse(restaurantIdHeader);
-		const response = await this.linkBankAccountUseCase.execute({ restaurantId, ...req.body });
+		const response = await this.linkBankAccountUseCase.execute({
+			restaurantId,
+			accountHolderName,
+			accountNumber,
+			ifsc,
+		});
 
 		return sendSuccessResponse(
 			res,

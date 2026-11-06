@@ -1,9 +1,7 @@
 import { InvalidBankAccountDetailsError } from '@domain/errors/restaurant.errors.ts';
 import { MESSAGES } from '@shared/constants/message.constants.ts';
 import { DEFAULT_CURRENCY } from '@shared/constants/payment.constants.ts';
-import {
-	BANK_ACCOUNT_NUMBER_REGEX,
-} from '@shared/constants/regex.constants.ts';
+import { BANK_ACCOUNT_NUMBER_REGEX } from '@shared/constants/regex.constants.ts';
 
 export interface RestaurantWalletProps {
 	id: string;
@@ -12,6 +10,7 @@ export interface RestaurantWalletProps {
 	currency: string;
 	isLocked: boolean;
 	razorpayFundAccountId?: string | null;
+	razorpayContactId?: string | null;
 	bankName?: string | null;
 	bankAccountLast4?: string | null;
 	createdAt: Date;
@@ -31,6 +30,7 @@ export class RestaurantWallet {
 			currency: DEFAULT_CURRENCY,
 			isLocked: false,
 			razorpayFundAccountId: null,
+			razorpayContactId: null,
 			bankName: null,
 			bankAccountLast4: null,
 			createdAt: now,
@@ -38,7 +38,12 @@ export class RestaurantWallet {
 		});
 	}
 
-	linkBankAccount(bankName: string, accountNumber: string): void {
+	linkBankAccount(
+		bankName: string,
+		accountNumber: string,
+		razorpayContactId: string,
+		razorpayFundAccountId: string,
+	): void {
 		const normalizedBankName = bankName.trim();
 
 		if (!normalizedBankName) {
@@ -50,6 +55,9 @@ export class RestaurantWallet {
 
 		this.props.bankName = normalizedBankName;
 		this.props.bankAccountLast4 = accountNumber.slice(-4);
+		this.props.razorpayContactId = razorpayContactId;
+		this.props.razorpayFundAccountId = razorpayFundAccountId;
+
 		this.props.updatedAt = new Date();
 	}
 
@@ -77,6 +85,9 @@ export class RestaurantWallet {
 		return this.props.razorpayFundAccountId ?? null;
 	}
 
+	get razorpayContactId(): string | null {
+		return this.props.razorpayContactId ?? null;
+	}
 	get bankName(): string | null {
 		return this.props.bankName ?? null;
 	}

@@ -10,6 +10,34 @@ export type RestaurantWalletOverviewRecord = {
 } & RestaurantWalletTodayStats;
 
 export const RestaurantWalletPersistenceMapper = {
+	toPersistance(wallet: RestaurantWallet) {
+		return {
+			id: wallet.id,
+			restaurantId: wallet.restaurantId,
+			balancePaise: wallet.balancePaise,
+			currency: wallet.currency,
+			isLocked: wallet.isLocked,
+			razorpayFundAccountId: wallet.razorpayFundAccountId,
+			razorpayContactId: wallet.razorpayContactId,
+			bankName: wallet.bankName,
+			bankAccountLast4: wallet.bankAccountLast4,
+			createdAt: wallet.createdAt,
+			updatedAt: wallet.updatedAt,
+		};
+	},
+
+	toUpdatePersistance(wallet: RestaurantWallet) {
+		return {
+			balancePaise: wallet.balancePaise,
+			currency: wallet.currency,
+			isLocked: wallet.isLocked,
+			razorpayFundAccountId: wallet.razorpayFundAccountId,
+			razorpayContactId: wallet.razorpayContactId,
+			bankName: wallet.bankName,
+			bankAccountLast4: wallet.bankAccountLast4,
+		};
+	},
+
 	toDomain(record: PrismaRestaurantWallet): RestaurantWallet {
 		return new RestaurantWallet({
 			id: record.id,
@@ -18,6 +46,7 @@ export const RestaurantWalletPersistenceMapper = {
 			currency: record.currency,
 			isLocked: record.isLocked,
 			razorpayFundAccountId: record.razorpayFundAccountId,
+			razorpayContactId: record.razorpayContactId,
 			bankName: record.bankName,
 			bankAccountLast4: record.bankAccountLast4,
 			createdAt: record.createdAt,

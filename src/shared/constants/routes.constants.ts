@@ -29,7 +29,7 @@ export const PLATFORM_FINANCE_ROUTES = {
 } as const;
 
 export const RESTAURANT_WALLET_ROUTES = {
-	ROOT: '/wallet',
+	ROOT: '/wallets',
 	WALLET: '/',
 	LINK_BANK: '/bank-account',
 	WITHDRAW: '/withdraw',

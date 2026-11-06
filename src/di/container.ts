@@ -1,3 +1,4 @@
+import type { ILogger } from '@application/ports/services/logger.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
@@ -38,6 +39,7 @@ import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
+import { logger } from '@infrastructure/index.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
@@ -61,6 +63,8 @@ import { TYPES } from './types.ts';
 
 export const container = new Container();
 container.load(restaurantWalletModule);
+
+container.bind<ILogger>(TYPES.Logger).toConstantValue(logger);
 
 container
 	.bind<ISubscriptionRepository>(TYPES.Repositories.SubscriptionRepository)

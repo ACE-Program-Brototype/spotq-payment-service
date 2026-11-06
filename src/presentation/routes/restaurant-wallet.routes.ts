@@ -1,5 +1,4 @@
 import { restaurantWalletController } from '@di/controller.resolution';
-import { adminAuthMiddleware } from '@presentation/middleware/admin-auth.middleware';
 import { restaurantAdminAuthMiddleware } from '@presentation/middleware/restaurant-admin.auth.middleware';
 import { validateRequestBody } from '@presentation/middleware/validation.middleware';
 import { RESTAURANT_WALLET_ROUTES } from '@shared/constants';
@@ -16,7 +15,7 @@ restaurantWalletRoutes.get(
 
 restaurantWalletRoutes.post(
 	RESTAURANT_WALLET_ROUTES.LINK_BANK,
-	adminAuthMiddleware,
+	restaurantAdminAuthMiddleware,
 	validateRequestBody(linkBankAccountBodySchema),
 	restaurantWalletController.linkBankAccount,
 );

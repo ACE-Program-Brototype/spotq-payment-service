@@ -46,3 +46,7 @@ export const INVOICE_STATUS = {
 	PAID: 'PAID',
 	VOID: 'VOID',
 } as const;
+
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS];
+export type InvoiceStatus = (typeof INVOICE_STATUS)[keyof typeof INVOICE_STATUS];
+export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];

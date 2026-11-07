@@ -1,12 +1,16 @@
 import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
-import { SubscriptionStatusEnum } from '@domain/enums/subscription.enums.ts';
 import {
 	ForbiddenSubscriptionAccessError,
 	SubscriptionNotEligibleForRenewalError,
 } from '@domain/errors/payment.errors.ts';
-import { MILLISECONDS_PER_DAY, SUBSCRIPTION_RENEWAL_WINDOW_DAYS } from '@shared/constants/index.ts';
+import {
+	MILLISECONDS_PER_DAY,
+	SUBSCRIPTION_RENEWAL_WINDOW_DAYS,
+	SUBSCRIPTION_STATUS,
+	type SubscriptionStatus,
+} from '@shared/constants/index.ts';
 
-export type SubscriptionStatus = `${SubscriptionStatusEnum}`;
+export type { SubscriptionStatus };
 
 export interface SubscriptionProps {
 	id: string;
@@ -75,15 +79,13 @@ export class Subscription {
 	}
 
 	isActive(now: Date = new Date()): boolean {
-		return (
-			this.props.status === SubscriptionStatusEnum.ACTIVE && now <= this.props.currentPeriodEnd
-		);
+		return this.props.status === SUBSCRIPTION_STATUS.ACTIVE && now <= this.props.currentPeriodEnd;
 	}
 
 	isExpired(now: Date = new Date()): boolean {
 		return (
-			this.props.status === SubscriptionStatusEnum.EXPIRED ||
-			this.props.status === SubscriptionStatusEnum.PAST_DUE ||
+			this.props.status === SUBSCRIPTION_STATUS.EXPIRED ||
+			this.props.status === SUBSCRIPTION_STATUS.PAST_DUE ||
 			now > this.props.currentPeriodEnd
 		);
 	}
@@ -93,8 +95,8 @@ export class Subscription {
 		windowDays: number = SUBSCRIPTION_RENEWAL_WINDOW_DAYS,
 	): boolean {
 		if (
-			this.props.status === SubscriptionStatusEnum.CANCELLED ||
-			this.props.status === SubscriptionStatusEnum.PENDING
+			this.props.status === SUBSCRIPTION_STATUS.CANCELLED ||
+			this.props.status === SUBSCRIPTION_STATUS.PENDING
 		) {
 			return false;
 		}
@@ -103,7 +105,7 @@ export class Subscription {
 			return true;
 		}
 
-		if (this.props.status === SubscriptionStatusEnum.ACTIVE) {
+		if (this.props.status === SUBSCRIPTION_STATUS.ACTIVE) {
 			const windowMs = windowDays * MILLISECONDS_PER_DAY;
 			const timeRemainingMs = this.props.currentPeriodEnd.getTime() - now.getTime();
 			return timeRemainingMs <= windowMs;

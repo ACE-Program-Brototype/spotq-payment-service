@@ -9,7 +9,6 @@ import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/sub
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
 import { RENEWAL_NOTE_FLAG } from '@domain/constants/subscription.constants.ts';
-import { InvoiceStatusEnum } from '@domain/enums/subscription.enums.ts';
 import {
 	IdempotencyKeyPayloadMismatchError,
 	IdempotencyRequestInProgressError,
@@ -31,6 +30,7 @@ import {
 	IDEMPOTENCY_COMPLETED_TTL_SECONDS,
 	IDEMPOTENCY_IN_PROGRESS_TTL_SECONDS,
 	IDEMPOTENCY_REDIS_PREFIXES,
+	INVOICE_STATUS,
 	PAYMENT_STATUS,
 	SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS,
 } from '@shared/constants/index.ts';
@@ -233,7 +233,7 @@ export class RenewSubscriptionUseCase implements IRenewSubscriptionUseCase {
 				invoiceNumber: InvoiceNumber.generate(),
 				amountPaise: plan.pricePaise,
 				currency: plan.currency,
-				status: InvoiceStatusEnum.DRAFT,
+				status: INVOICE_STATUS.DRAFT,
 			});
 		}
 

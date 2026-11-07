@@ -1,4 +1,5 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
+import { config } from '@config/index.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
@@ -316,17 +317,35 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		});
 
 		it('should reject webhook with received: false when signature is invalid or missing', async () => {
-			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(false);
+			const originalWebhookSecret = config.razorpay.webhookSecret;
+			Object.assign(config.razorpay, { webhookSecret: 'test-webhook-secret' });
+			try {
+				jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(false);
 
-			const res = await request(app)
-				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
-				.send({
-					event: 'payment.captured',
-					payload: {},
-				})
-				.expect(HTTP_STATUS.OK);
+				const missingSignatureResponse = await request(app)
+					.post(SUBSCRIPTION_ROUTES.WEBHOOK)
+					.send({
+						event: 'payment.captured',
+						payload: {},
+					})
+					.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(false);
+				expect(missingSignatureResponse.body.received).toBe(false);
+
+				const invalidSignatureResponse = await request(app)
+					.post(SUBSCRIPTION_ROUTES.WEBHOOK)
+					.set('x-razorpay-signature', 'invalid-signature')
+					.send({
+						event: 'payment.captured',
+						payload: {},
+					})
+					.expect(HTTP_STATUS.OK);
+
+				expect(invalidSignatureResponse.body.received).toBe(false);
+				expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledTimes(1);
+			} finally {
+				Object.assign(config.razorpay, { webhookSecret: originalWebhookSecret });
+			}
 		});
 	});
 });

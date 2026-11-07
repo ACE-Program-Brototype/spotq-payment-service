@@ -6,11 +6,8 @@ import { CustomerPaymentRetryMapper } from '@application/mappers/customer-paymen
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
-import {
-	AlreadyPaidError,
-	OrderExpiredError,
-	TransactionNotFoundError,
-} from '@domain/errors/payment.errors.ts';
+import { AlreadyPaidError, OrderExpiredError } from '@domain/errors/payment.errors.ts';
+import { TransactionNotFoundError } from '@domain/errors/transaction.errors.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { PENDING_ORDER_REUSE_WINDOW_MS } from '@shared/constants/index.ts';

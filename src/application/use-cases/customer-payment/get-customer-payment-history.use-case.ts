@@ -5,7 +5,7 @@ import type {
 import { CustomerPaymentHistoryMapper } from '@application/mappers/customer-payment/customer-payment-history.mapper.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { InvalidDateRangeError } from '@domain/errors/transaction.errors.ts';
+import { ForbiddenAccessError, InvalidDateRangeError } from '@domain/errors/transaction.errors.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { PAGINATION, PAYMENT_SORT_FIELDS, SORT_DIRECTIONS } from '@shared/constants/index.ts';
 import { inject, injectable } from 'inversify';
@@ -20,6 +20,10 @@ export class GetCustomerPaymentHistoryUseCase implements IGetCustomerPaymentHist
 	async execute(
 		input: GetCustomerPaymentHistoryInputDTO,
 	): Promise<GetCustomerPaymentHistoryOutputDTO> {
+		if (!input.customerId?.trim()) {
+			throw new ForbiddenAccessError();
+		}
+
 		if (input.startDate && input.endDate) {
 			const start = new Date(input.startDate);
 			const end = new Date(input.endDate);

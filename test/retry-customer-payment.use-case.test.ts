@@ -8,8 +8,8 @@ import {
 	CustomerUnauthorizedError,
 	OrderExpiredError,
 	PaymentNotRetryableError,
-	TransactionNotFoundError,
 } from '@domain/errors/payment.errors.ts';
+import { TransactionNotFoundError } from '@domain/errors/transaction.errors.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import { PAYMENT_STATUS } from '@shared/constants/index.ts';
 

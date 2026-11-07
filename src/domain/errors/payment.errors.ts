@@ -88,12 +88,6 @@ export class PaymentNotRetryableError extends DomainError {
 	}
 }
 
-export class TransactionNotFoundError extends DomainError {
-	constructor(message: string = MESSAGES.TRANSACTION_NOT_FOUND) {
-		super(message, 'NOT_FOUND');
-	}
-}
-
 export class SubscriberNotFoundError extends DomainError {
 	constructor(message: string = MESSAGES.SUBSCRIBER_NOT_FOUND) {
 		super(message, 'SUBSCRIBER_NOT_FOUND');

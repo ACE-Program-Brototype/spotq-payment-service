@@ -1,5 +1,5 @@
 import { GetCustomerPaymentHistoryUseCase } from '@application/use-cases/customer-payment/get-customer-payment-history.use-case.ts';
-import { InvalidDateRangeError } from '@domain/errors/transaction.errors.ts';
+import { ForbiddenAccessError, InvalidDateRangeError } from '@domain/errors/transaction.errors.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type { PaginatedCustomerTransactionsResult } from '@domain/types/transaction-query.types.ts';
 
@@ -89,6 +89,26 @@ describe('GetCustomerPaymentHistoryUseCase (SCRUM-35)', () => {
 			sortBy: 'createdAt',
 			sortOrder: 'desc',
 		});
+	});
+
+	it('should throw ForbiddenAccessError when customerId is missing or empty', async () => {
+		await expect(
+			useCase.execute({
+				customerId: '',
+			}),
+		).rejects.toThrow(ForbiddenAccessError);
+
+		await expect(
+			useCase.execute({
+				customerId: '   ',
+			}),
+		).rejects.toThrow(ForbiddenAccessError);
+
+		await expect(
+			useCase.execute({
+				customerId: undefined as unknown as string,
+			}),
+		).rejects.toThrow(ForbiddenAccessError);
 	});
 
 	it('should throw InvalidDateRangeError when startDate is after endDate', async () => {

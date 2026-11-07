@@ -72,5 +72,4 @@ export const PAGINATION = {
 	MAX_LIMIT: 50,
 } as const;
 
-export const PAYMENT_RETRY_WINDOW_MS = 15 * 60 * 1000;
-export const PENDING_ORDER_REUSE_WINDOW_MS = PAYMENT_RETRY_WINDOW_MS;
+export const PENDING_ORDER_REUSE_WINDOW_MS = 15 * 60 * 1000;

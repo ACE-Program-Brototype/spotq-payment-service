@@ -1,13 +1,10 @@
-import {
-	MILLISECONDS_PER_DAY,
-	SUBSCRIPTION_RENEWAL_WINDOW_DAYS,
-} from '@domain/constants/subscription.constants.ts';
 import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import { SubscriptionStatusEnum } from '@domain/enums/subscription.enums.ts';
 import {
 	ForbiddenSubscriptionAccessError,
 	SubscriptionNotEligibleForRenewalError,
 } from '@domain/errors/payment.errors.ts';
+import { MILLISECONDS_PER_DAY, SUBSCRIPTION_RENEWAL_WINDOW_DAYS } from '@shared/constants/index.ts';
 
 export type SubscriptionStatus = `${SubscriptionStatusEnum}`;
 

@@ -1,7 +1,7 @@
 import type { RenewSubscriptionOutputDTO } from '@application/dtos/subscriptions/renew-subscription.dto.ts';
-import { SUBSCRIPTION_RENEWAL_WINDOW_DAYS } from '@domain/constants/subscription.constants.ts';
 import type { Subscription } from '@domain/entities/subscription.entity.ts';
 import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
+import { SUBSCRIPTION_RENEWAL_WINDOW_DAYS } from '@shared/constants/index.ts';
 
 export interface ToRenewSubscriptionOutputParams {
 	orderId: string;

@@ -251,6 +251,7 @@ export class PrismaPaymentTransactionRepository
 			where: { razorpayOrderId },
 			data: {
 				status: PAYMENT_STATUS.CREATED,
+				failureReason: null,
 			},
 		});
 

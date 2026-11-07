@@ -60,7 +60,6 @@ export class WithdrawFromRestaurantWalletUseCase implements IWithdrawFromRestaur
 				mode: input.mode,
 				referenceId: reservation.withdrawalReference,
 			});
-			console.log(payout);
 			payoutId = payout.payoutId;
 		} catch (error) {
 			if (

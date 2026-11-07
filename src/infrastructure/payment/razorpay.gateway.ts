@@ -297,7 +297,7 @@ export class RazorpayGateway implements IPaymentGateway {
 					amount: params.amountPaise,
 					currency: params.currency,
 					mode: params.mode,
-					purpose: 'vendor_payout',
+					purpose: 'payout',
 					reference_id: params.referenceId,
 				},
 				{ 'X-Payout-Idempotency': params.referenceId },

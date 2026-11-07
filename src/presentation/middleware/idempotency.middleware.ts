@@ -3,6 +3,7 @@ import type { ICacheService } from '@application/ports/services/cache.service.po
 import { getHeaderValue } from '@presentation/middleware/customer-auth.middleware.ts';
 import {
 	HTTP_HEADERS,
+	HTTP_STATUS,
 	IDEMPOTENCY_TTL_SECONDS,
 	MESSAGES,
 	REFUND_IDEMPOTENCY_KEY_PREFIX,
@@ -59,7 +60,7 @@ export function idempotencyMiddleware(
 			}
 			return JSON.stringify(value) ?? 'undefined';
 		};
-		
+
 		// A key reused for a different operation must conflict instead of replaying the wrong response.
 		const fingerprint = createHash('sha256')
 			.update(`${req.method}:${req.originalUrl}:${canonicalize(req.body)}`)
@@ -91,7 +92,7 @@ export function idempotencyMiddleware(
 			throw new ConflictError(MESSAGES.CONFLICT);
 		}
 
-		// Cache the complete response before sending it, including definitive failures.
+		// Cache successful responses with their fingerprint and status before sending them.
 		const originalJson = res.json.bind(res);
 		let lockReleased = false;
 
@@ -102,13 +103,19 @@ export function idempotencyMiddleware(
 			}
 		};
 
-		// Persist the response before sending it so an immediate retry can replay it.
 		res.json = (body: unknown): Response => {
-			void cache
-				.set(cacheKey, JSON.stringify({ fingerprint, statusCode: res.statusCode, body }), ttl)
-				.then(() => originalJson(body))
-				.catch(() => originalJson(body));
-			return res;
+			if (res.statusCode >= HTTP_STATUS.OK && res.statusCode < HTTP_STATUS.BAD_REQUEST) {
+				void cache
+					.set(
+						cacheKey,
+						JSON.stringify({ fingerprint, statusCode: res.statusCode, body }),
+						ttl,
+					)
+					.then(() => originalJson(body))
+					.catch(() => originalJson(body));
+				return res;
+			}
+			return originalJson(body);
 		};
 
 		res.on('finish', releaseLockSafely);

@@ -181,6 +181,15 @@ export class PrismaRestaurantWalletRepository
 		status: WalletWithdrawalFailureStatus = WALLET_LEDGER_STATUSES.FAILED,
 	): Promise<void> {
 		await this.prisma.$transaction(async (transaction) => {
+			// Failed payouts are only released while pending; a reversal may arrive after processing.
+			const isEligibleStatus = (entryStatus: string): boolean => {
+				if (entryStatus === WALLET_LEDGER_STATUSES.PROCESSING) return true;
+				if (status === WALLET_LEDGER_STATUSES.REVERSED) {
+					return entryStatus === WALLET_LEDGER_STATUSES.PROCESSED;
+				}
+				return false;
+			};
+
 			const entry = await transaction.walletLedgerEntry.findUnique({
 				where: { referenceId: reference },
 			});
@@ -188,12 +197,13 @@ export class PrismaRestaurantWalletRepository
 			if (
 				!entry ||
 				entry.type !== WALLET_LEDGER_TYPES.DEBIT_PAYOUT_WITHDRAWAL ||
-				entry.status !== WALLET_LEDGER_STATUSES.PROCESSING
+				!isEligibleStatus(entry.status)
 			) {
 				return;
 			}
 
 			await transaction.$queryRaw`
+			-- Serialize wallet balance changes while applying the release.
 			SELECT id
 			FROM restaurant_wallets
 			WHERE id = ${entry.walletId}::uuid
@@ -204,7 +214,7 @@ export class PrismaRestaurantWalletRepository
 				where: { id: entry.id },
 			});
 
-			if (!lockedEntry || lockedEntry.status !== WALLET_LEDGER_STATUSES.PROCESSING) return;
+			if (!lockedEntry || !isEligibleStatus(lockedEntry.status)) return;
 
 			const wallet = await transaction.restaurantWallet.update({
 				where: { id: entry.walletId },

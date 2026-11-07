@@ -63,11 +63,13 @@ export class WithdrawFromRestaurantWalletUseCase implements IWithdrawFromRestaur
 			console.log(payout);
 			payoutId = payout.payoutId;
 		} catch (error) {
-			if (error instanceof PaymentGatewayRequestNotSentError) {
+			if (
+				error instanceof PaymentGatewayRequestNotSentError ||
+				error instanceof PaymentGatewayError
+			) {
 				await this.walletRepository.failWithdrawal(reservation.withdrawalReference);
 				throw error;
 			}
-			if (error instanceof PaymentGatewayError) throw error;
 			// Keep other failures reserved until Razorpay's webhook confirms the payout outcome.
 		}
 

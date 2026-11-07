@@ -231,4 +231,35 @@ export class PrismaRestaurantWalletRepository
 			});
 		});
 	}
+
+	async markWithdrawalProcessed(reference: string, utrNumber?: string | null): Promise<void> {
+		await this.prisma.$transaction(async (transaction) => {
+			const entry = await transaction.walletLedgerEntry.findUnique({
+				where: { referenceId: reference },
+			});
+			if (
+				!entry ||
+				entry.type !== WALLET_LEDGER_TYPES.DEBIT_PAYOUT_WITHDRAWAL ||
+				entry.status !== WALLET_LEDGER_STATUSES.PROCESSING
+			) {
+				return;
+			}
+
+			await transaction.$queryRaw`
+				SELECT id FROM restaurant_wallets WHERE id = ${entry.walletId}::uuid FOR UPDATE
+			`;
+			const lockedEntry = await transaction.walletLedgerEntry.findUnique({
+				where: { id: entry.id },
+			});
+			if (!lockedEntry || lockedEntry.status !== WALLET_LEDGER_STATUSES.PROCESSING) return;
+
+			await transaction.walletLedgerEntry.update({
+				where: { id: lockedEntry.id },
+				data: {
+					status: WALLET_LEDGER_STATUSES.PROCESSED,
+					utrNumber: utrNumber ?? undefined,
+				},
+			});
+		});
+	}
 }

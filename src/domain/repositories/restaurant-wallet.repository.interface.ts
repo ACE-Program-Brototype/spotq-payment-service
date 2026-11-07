@@ -40,5 +40,6 @@ export interface IRestaurantWalletRepository extends IBaseRepository<RestaurantW
 		amountPaise: bigint,
 		reference: string,
 	): Promise<WalletWithdrawalReservation>;
+	markWithdrawalProcessed(reference: string, utrNumber?: string | null): Promise<void>;
 	failWithdrawal(reference: string, status?: WalletWithdrawalFailureStatus): Promise<void>;
 }

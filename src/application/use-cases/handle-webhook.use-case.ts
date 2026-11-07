@@ -72,6 +72,25 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 
 		logger.info({ eventType, paymentId: paymentEntity?.id }, 'Processing Razorpay webhook event');
 
+		if (eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_PROCESSED && payoutEntity) {
+			if (payoutEntity.reference_id) {
+				await this.restaurantWalletRepository.markWithdrawalProcessed(
+					payoutEntity.reference_id,
+					payoutEntity.utr,
+				);
+				logger.info(
+					{ payoutId: payoutEntity.id, referenceId: payoutEntity.reference_id },
+					'Payout processed webhook updated the withdrawal ledger',
+				);
+			} else {
+				logger.warn(
+					{ payoutId: payoutEntity.id },
+					'Processed payout webhook did not include a reference ID',
+				);
+			}
+			return { received: true };
+		}
+
 		if (
 			(eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_REJECTED ||
 				eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_FAILED ||

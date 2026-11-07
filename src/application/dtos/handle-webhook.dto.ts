@@ -16,6 +16,7 @@ export interface WebhookPayoutEntity {
 	id: string;
 	reference_id: string | null;
 	status: string;
+	utr?: string | null;
 	failure_reason?: string | null;
 }
 

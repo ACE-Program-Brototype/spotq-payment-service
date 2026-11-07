@@ -1,5 +1,6 @@
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases/get-order-payment-status.use-case.port.ts';
+import type { IProcessOrderRefundUseCase } from '@application/ports/use-cases/process-order-refund.use-case.port.ts';
 import type { IVerifyOrderPaymentUseCase } from '@application/ports/use-cases/verify-order-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
@@ -16,6 +17,8 @@ export class OrderPaymentController {
 		private readonly verifyOrderPaymentUseCase: IVerifyOrderPaymentUseCase,
 		@inject(TYPES.UseCases.GetOrderPaymentStatusUseCase)
 		private readonly getOrderPaymentStatusUseCase: IGetOrderPaymentStatusUseCase,
+		@inject(TYPES.UseCases.ProcessOrderRefundUseCase)
+		private readonly processOrderRefundUseCase: IProcessOrderRefundUseCase,
 	) {}
 
 	createGatewayOrder = async (req: Request, res: Response): Promise<void> => {
@@ -57,5 +60,18 @@ export class OrderPaymentController {
 		});
 
 		sendSuccessResponse(res, result, MESSAGES.ORDER_PAYMENT_STATUS_FETCHED, HTTP_STATUS.OK);
+	};
+
+	processRefund = async (req: Request, res: Response): Promise<void> => {
+		const { orderId, amountPaise, reason, notes } = req.body;
+
+		const result = await this.processOrderRefundUseCase.execute({
+			orderId,
+			amountPaise,
+			reason,
+			notes,
+		});
+
+		sendSuccessResponse(res, result, MESSAGES.REFUND_PROCESSED, HTTP_STATUS.OK);
 	};
 }

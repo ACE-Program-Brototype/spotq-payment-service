@@ -55,6 +55,8 @@ describe('Subscription & Payment Use Cases', () => {
 		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
 		captureOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
 		failOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
+		processOrderRefund: jest.fn().mockResolvedValue({}),
+		syncRefundFromWebhook: jest.fn().mockResolvedValue(undefined),
 		markSuccess: jest.fn(),
 		markFailed: jest.fn(),
 		resetToCreated: jest.fn().mockResolvedValue({}),
@@ -82,6 +84,13 @@ describe('Subscription & Payment Use Cases', () => {
 		verifyPaymentSignature: jest.fn().mockReturnValue(true),
 		verifyWebhookSignature: jest.fn().mockReturnValue(true),
 		getPaymentDetails: jest.fn().mockResolvedValue({}),
+		createRefund: jest.fn().mockResolvedValue({
+			refundId: 'rfnd_test_123',
+			status: 'processed',
+			paymentId: 'pay_test_123',
+			amount: 149900,
+			currency: 'INR',
+		}),
 	};
 
 	const mockOutboxRelay = {

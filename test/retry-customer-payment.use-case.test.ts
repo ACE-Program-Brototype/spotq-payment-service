@@ -50,6 +50,8 @@ describe('RetryCustomerPaymentUseCase (SCRUM-35)', () => {
 			create: jest.fn(),
 			captureOrderPaymentWithOutbox: jest.fn(),
 			failOrderPaymentWithOutbox: jest.fn(),
+			processOrderRefund: jest.fn(),
+			syncRefundFromWebhook: jest.fn(),
 			markSuccess: jest.fn(),
 			markFailed: jest.fn(),
 			resetToCreated: jest.fn(),

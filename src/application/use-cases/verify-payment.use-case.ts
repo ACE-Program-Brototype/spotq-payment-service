@@ -133,7 +133,7 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		return {
 			subscriptionId: subscription.id,
 			restaurantId: existingTx.restaurantId,
-			planCode: plan.code,
+			planCode: plan.tierCode,
 			status: subscription.status,
 			currentPeriodStart: subscription.currentPeriodStart.toISOString(),
 			currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),

@@ -32,9 +32,6 @@ subscriptionRouter.post(SUBSCRIPTION_ROUTES.ORDER, (req, res) =>
 );
 
 subscriptionRouter.post(SUBSCRIPTION_ROUTES.RENEW, ...renewSubscriptionPipeline);
-subscriptionRouter.post(SUBSCRIPTION_ROUTES.RENEW_SINGULAR, ...renewSubscriptionPipeline);
-subscriptionRouter.post(SUBSCRIPTION_ROUTES.API_V1_RENEW, ...renewSubscriptionPipeline);
-subscriptionRouter.post(SUBSCRIPTION_ROUTES.API_V1_RENEW_PLURAL, ...renewSubscriptionPipeline);
 
 subscriptionRouter.post(SUBSCRIPTION_ROUTES.VERIFY, (req, res) =>
 	subscriptionController.verifyPayment(req, res),

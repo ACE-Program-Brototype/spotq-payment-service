@@ -196,7 +196,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 		it('should return 422 UNPROCESSABLE_ENTITY when Idempotency-Key header is missing', async () => {
 			const res = await request(app)
-				.post(`/api/v1/subscription/${targetSubId}/renew`)
+				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
 				.set('x-user-id', 'user-123')
 				.set('x-user-role', 'RESTAURANT_ADMIN')
@@ -209,7 +209,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 		it('should return 422 UNPROCESSABLE_ENTITY when Idempotency-Key header is malformed', async () => {
 			const res = await request(app)
-				.post(`/api/v1/subscription/${targetSubId}/renew`)
+				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
 				.set('x-user-id', 'user-123')
 				.set('x-user-role', 'RESTAURANT_ADMIN')
@@ -223,7 +223,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 		it('should return 422 UNPROCESSABLE_ENTITY when unknown fields are sent in request body (.strict())', async () => {
 			const res = await request(app)
-				.post(`/api/v1/subscription/${targetSubId}/renew`)
+				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
 				.set('x-user-id', 'user-123')
 				.set('x-user-role', 'RESTAURANT_ADMIN')
@@ -247,7 +247,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			jest.spyOn(subscriptionRepository, 'findById').mockResolvedValueOnce(foreignSub);
 
 			const res = await request(app)
-				.post(`/api/v1/subscription/${targetSubId}/renew`)
+				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
 				.set('x-user-id', 'user-123')
 				.set('x-user-role', 'RESTAURANT_ADMIN')
@@ -316,7 +316,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			jest.spyOn(razorpayGateway, 'isHealthy').mockReturnValueOnce(false);
 
 			const res = await request(app)
-				.post(`/api/v1/subscription/${targetSubId}/renew`)
+				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
 				.set('x-user-id', 'user-123')
 				.set('x-user-role', 'RESTAURANT_ADMIN')
@@ -416,7 +416,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			expect(mismatchRes.body.error).toBe('IDEMPOTENCY_KEY_PAYLOAD_MISMATCH');
 		});
 
-		it('should also succeed on API_V1 endpoint /api/v1/subscription/:subscriptionId/renew', async () => {
+		it('should succeed on renewal endpoint /subscriptions/:subscriptionId/renew with active expiring subscription', async () => {
 			const activeExpiringSub = new Subscription({
 				id: targetSubId,
 				restaurantId: restId,
@@ -465,7 +465,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			);
 
 			const res = await request(app)
-				.post(`/api/v1/subscription/${targetSubId}/renew`)
+				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
 				.set('x-user-id', 'user-123')
 				.set('x-user-role', 'RESTAURANT_ADMIN')

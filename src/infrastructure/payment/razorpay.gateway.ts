@@ -1,11 +1,17 @@
 import crypto from 'node:crypto';
 import { config } from '@config/index.ts';
+import {
+	PaymentGatewayError,
+	PaymentGatewayRequestNotSentError,
+} from '@domain/errors/payment.errors.ts';
 import type {
 	CreateOrderParams,
+	CreatePayoutParams,
 	FundAccountDetails,
 	IPaymentGateway,
 	PaymentDetailsResult,
 	PaymentOrderResult,
+	PayoutResult,
 	VerifyPaymentSignatureParams,
 } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
@@ -156,6 +162,7 @@ export class RazorpayGateway implements IPaymentGateway {
 		method: RazorpayHttpMethod,
 		path: string,
 		body?: Record<string, unknown>,
+		extraHeaders?: Record<string, string>,
 	): Promise<T> {
 		const { keyId, keySecret } = config.razorpay;
 
@@ -173,6 +180,7 @@ export class RazorpayGateway implements IPaymentGateway {
 				},
 				headers: {
 					'Content-Type': 'application/json',
+					...extraHeaders,
 				},
 				data: body,
 				timeout: 10000,
@@ -180,7 +188,14 @@ export class RazorpayGateway implements IPaymentGateway {
 
 			return response.data;
 		} catch (error) {
-			logger.error({ err: error }, `RazorpayX request failed: ${method} ${path}`);
+			logger.error(
+				{
+					method,
+					path,
+					status: axios.isAxiosError(error) ? error.response?.status : undefined,
+				},
+				`RazorpayX request failed: ${method} ${path}`,
+			);
 			throw error;
 		}
 	}
@@ -263,5 +278,51 @@ export class RazorpayGateway implements IPaymentGateway {
 			`${RAZORPAY_X_PATH.FUND_ACCOUNTS}/${fundAccountId}`,
 			{ active: false },
 		);
+	}
+
+	async createPayout(params: CreatePayoutParams): Promise<PayoutResult> {
+		const accountNumber = config.razorpay.payoutAccountNumber;
+		if (!accountNumber) {
+			throw new PaymentGatewayRequestNotSentError(
+				'RazorpayX payout source account is not configured',
+			);
+		}
+		try {
+			const payout = await this.razorpayXRequest<{ id: string; status: string }>(
+				RAZORPAY_HTTP_METHOD.POST,
+				RAZORPAY_X_PATH.PAYOUTS,
+				{
+					account_number: accountNumber,
+					fund_account_id: params.fundAccountId,
+					amount: params.amountPaise,
+					currency: params.currency,
+					mode: params.mode,
+					purpose: 'vendor_payout',
+					reference_id: params.referenceId,
+				},
+				{ 'X-Payout-Idempotency': params.referenceId },
+			);
+			return { payoutId: payout.id, status: payout.status };
+		} catch (error) {
+			if (
+				axios.isAxiosError(error) &&
+				!error.response &&
+				['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ENETUNREACH', 'EHOSTUNREACH'].includes(
+					error.code ?? '',
+				)
+			) {
+				throw new PaymentGatewayRequestNotSentError('RazorpayX could not be reached');
+			}
+			if (
+				axios.isAxiosError(error) &&
+				error.response?.status !== undefined &&
+				error.response.status >= 400 &&
+				error.response.status < 500 &&
+				![408, 409, 429].includes(error.response.status)
+			) {
+				throw new PaymentGatewayError('RazorpayX rejected the payout request');
+			}
+			throw error;
+		}
 	}
 }

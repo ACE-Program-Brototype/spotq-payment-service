@@ -69,3 +69,15 @@ export class InvalidPaymentStateTransitionError extends DomainError {
 		super(message, 'INVALID_PAYMENT_STATE_TRANSITION');
 	}
 }
+
+export class PaymentGatewayError extends DomainError {
+	constructor(message: string = MESSAGES.PAYMENT_GATEWAY_ERROR) {
+		super(message, 'PAYMENT_GATEWAY_ERROR');
+	}
+}
+
+export class PaymentGatewayRequestNotSentError extends DomainError {
+	constructor(message: string = MESSAGES.PAYMENT_GATEWAY_ERROR) {
+		super(message, 'PAYMENT_GATEWAY_REQUEST_NOT_SENT');
+	}
+}

@@ -45,6 +45,19 @@ export interface FundAccountDetails {
 	active: boolean;
 }
 
+export interface CreatePayoutParams {
+	fundAccountId: string;
+	amountPaise: number;
+	currency: 'INR';
+	mode: string;
+	referenceId: string;
+}
+
+export interface PayoutResult {
+	payoutId: string;
+	status: string;
+}
+
 export interface IPaymentGateway {
 	initialize(): Promise<void>;
 	isHealthy(): boolean;
@@ -62,4 +75,5 @@ export interface IPaymentGateway {
 	): Promise<FundAccountDetails>;
 	createContact(name: string): Promise<{ contactId: string }>;
 	deactivateFundAccount(fundAccountId: string): Promise<void>;
+	createPayout(params: CreatePayoutParams): Promise<PayoutResult>;
 }

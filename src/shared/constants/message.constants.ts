@@ -75,6 +75,11 @@ export enum MessageEnum {
 	INVALID_BANK_ACCOUNT_DETAILS = 'Invalid bank account details',
 	WITHDRAWAL_AMOUNT_REQUIRED = 'Withdrawal amount must be a positive whole number of paise',
 	INVALID_WITHDRAWAL_MODE = 'Withdrawal mode must be one of: IMPS, NEFT, RTGS, UPI',
+	WALLET_WITHDRAWAL_LOCKED = 'Wallet is locked and cannot be withdrawn from',
+	WALLET_WITHDRAWAL_BANK_REQUIRED = 'Link a bank account before requesting a withdrawal',
+	WALLET_INSUFFICIENT_BALANCE = 'Insufficient wallet balance for this withdrawal',
+	WALLET_T1_BALANCE_UNAVAILABLE = "Today's earnings will be available to withdraw tomorrow",
+	WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED = 'Wallet withdrawals are only supported in INR',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -94,6 +99,9 @@ export enum MessageEnum {
 	INVALID_AMOUNT_RANGE = 'Invalid amount range: minAmount cannot be greater than maxAmount',
 	INVALID_DATE_FORMAT = 'Date must be a valid calendar date in YYYY-MM-DD format',
 	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
+
+	// Gateway
+	PAYMENT_GATEWAY_ERROR = 'Payment gateway error',
 }
 
 export const MESSAGES = {
@@ -176,6 +184,11 @@ export const MESSAGES = {
 	INVALID_BANK_ACCOUNT_DETAILS: MessageEnum.INVALID_BANK_ACCOUNT_DETAILS,
 	WITHDRAWAL_AMOUNT_REQUIRED: MessageEnum.WITHDRAWAL_AMOUNT_REQUIRED,
 	INVALID_WITHDRAWAL_MODE: MessageEnum.INVALID_WITHDRAWAL_MODE,
+	WALLET_WITHDRAWAL_LOCKED: MessageEnum.WALLET_WITHDRAWAL_LOCKED,
+	WALLET_WITHDRAWAL_BANK_REQUIRED: MessageEnum.WALLET_WITHDRAWAL_BANK_REQUIRED,
+	WALLET_INSUFFICIENT_BALANCE: MessageEnum.WALLET_INSUFFICIENT_BALANCE,
+	WALLET_T1_BALANCE_UNAVAILABLE: MessageEnum.WALLET_T1_BALANCE_UNAVAILABLE,
+	WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED: MessageEnum.WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED,
 
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,
@@ -196,6 +209,9 @@ export const MESSAGES = {
 	INVALID_AMOUNT_RANGE: MessageEnum.INVALID_AMOUNT_RANGE,
 	INVALID_DATE_FORMAT: MessageEnum.INVALID_DATE_FORMAT,
 	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
+
+	// gateway
+	PAYMENT_GATEWAY_ERROR: MessageEnum.PAYMENT_GATEWAY_ERROR,
 } as const;
 
 export const messages = MESSAGES;

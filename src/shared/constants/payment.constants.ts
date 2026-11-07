@@ -24,6 +24,9 @@ export const RAZORPAY_WEBHOOK_EVENTS = {
 	PAYMENT_CAPTURED: 'payment.captured',
 	ORDER_PAID: 'order.paid',
 	PAYMENT_FAILED: 'payment.failed',
+	PAYOUT_REJECTED: 'payout.rejected',
+	PAYOUT_FAILED: 'payout.failed',
+	PAYOUT_REVERSED: 'payout.reversed',
 } as const;
 
 export type RazorpayWebhookEvent =

@@ -6,3 +6,17 @@ export const WALLET_LEDGER_TYPES = {
 } as const;
 
 export type WalletLedgerType = (typeof WALLET_LEDGER_TYPES)[keyof typeof WALLET_LEDGER_TYPES];
+
+export const WALLET_LEDGER_STATUSES = {
+	PROCESSING: 'PROCESSING',
+	PROCESSED: 'PROCESSED',
+	REVERSED: 'REVERSED',
+	FAILED: 'FAILED',
+} as const;
+
+export type WalletLedgerStatus =
+	(typeof WALLET_LEDGER_STATUSES)[keyof typeof WALLET_LEDGER_STATUSES];
+
+export type WalletWithdrawalFailureStatus =
+	| typeof WALLET_LEDGER_STATUSES.FAILED
+	| typeof WALLET_LEDGER_STATUSES.REVERSED;

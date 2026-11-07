@@ -12,6 +12,13 @@ export interface WebhookOrderEntity {
 	status: string;
 }
 
+export interface WebhookPayoutEntity {
+	id: string;
+	reference_id: string | null;
+	status: string;
+	failure_reason?: string | null;
+}
+
 export interface WebhookPayload {
 	event: string;
 	payload?: {
@@ -20,6 +27,9 @@ export interface WebhookPayload {
 		};
 		order?: {
 			entity?: WebhookOrderEntity;
+		};
+		payout?: {
+			entity?: WebhookPayoutEntity;
 		};
 	};
 }

@@ -11,9 +11,7 @@ export interface WithdrawFromRestaurantWalletInputDTO {
 export interface WithdrawFromRestaurantWalletOutputDTO {
 	payoutId: string;
 	withdrawnPaise: number;
-	withdrawnFormatted: string;
 	remainingBalancePaise: number;
-	remainingBalanceFormatted: string;
 	destination: {
 		bankName: string;
 		accountNumberMasked: string;

@@ -225,14 +225,22 @@ export class RedisIdempotencyService implements IIdempotencyService {
 		existingRaw: string,
 		payloadHash: string,
 	): IdempotencyClaimResult<T> {
-		const parsed = JSON.parse(existingRaw) as StoredIdempotencyRecord<T>;
-		if (parsed.payloadHash !== payloadHash) {
-			return { status: IDEMPOTENCY_CLAIM_STATUS.PAYLOAD_MISMATCH };
+		try {
+			const parsed = JSON.parse(existingRaw) as StoredIdempotencyRecord<T>;
+			if (parsed.payloadHash !== payloadHash) {
+				return { status: IDEMPOTENCY_CLAIM_STATUS.PAYLOAD_MISMATCH };
+			}
+			if (parsed.state === 'COMPLETED' && parsed.response !== undefined) {
+				return { status: IDEMPOTENCY_CLAIM_STATUS.REPLAY, response: parsed.response };
+			}
+			return { status: IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS };
+		} catch (error) {
+			logger.warn(
+				{ err: error, rawSnippet: existingRaw.slice(0, 100) },
+				'Failed to parse stored idempotency record; treating as IN_PROGRESS',
+			);
+			return { status: IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS };
 		}
-		if (parsed.state === 'COMPLETED' && parsed.response !== undefined) {
-			return { status: IDEMPOTENCY_CLAIM_STATUS.REPLAY, response: parsed.response };
-		}
-		return { status: IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS };
 	}
 
 	private claimOrGetInMemory<T>(

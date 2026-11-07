@@ -119,4 +119,15 @@ describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () 
 		const tokenC = await service.acquireSubscriptionLock('sub-100', 15);
 		expect(tokenC).toBeTruthy();
 	});
+
+	it('handles malformed corrupted JSON gracefully without crashing', async () => {
+		const mockClient = createMockRedisClient();
+		const service = new RedisIdempotencyService(mockClient as never);
+		const scopeKey = 'idempotency:corrupted:1';
+
+		mockClient.store.set(scopeKey, '{not-valid-json');
+
+		const claim = await service.claimOrGet(scopeKey, 'any-hash', 60);
+		expect(claim.status).toBe('IN_PROGRESS');
+	});
 });

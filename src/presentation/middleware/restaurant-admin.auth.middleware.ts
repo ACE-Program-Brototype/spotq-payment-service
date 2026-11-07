@@ -45,7 +45,7 @@ export function restaurantAdminAuthMiddleware(
 	}
 
 	const email = getHeaderValue(req.headers['x-user-email']);
-	const restaurantId = headerRestaurantId || userId;
+	const restaurantId = headerRestaurantId;
 
 	if (userId && restaurantId && userId.trim() !== restaurantId.trim()) {
 		res

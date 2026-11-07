@@ -1,5 +1,6 @@
 import { IdempotencyStorageUnavailableError } from '@domain/errors/payment.errors.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/redis-idempotency.service.ts';
+import { SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS } from '@shared/constants/subscription.constants.ts';
 
 describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () => {
 	const createMockRedisClient = () => {
@@ -107,17 +108,28 @@ describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () 
 		const mockClient = createMockRedisClient();
 		const service = new RedisIdempotencyService(mockClient as never);
 
-		const tokenA = await service.acquireSubscriptionLock('sub-100', 15);
+		const tokenA = await service.acquireSubscriptionLock(
+			'sub-100',
+			SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS,
+		);
 		expect(tokenA).toBeTruthy();
 
-		const tokenB = await service.acquireSubscriptionLock('sub-100', 15);
+		const tokenB = await service.acquireSubscriptionLock(
+			'sub-100',
+			SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS,
+		);
 		expect(tokenB).toBeNull();
 
 		await service.releaseSubscriptionLock('sub-100', 'stale-other-token');
-		expect(await service.acquireSubscriptionLock('sub-100', 15)).toBeNull();
+		expect(
+			await service.acquireSubscriptionLock('sub-100', SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS),
+		).toBeNull();
 
 		await service.releaseSubscriptionLock('sub-100', tokenA as string);
-		const tokenC = await service.acquireSubscriptionLock('sub-100', 15);
+		const tokenC = await service.acquireSubscriptionLock(
+			'sub-100',
+			SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS,
+		);
 		expect(tokenC).toBeTruthy();
 	});
 
@@ -140,9 +152,9 @@ describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () 
 		await expect(service.claimOrGet(scopeKey, 'hash-a', 60)).rejects.toThrow(
 			IdempotencyStorageUnavailableError,
 		);
-		await expect(service.acquireSubscriptionLock('sub-1', 15)).rejects.toThrow(
-			IdempotencyStorageUnavailableError,
-		);
+		await expect(
+			service.acquireSubscriptionLock('sub-1', SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS),
+		).rejects.toThrow(IdempotencyStorageUnavailableError);
 		await expect(service.complete(scopeKey, 'hash-a', { orderId: 'ord-1' }, 60)).rejects.toThrow(
 			IdempotencyStorageUnavailableError,
 		);
@@ -159,9 +171,9 @@ describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () 
 		await expect(service.claimOrGet(scopeKey, 'hash-a', 60)).rejects.toThrow(
 			IdempotencyStorageUnavailableError,
 		);
-		await expect(service.acquireSubscriptionLock('sub-1', 15)).rejects.toThrow(
-			IdempotencyStorageUnavailableError,
-		);
+		await expect(
+			service.acquireSubscriptionLock('sub-1', SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS),
+		).rejects.toThrow(IdempotencyStorageUnavailableError);
 		await expect(service.complete(scopeKey, 'hash-a', { orderId: 'ord-1' }, 60)).rejects.toThrow(
 			IdempotencyStorageUnavailableError,
 		);

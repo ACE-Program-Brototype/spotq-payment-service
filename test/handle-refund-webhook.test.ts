@@ -29,6 +29,7 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			findById: jest.fn(),
 			findByOrderId: jest.fn(),
 			findByCustomerOrderId: jest.fn(),
+			findCapturedByOrderId: jest.fn(),
 			findByPaymentId: jest.fn(),
 			findPendingByRestaurantAndPlan: jest.fn(),
 			create: jest.fn(),

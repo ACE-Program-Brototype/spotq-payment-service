@@ -8,6 +8,7 @@ import {
 } from '@shared/index.ts';
 import { Router } from 'express';
 import { adminSubscriberRouter } from './admin-subscriber.routes.ts';
+import { customerPaymentRouter } from './customer-payment.routes.ts';
 import { internalOrderPaymentRouter } from './internal-order-payment.routes.ts';
 import { metricsRouter } from './metrics.routes.ts';
 import { orderPaymentRouter } from './order-payment.routes.ts';
@@ -20,6 +21,7 @@ export const router = Router();
 router.use(ROUTES.ROOT, healthRouter);
 router.use(ROUTES.ROOT, metricsRouter);
 router.use(ROUTES.ROOT, subscriptionRouter);
+router.use(ROUTES.ROOT, customerPaymentRouter);
 router.use(TRANSACTION_ROUTES.BASE, restaurantTransactionRouter);
 router.use(TRANSACTION_ROUTES.API_V1_BASE, restaurantTransactionRouter);
 router.use(PLATFORM_FINANCE_ROUTES.ROOT, platformFinanceRouter);

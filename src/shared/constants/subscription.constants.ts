@@ -1,7 +1,6 @@
 export const INDIA_TIMEZONE_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 export const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export const PENDING_ORDER_REUSE_WINDOW_MS = 15 * 60 * 1000;
 export const OUTBOX_RELAY_INTERVAL_MS = 5000;
 export const EXPIRY_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 

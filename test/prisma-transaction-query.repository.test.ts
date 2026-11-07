@@ -6,6 +6,7 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 
 	let repository: PrismaTransactionQueryRepository;
 	let mockPrisma: {
+		$transaction: jest.Mock;
 		paymentTransaction: {
 			count: jest.Mock;
 			findMany: jest.Mock;
@@ -15,6 +16,15 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 
 	beforeEach(() => {
 		mockPrisma = {
+			$transaction: jest.fn().mockImplementation((args: unknown) => {
+				if (Array.isArray(args)) {
+					return Promise.all(args);
+				}
+				if (typeof args === 'function') {
+					return args(mockPrisma);
+				}
+				return Promise.resolve(args);
+			}),
 			paymentTransaction: {
 				count: jest.fn().mockResolvedValue(1),
 				findMany: jest.fn().mockResolvedValue([
@@ -241,6 +251,190 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 
 			expect(result).not.toBeNull();
 			expect(result?.paymentMethod).toBe('CARD');
+		});
+	});
+
+	describe('findTransactionsByCustomer', () => {
+		const mockCustomerId = 'cust-12345';
+
+		it('should query transactions by customerId using $transaction batching', async () => {
+			const mockFailedTx = {
+				id: 'tx-1',
+				restaurantId: 'rest-1',
+				customerId: mockCustomerId,
+				orderId: 'order-1',
+				amountPaise: 50000,
+				currency: 'INR',
+				status: 'FAILED',
+				failureReason: 'PAYMENT_FAILED',
+				metadata: { orderNumber: 'ORD-101' },
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				refunds: [],
+			};
+			const mockCapturedTx = {
+				id: 'tx-2',
+				restaurantId: 'rest-1',
+				customerId: mockCustomerId,
+				orderId: 'order-2',
+				amountPaise: 75000,
+				currency: 'INR',
+				status: 'CAPTURED',
+				failureReason: null,
+				metadata: { orderNumber: 'ORD-102' },
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				refunds: [],
+			};
+
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(2);
+			mockPrisma.paymentTransaction.findMany
+				.mockResolvedValueOnce([mockFailedTx, mockCapturedTx])
+				.mockResolvedValueOnce([]); // no captured duplicate orders
+
+			const result = await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				page: 1,
+				limit: 10,
+			});
+
+			expect(mockPrisma.$transaction).toHaveBeenCalled();
+			expect(result.pagination.total).toBe(2);
+			expect(result.transactions).toHaveLength(2);
+
+			// Failed transaction
+			expect(result.transactions[0].retryEligible).toBe(true);
+			expect(result.transactions[0].hasInvoice).toBe(false);
+			expect(result.transactions[0].invoiceUrl).toBeNull();
+
+			// Captured transaction
+			expect(result.transactions[1].retryEligible).toBe(false);
+			expect(result.transactions[1].hasInvoice).toBe(true);
+			expect(result.transactions[1].invoiceUrl).toBe('/api/v1/payments/transactions/tx-2/invoice');
+		});
+
+		it('should include invoice URL and refund details for REFUNDED transactions', async () => {
+			const mockRefundedTx = {
+				id: 'tx-refunded-1',
+				restaurantId: 'rest-1',
+				customerId: mockCustomerId,
+				orderId: 'order-3',
+				amountPaise: 60000,
+				currency: 'INR',
+				status: 'REFUNDED',
+				failureReason: null,
+				metadata: { orderNumber: 'ORD-103' },
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				refunds: [
+					{
+						id: 'ref-1',
+						razorpayRefundId: 'rfnd_123',
+						amountPaise: 60000,
+						status: 'PROCESSED',
+						reason: 'Customer cancelled',
+						arn: 'ARN998877',
+						processedAt: new Date(),
+					},
+				],
+			};
+
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(1);
+			mockPrisma.paymentTransaction.findMany.mockResolvedValueOnce([mockRefundedTx]);
+
+			const result = await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				page: 1,
+				limit: 10,
+			});
+
+			expect(result.transactions).toHaveLength(1);
+			expect(result.transactions[0].status).toBe('REFUNDED');
+			expect(result.transactions[0].hasInvoice).toBe(true);
+			expect(result.transactions[0].invoiceUrl).toBe(
+				'/api/v1/payments/transactions/tx-refunded-1/invoice',
+			);
+			expect(result.transactions[0].retryEligible).toBe(false);
+			expect(result.transactions[0].refundDetails).not.toBeNull();
+			expect(result.transactions[0].refundDetails?.razorpayRefundId).toBe('rfnd_123');
+		});
+
+		it('should skip sibling query when captured order is already present in-page', async () => {
+			const mockFailedTx = {
+				id: 'tx-1',
+				restaurantId: 'rest-1',
+				customerId: mockCustomerId,
+				orderId: 'order-1',
+				amountPaise: 50000,
+				currency: 'INR',
+				status: 'FAILED',
+				failureReason: 'PAYMENT_FAILED',
+				metadata: { orderNumber: 'ORD-101' },
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				refunds: [],
+			};
+			const mockCapturedTx = {
+				id: 'tx-2',
+				restaurantId: 'rest-1',
+				customerId: mockCustomerId,
+				orderId: 'order-1', // Same orderId!
+				amountPaise: 50000,
+				currency: 'INR',
+				status: 'CAPTURED',
+				failureReason: null,
+				metadata: { orderNumber: 'ORD-101' },
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				refunds: [],
+			};
+
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(2);
+			mockPrisma.paymentTransaction.findMany.mockResolvedValueOnce([mockFailedTx, mockCapturedTx]);
+
+			const result = await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				page: 1,
+				limit: 10,
+			});
+
+			// Only the first findMany inside $transaction should be called; sibling query was skipped!
+			expect(mockPrisma.paymentTransaction.findMany).toHaveBeenCalledTimes(1);
+			expect(result.transactions[0].retryEligible).toBe(false); // marked ineligible because order is captured in-page
+		});
+
+		it('should return totalPages: 0 when total records is 0', async () => {
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(0);
+			mockPrisma.paymentTransaction.findMany.mockResolvedValueOnce([]);
+
+			const result = await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				page: 1,
+				limit: 10,
+			});
+
+			expect(result.pagination.total).toBe(0);
+			expect(result.pagination.totalPages).toBe(0);
+			expect(result.pagination.hasNext).toBe(false);
+			expect(result.pagination.hasPrev).toBe(false);
+		});
+
+		it('should query status=CAPTURED in where clause', async () => {
+			mockPrisma.paymentTransaction.count.mockResolvedValueOnce(0);
+			mockPrisma.paymentTransaction.findMany.mockResolvedValueOnce([]);
+
+			await repository.findTransactionsByCustomer({
+				customerId: mockCustomerId,
+				status: 'CAPTURED',
+				page: 1,
+				limit: 10,
+			});
+
+			expect(mockPrisma.paymentTransaction.count).toHaveBeenCalledWith({
+				where: expect.objectContaining({
+					status: 'CAPTURED',
+				}),
+			});
 		});
 	});
 });

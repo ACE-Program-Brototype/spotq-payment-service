@@ -64,6 +64,7 @@ export interface IPaymentTransactionRepository {
 	findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null>;
 	findByCustomerOrderId(orderId: string): Promise<PaymentTransaction | null>;
 	findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null>;
+	findCapturedByOrderId(orderId: string): Promise<PaymentTransaction | null>;
 	findPendingByRestaurantAndPlan(
 		restaurantId: string,
 		planId: string,
@@ -82,5 +83,5 @@ export interface IPaymentTransactionRepository {
 		subscriptionId: string;
 	}): Promise<PaymentTransaction>;
 	markFailed(razorpayOrderId: string, failureReason: string): Promise<PaymentTransaction>;
-	resetToCreated(razorpayOrderId: string): Promise<PaymentTransaction>;
+	resetToCreated(transaction: PaymentTransaction): Promise<PaymentTransaction>;
 }

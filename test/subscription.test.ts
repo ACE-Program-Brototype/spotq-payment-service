@@ -50,6 +50,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findByOrderId: jest.fn().mockResolvedValue(null),
 		findByCustomerOrderId: jest.fn().mockResolvedValue(null),
 		findByPaymentId: jest.fn().mockResolvedValue(null),
+		findCapturedByOrderId: jest.fn().mockResolvedValue(null),
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
 		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
 		captureOrderPaymentWithOutbox: jest.fn().mockResolvedValue({}),
@@ -208,7 +209,7 @@ describe('Subscription & Payment Use Cases', () => {
 			});
 
 			expect(result.orderId).toBe('order_retry_123');
-			expect(mockTxRepo.resetToCreated).toHaveBeenCalledWith('order_retry_123');
+			expect(mockTxRepo.resetToCreated).toHaveBeenCalledWith(failedTx);
 			expect(mockGateway.createOrder).not.toHaveBeenCalled();
 		});
 

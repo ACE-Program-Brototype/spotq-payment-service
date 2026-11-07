@@ -1,17 +1,21 @@
+import { IDEMPOTENCY_CLAIM_STATUS, type IdempotencyClaimStatus } from '@shared/constants/index.ts';
+
+export { IDEMPOTENCY_CLAIM_STATUS, type IdempotencyClaimStatus };
+
 export type IdempotencyClaimResult<T> =
 	| {
-			status: 'CLAIMED';
+			status: typeof IDEMPOTENCY_CLAIM_STATUS.CLAIMED;
 			claimToken: string;
 	  }
 	| {
-			status: 'REPLAY';
+			status: typeof IDEMPOTENCY_CLAIM_STATUS.REPLAY;
 			response: T;
 	  }
 	| {
-			status: 'IN_PROGRESS';
+			status: typeof IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS;
 	  }
 	| {
-			status: 'PAYLOAD_MISMATCH';
+			status: typeof IDEMPOTENCY_CLAIM_STATUS.PAYLOAD_MISMATCH;
 	  };
 
 export interface IIdempotencyService {

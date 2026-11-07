@@ -27,6 +27,7 @@ import type { ISubscriptionPlanRepository } from '@domain/repositories/subscript
 import { InvoiceNumber, ReceiptId } from '@domain/value-objects/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import {
+	IDEMPOTENCY_CLAIM_STATUS,
 	IDEMPOTENCY_COMPLETED_TTL_SECONDS,
 	IDEMPOTENCY_IN_PROGRESS_TTL_SECONDS,
 	IDEMPOTENCY_REDIS_PREFIXES,
@@ -77,15 +78,15 @@ export class RenewSubscriptionUseCase implements IRenewSubscriptionUseCase {
 				IDEMPOTENCY_IN_PROGRESS_TTL_SECONDS,
 			);
 
-			if (claim.status === 'PAYLOAD_MISMATCH') {
+			if (claim.status === IDEMPOTENCY_CLAIM_STATUS.PAYLOAD_MISMATCH) {
 				throw new IdempotencyKeyPayloadMismatchError();
 			}
 
-			if (claim.status === 'IN_PROGRESS') {
+			if (claim.status === IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS) {
 				throw new IdempotencyRequestInProgressError();
 			}
 
-			if (claim.status === 'REPLAY') {
+			if (claim.status === IDEMPOTENCY_CLAIM_STATUS.REPLAY) {
 				logger.info(
 					{
 						subscriptionId: input.subscriptionId,

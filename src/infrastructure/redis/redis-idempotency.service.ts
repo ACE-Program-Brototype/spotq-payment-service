@@ -4,7 +4,10 @@ import type {
 	IIdempotencyService,
 } from '@application/ports/services/idempotency.service.port.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { IDEMPOTENCY_REDIS_PREFIXES } from '@shared/constants/subscription.constants.ts';
+import {
+	IDEMPOTENCY_CLAIM_STATUS,
+	IDEMPOTENCY_REDIS_PREFIXES,
+} from '@shared/constants/subscription.constants.ts';
 import { injectable, unmanaged } from 'inversify';
 import type { RedisClientType } from 'redis';
 import { redisClient } from './redis.client.ts';
@@ -78,7 +81,7 @@ export class RedisIdempotencyService implements IIdempotencyService {
 			});
 
 			if (setResult === 'OK') {
-				return { status: 'CLAIMED', claimToken };
+				return { status: IDEMPOTENCY_CLAIM_STATUS.CLAIMED, claimToken };
 			}
 
 			const existingRaw = await this.client.get(scopeKey);
@@ -88,9 +91,9 @@ export class RedisIdempotencyService implements IIdempotencyService {
 					EX: inProgressTtlSeconds,
 				});
 				if (retrySet === 'OK') {
-					return { status: 'CLAIMED', claimToken };
+					return { status: IDEMPOTENCY_CLAIM_STATUS.CLAIMED, claimToken };
 				}
-				return { status: 'IN_PROGRESS' };
+				return { status: IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS };
 			}
 
 			return this.evaluateExistingRecord<T>(existingRaw, payloadHash);
@@ -224,12 +227,12 @@ export class RedisIdempotencyService implements IIdempotencyService {
 	): IdempotencyClaimResult<T> {
 		const parsed = JSON.parse(existingRaw) as StoredIdempotencyRecord<T>;
 		if (parsed.payloadHash !== payloadHash) {
-			return { status: 'PAYLOAD_MISMATCH' };
+			return { status: IDEMPOTENCY_CLAIM_STATUS.PAYLOAD_MISMATCH };
 		}
 		if (parsed.state === 'COMPLETED' && parsed.response !== undefined) {
-			return { status: 'REPLAY', response: parsed.response };
+			return { status: IDEMPOTENCY_CLAIM_STATUS.REPLAY, response: parsed.response };
 		}
-		return { status: 'IN_PROGRESS' };
+		return { status: IDEMPOTENCY_CLAIM_STATUS.IN_PROGRESS };
 	}
 
 	private claimOrGetInMemory<T>(
@@ -250,7 +253,7 @@ export class RedisIdempotencyService implements IIdempotencyService {
 			rawValue: serializedClaim,
 			expiresAt: now + ttlSeconds * 1000,
 		});
-		return { status: 'CLAIMED', claimToken };
+		return { status: IDEMPOTENCY_CLAIM_STATUS.CLAIMED, claimToken };
 	}
 
 	private acquireLockInMemory(

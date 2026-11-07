@@ -19,6 +19,16 @@ export const IDEMPOTENCY_REDIS_PREFIXES = {
 	SUBSCRIPTION_LOCK: 'lock:subscription:renew',
 } as const;
 
+export const IDEMPOTENCY_CLAIM_STATUS = {
+	CLAIMED: 'CLAIMED',
+	REPLAY: 'REPLAY',
+	IN_PROGRESS: 'IN_PROGRESS',
+	PAYLOAD_MISMATCH: 'PAYLOAD_MISMATCH',
+} as const;
+
+export type IdempotencyClaimStatus =
+	(typeof IDEMPOTENCY_CLAIM_STATUS)[keyof typeof IDEMPOTENCY_CLAIM_STATUS];
+
 export const SUBSCRIPTION_EVENTS = {
 	ACTIVATED: 'subscription.activated',
 	EXPIRED: 'subscription.expired',

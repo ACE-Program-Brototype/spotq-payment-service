@@ -186,21 +186,20 @@ export class PrismaSubscriptionRepository
 					where: { id: existingInvoice.id },
 					data: {
 						subscriptionId: subRecord.id,
-						status: 'PAID',
+						status: INVOICE_STATUS.PAID,
 						paidAt: new Date(),
 					},
 				});
 			} else if (existingTx) {
-				const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 				await tx.billingInvoice.create({
 					data: {
 						restaurantId: params.subscription.restaurantId,
 						subscriptionId: subRecord.id,
 						paymentTransactionId: existingTx.id,
-						invoiceNumber,
+						invoiceNumber: InvoiceNumber.generate(),
 						amountPaise: existingTx.amountPaise,
 						currency: existingTx.currency,
-						status: 'PAID',
+						status: INVOICE_STATUS.PAID,
 						paidAt: new Date(),
 					},
 				});

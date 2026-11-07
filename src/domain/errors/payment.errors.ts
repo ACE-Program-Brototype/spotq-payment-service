@@ -118,6 +118,12 @@ export class IdempotencyRequestInProgressError extends DomainError {
 	}
 }
 
+export class IdempotencyStorageUnavailableError extends DomainError {
+	constructor(message: string = MESSAGES.IDEMPOTENCY_STORAGE_UNAVAILABLE) {
+		super(message, 'IDEMPOTENCY_STORAGE_UNAVAILABLE');
+	}
+}
+
 export class RenewalAlreadyInProgressError extends DomainError {
 	constructor(message: string = MESSAGES.RENEWAL_ALREADY_IN_PROGRESS) {
 		super(message, 'RENEWAL_ALREADY_IN_PROGRESS');

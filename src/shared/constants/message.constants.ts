@@ -99,6 +99,7 @@ export enum MessageEnum {
 	INVALID_IDEMPOTENCY_KEY = 'Idempotency-Key must be 8 to 128 characters containing only letters, numbers, hyphens, underscores, colons, or dots',
 	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH = 'Idempotency-Key has already been used with different request parameters',
 	IDEMPOTENCY_REQUEST_IN_PROGRESS = 'A request with this Idempotency-Key is currently being processed',
+	IDEMPOTENCY_STORAGE_UNAVAILABLE = 'Idempotency and lock service is currently unavailable',
 	RENEWAL_ALREADY_IN_PROGRESS = 'Another renewal request for this subscription is currently in progress',
 }
 
@@ -205,6 +206,7 @@ export const MESSAGES = {
 	INVALID_IDEMPOTENCY_KEY: MessageEnum.INVALID_IDEMPOTENCY_KEY,
 	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH: MessageEnum.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH,
 	IDEMPOTENCY_REQUEST_IN_PROGRESS: MessageEnum.IDEMPOTENCY_REQUEST_IN_PROGRESS,
+	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
 	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
 } as const;
 

@@ -13,6 +13,7 @@ import type { ISubscriptionPlanRepository } from '@domain/repositories/subscript
 import { databaseService } from '@infrastructure/database/index.ts';
 import { bullmqService } from '@infrastructure/queue/index.ts';
 import { redisService } from '@infrastructure/redis/index.ts';
+import { redisClient } from '@infrastructure/redis/redis.client.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
 import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
 import request from 'supertest';
@@ -46,8 +47,49 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		isActive: true,
 	});
 
+	const redisStore = new Map<string, string>();
+
 	beforeEach(() => {
 		jest.clearAllMocks();
+		redisStore.clear();
+		Object.defineProperty(redisClient, 'isOpen', {
+			value: true,
+			writable: true,
+			configurable: true,
+		});
+		jest.spyOn(redisClient, 'set').mockImplementation(async (key, value, options?: unknown) => {
+			const strKey = String(key);
+			const setOptions = options as { NX?: boolean; EX?: number } | undefined;
+			if (setOptions?.NX && redisStore.has(strKey)) {
+				return null;
+			}
+			redisStore.set(strKey, String(value));
+			return 'OK';
+		});
+		jest.spyOn(redisClient, 'get').mockImplementation(async (key) => {
+			return redisStore.get(String(key)) ?? null;
+		});
+		jest.spyOn(redisClient, 'eval').mockImplementation(async (script, options?: unknown) => {
+			const evalOptions = options as { keys: string[]; arguments: string[] } | undefined;
+			const key = String(evalOptions?.keys?.[0] ?? '');
+			const token = String(evalOptions?.arguments?.[0] ?? '');
+			const current = redisStore.get(key);
+			if (!current) {
+				return 0;
+			}
+			if (String(script).includes('string.find')) {
+				if (current.includes(token)) {
+					redisStore.delete(key);
+					return 1;
+				}
+				return 0;
+			}
+			if (current === token) {
+				redisStore.delete(key);
+				return 1;
+			}
+			return 0;
+		});
 		jest.spyOn(databaseService, 'isHealthy').mockResolvedValue(true);
 		jest.spyOn(redisService, 'isHealthy').mockResolvedValue(true);
 		jest.spyOn(razorpayGateway, 'isHealthy').mockReturnValue(true);
@@ -326,6 +368,26 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 
 			expect(res.body.success).toBe(false);
 			expect(res.body.error).toBe('PAYMENT_GATEWAY_UNAVAILABLE');
+		});
+
+		it('should return 503 SERVICE_UNAVAILABLE when Redis idempotency storage is unavailable', async () => {
+			Object.defineProperty(redisClient, 'isOpen', {
+				value: false,
+				writable: true,
+				configurable: true,
+			});
+
+			const res = await request(app)
+				.post(`/subscriptions/${targetSubId}/renew`)
+				.set('x-restaurant-id', restId)
+				.set('x-user-id', 'user-123')
+				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('Idempotency-Key', 'idem-api-redis-down-0001')
+				.send({})
+				.expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
+
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe('IDEMPOTENCY_STORAGE_UNAVAILABLE');
 		});
 
 		it('should create renewal order with 201 CREATED, replay duplicate Idempotency-Key, and reject payload mismatch with 409', async () => {

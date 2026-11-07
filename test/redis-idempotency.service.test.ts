@@ -1,3 +1,4 @@
+import { IdempotencyStorageUnavailableError } from '@domain/errors/payment.errors.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/redis-idempotency.service.ts';
 
 describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () => {
@@ -129,5 +130,40 @@ describe('RedisIdempotencyService (Live Redis Commands & Lua Token Guards)', () 
 
 		const claim = await service.claimOrGet(scopeKey, 'any-hash', 60);
 		expect(claim.status).toBe('IN_PROGRESS');
+	});
+
+	it('fails closed and throws IdempotencyStorageUnavailableError when Redis client is not open', async () => {
+		const mockClient = { ...createMockRedisClient(), isOpen: false };
+		const service = new RedisIdempotencyService(mockClient as never);
+		const scopeKey = 'idempotency:sub-renew:rest-1:sub-1:key-closed';
+
+		await expect(service.claimOrGet(scopeKey, 'hash-a', 60)).rejects.toThrow(
+			IdempotencyStorageUnavailableError,
+		);
+		await expect(service.acquireSubscriptionLock('sub-1', 15)).rejects.toThrow(
+			IdempotencyStorageUnavailableError,
+		);
+		await expect(service.complete(scopeKey, 'hash-a', { orderId: 'ord-1' }, 60)).rejects.toThrow(
+			IdempotencyStorageUnavailableError,
+		);
+	});
+
+	it('fails closed and throws IdempotencyStorageUnavailableError when Redis commands throw error', async () => {
+		const mockClient = {
+			...createMockRedisClient(),
+			set: jest.fn().mockRejectedValue(new Error('Connection dropped')),
+		};
+		const service = new RedisIdempotencyService(mockClient as never);
+		const scopeKey = 'idempotency:sub-renew:rest-1:sub-1:key-err';
+
+		await expect(service.claimOrGet(scopeKey, 'hash-a', 60)).rejects.toThrow(
+			IdempotencyStorageUnavailableError,
+		);
+		await expect(service.acquireSubscriptionLock('sub-1', 15)).rejects.toThrow(
+			IdempotencyStorageUnavailableError,
+		);
+		await expect(service.complete(scopeKey, 'hash-a', { orderId: 'ord-1' }, 60)).rejects.toThrow(
+			IdempotencyStorageUnavailableError,
+		);
 	});
 });

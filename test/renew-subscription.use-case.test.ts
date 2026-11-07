@@ -6,6 +6,7 @@ import {
 	ForbiddenSubscriptionAccessError,
 	IdempotencyKeyPayloadMismatchError,
 	IdempotencyRequestInProgressError,
+	IdempotencyStorageUnavailableError,
 	MissingIdempotencyKeyError,
 	PaymentGatewayUnavailableError,
 	PlanNotFoundError,
@@ -109,6 +110,55 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		update: jest.fn().mockResolvedValue({}),
 		delete: jest.fn().mockResolvedValue(true),
 		findById: jest.fn(),
+	};
+
+	const createMockRedisClient = () => {
+		const store = new Map<string, string>();
+		return {
+			isOpen: true,
+			store,
+			set: jest.fn(
+				async (
+					key: string,
+					value: string,
+					options?: { NX?: boolean; EX?: number },
+				): Promise<string | null> => {
+					if (options?.NX && store.has(key)) {
+						return null;
+					}
+					store.set(key, value);
+					return 'OK';
+				},
+			),
+			get: jest.fn(async (key: string): Promise<string | null> => {
+				return store.get(key) ?? null;
+			}),
+			eval: jest.fn(
+				async (
+					script: string,
+					options: { keys: string[]; arguments: string[] },
+				): Promise<number> => {
+					const key = options.keys[0];
+					const token = options.arguments[0];
+					const current = store.get(key);
+					if (!current) {
+						return 0;
+					}
+					if (script.includes('string.find')) {
+						if (current.includes(token)) {
+							store.delete(key);
+							return 1;
+						}
+						return 0;
+					}
+					if (current === token) {
+						store.delete(key);
+						return 1;
+					}
+					return 0;
+				},
+			),
+		};
 	};
 
 	beforeEach(() => {
@@ -334,7 +384,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		mockSubRepo.findById.mockResolvedValue(expiredSub);
 		mockGateway.isHealthy.mockReturnValueOnce(false);
 
-		const idempotencyService = new RedisIdempotencyService({ isOpen: false } as never);
+		const idempotencyService = new RedisIdempotencyService(createMockRedisClient() as never);
 		const useCase = new RenewSubscriptionUseCase(
 			mockPlanRepo,
 			mockSubRepo,
@@ -590,7 +640,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		});
 		mockSubRepo.findById.mockResolvedValueOnce(activeExpiringSub);
 
-		const idempotencyService = new RedisIdempotencyService({ isOpen: false } as never);
+		const idempotencyService = new RedisIdempotencyService(createMockRedisClient() as never);
 		const useCase = new RenewSubscriptionUseCase(
 			mockPlanRepo,
 			mockSubRepo,
@@ -630,7 +680,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 	});
 
 	it('should reject concurrent duplicate Idempotency-Key and concurrent per-subscription lock contention', async () => {
-		const idempotencyService = new RedisIdempotencyService({ isOpen: false } as never);
+		const idempotencyService = new RedisIdempotencyService(createMockRedisClient() as never);
 		let resolveSubLookup!: (sub: Subscription) => void;
 		mockSubRepo.findById.mockImplementationOnce(
 			() =>
@@ -683,5 +733,25 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 
 		const completed = await firstPromise;
 		expect(completed.orderId).toBe('order_renew_123');
+	});
+
+	it('should fail closed and throw IdempotencyStorageUnavailableError when Redis is disconnected', async () => {
+		const idempotencyService = new RedisIdempotencyService({ isOpen: false } as never);
+		const useCase = new RenewSubscriptionUseCase(
+			mockPlanRepo,
+			mockSubRepo,
+			mockTxRepo,
+			mockGateway,
+			mockInvoiceRepo,
+			idempotencyService,
+		);
+
+		await expect(
+			useCase.execute({
+				subscriptionId: mockSubscriptionId,
+				restaurantId: mockRestaurantId,
+				idempotencyKey: defaultIdempotencyKey,
+			}),
+		).rejects.toThrow(IdempotencyStorageUnavailableError);
 	});
 });

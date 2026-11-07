@@ -31,6 +31,14 @@ export interface FailOrderPaymentWithOutboxParams {
 	};
 }
 
+export interface CreateRenewalOrderWithInvoiceParams {
+	transaction: CreatePaymentTransactionInput;
+	invoice: {
+		invoiceNumber: string;
+		status: 'DRAFT' | 'PAID' | 'VOID';
+	};
+}
+
 export interface IPaymentTransactionRepository {
 	findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null>;
 	findByCustomerOrderId(orderId: string): Promise<PaymentTransaction | null>;
@@ -44,6 +52,9 @@ export interface IPaymentTransactionRepository {
 		planId: string,
 	): Promise<PaymentTransaction | null>;
 	create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction>;
+	createRenewalWithInvoice?(
+		params: CreateRenewalOrderWithInvoiceParams,
+	): Promise<PaymentTransaction>;
 	captureOrderPaymentWithOutbox(
 		params: CaptureOrderPaymentWithOutboxParams,
 	): Promise<PaymentTransaction>;

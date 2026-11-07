@@ -3,6 +3,7 @@ import { PaymentOrderNotFoundError } from '@domain/errors/payment.errors.ts';
 import type {
 	CaptureOrderPaymentWithOutboxParams,
 	CreatePaymentTransactionInput,
+	CreateRenewalOrderWithInvoiceParams,
 	FailOrderPaymentWithOutboxParams,
 	IPaymentTransactionRepository,
 } from '@domain/repositories/payment-transaction.repository.interface.ts';
@@ -127,6 +128,41 @@ export class PrismaPaymentTransactionRepository
 		});
 
 		return this.mapToDomain(record);
+	}
+
+	async createRenewalWithInvoice(
+		params: CreateRenewalOrderWithInvoiceParams,
+	): Promise<PaymentTransaction> {
+		return await this.prisma.$transaction(async (tx) => {
+			const record = await tx.paymentTransaction.create({
+				data: {
+					restaurantId: params.transaction.restaurantId,
+					subscriptionId: params.transaction.subscriptionId || undefined,
+					planId: params.transaction.planId,
+					orderId: params.transaction.orderId,
+					customerId: params.transaction.customerId,
+					razorpayOrderId: params.transaction.razorpayOrderId,
+					amountPaise: params.transaction.amountPaise,
+					currency: params.transaction.currency,
+					status: params.transaction.status || PAYMENT_STATUS.CREATED,
+					metadata: (params.transaction.metadata as unknown as Prisma.InputJsonValue) || undefined,
+				},
+			});
+
+			await tx.billingInvoice.create({
+				data: {
+					restaurantId: params.transaction.restaurantId,
+					subscriptionId: params.transaction.subscriptionId || undefined,
+					paymentTransactionId: record.id,
+					invoiceNumber: params.invoice.invoiceNumber,
+					amountPaise: params.transaction.amountPaise,
+					currency: params.transaction.currency,
+					status: params.invoice.status,
+				},
+			});
+
+			return this.mapToDomain(record);
+		});
 	}
 
 	async captureOrderPaymentWithOutbox(

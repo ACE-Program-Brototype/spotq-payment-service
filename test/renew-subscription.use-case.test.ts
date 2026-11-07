@@ -16,6 +16,7 @@ import {
 } from '@domain/errors/payment.errors.ts';
 import { InvoiceNumber } from '@domain/value-objects/invoice-number.value-object.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/redis-idempotency.service.ts';
+import { INVOICE_STATUS } from '@shared/constants/index.ts';
 
 describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 	const mockRestaurantId = '22222222-2222-4222-8222-222222222222';
@@ -75,6 +76,10 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
 		findPendingRenewalBySubscriptionAndPlan: jest.fn().mockResolvedValue(null),
 		create: jest.fn().mockResolvedValue({ id: 'tx-renew-1' }),
+		createRenewalWithInvoice: jest.fn().mockImplementation(async (params) => ({
+			id: 'tx-renew-1',
+			...params.transaction,
+		})),
 		captureOrderPaymentWithOutbox: jest.fn(),
 		failOrderPaymentWithOutbox: jest.fn(),
 		markSuccess: jest.fn(),
@@ -398,20 +403,18 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 				}),
 			}),
 		);
-		expect(mockTxRepo.create).toHaveBeenCalledWith(
+		expect(mockTxRepo.createRenewalWithInvoice).toHaveBeenCalledWith(
 			expect.objectContaining({
-				subscriptionId: mockSubscriptionId,
-				status: 'CREATED',
-				metadata: expect.objectContaining({
-					idempotencyKey: defaultIdempotencyKey,
+				transaction: expect.objectContaining({
+					subscriptionId: mockSubscriptionId,
+					status: 'CREATED',
+					metadata: expect.objectContaining({
+						idempotencyKey: defaultIdempotencyKey,
+					}),
 				}),
-			}),
-		);
-		expect(mockInvoiceRepo.create).toHaveBeenCalledWith(
-			expect.objectContaining({
-				restaurantId: mockRestaurantId,
-				subscriptionId: mockSubscriptionId,
-				status: 'DRAFT',
+				invoice: expect.objectContaining({
+					status: INVOICE_STATUS.DRAFT,
+				}),
 			}),
 		);
 	});
@@ -566,6 +569,13 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 
 		expect(result.orderId).toBe('order_failed_retry_123');
 		expect(mockTxRepo.resetToCreated).toHaveBeenCalledWith('order_failed_retry_123');
+		expect(mockInvoiceRepo.findByPaymentTransactionId).toHaveBeenCalledWith('tx-failed-1');
+		expect(mockInvoiceRepo.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				paymentTransactionId: 'tx-failed-1',
+				status: INVOICE_STATUS.DRAFT,
+			}),
+		);
 		expect(mockGateway.createOrder).not.toHaveBeenCalled();
 	});
 

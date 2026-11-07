@@ -360,6 +360,9 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				status: 'CREATED',
 			});
 			jest.spyOn(paymentTransactionRepository, 'create').mockResolvedValueOnce(mockRenewTx);
+			jest
+				.spyOn(paymentTransactionRepository, 'createRenewalWithInvoice')
+				.mockResolvedValueOnce(mockRenewTx);
 			jest.spyOn(billingInvoiceRepository, 'create').mockResolvedValueOnce(
 				new BillingInvoice({
 					id: 'inv-renew-1',
@@ -448,6 +451,9 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				status: 'CREATED',
 			});
 			jest.spyOn(paymentTransactionRepository, 'create').mockResolvedValueOnce(mockRenewTx);
+			jest
+				.spyOn(paymentTransactionRepository, 'createRenewalWithInvoice')
+				.mockResolvedValueOnce(mockRenewTx);
 			jest.spyOn(billingInvoiceRepository, 'create').mockResolvedValueOnce(
 				new BillingInvoice({
 					id: 'inv-renew-2',

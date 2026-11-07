@@ -9,6 +9,7 @@ import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/sub
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
 import { RENEWAL_NOTE_FLAG } from '@domain/constants/subscription.constants.ts';
+import type { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import {
 	IdempotencyKeyPayloadMismatchError,
 	IdempotencyRequestInProgressError,
@@ -175,6 +176,30 @@ export class RenewSubscriptionUseCase implements IRenewSubscriptionUseCase {
 				);
 			}
 
+			if (this.billingInvoiceRepository) {
+				const existingInvoice = await this.billingInvoiceRepository.findByPaymentTransactionId(
+					existingPendingTx.id,
+				);
+				if (!existingInvoice) {
+					await this.billingInvoiceRepository.create({
+						restaurantId: input.restaurantId,
+						subscriptionId: subscription.id,
+						paymentTransactionId: existingPendingTx.id,
+						invoiceNumber: InvoiceNumber.generate(),
+						amountPaise: existingPendingTx.amountPaise,
+						currency: existingPendingTx.currency,
+						status: INVOICE_STATUS.DRAFT,
+					});
+					logger.info(
+						{
+							transactionId: existingPendingTx.id,
+							subscriptionId: subscription.id,
+						},
+						'Created missing draft billing invoice for reused renewal transaction',
+					);
+				}
+			}
+
 			logger.info(
 				{ orderId: existingPendingTx.razorpayOrderId, subscriptionId: subscription.id },
 				'Reusing existing pending renewal Razorpay order',
@@ -208,34 +233,63 @@ export class RenewSubscriptionUseCase implements IRenewSubscriptionUseCase {
 			planCode: plan.code,
 		});
 
-		const transactionRecord = await this.paymentTransactionRepository.create({
-			restaurantId: input.restaurantId,
-			subscriptionId: subscription.id,
-			planId: plan.id,
-			razorpayOrderId: gatewayOrder.orderId,
-			amountPaise: plan.pricePaise,
-			currency: plan.currency,
-			status: PAYMENT_STATUS.CREATED,
-			metadata: {
-				receiptId,
-				isRenewal: true,
-				targetSubscriptionId: subscription.id,
-				planName: plan.name,
-				planCode: plan.code,
-				idempotencyKey,
-			},
-		});
+		const invoiceNumber = InvoiceNumber.generate();
+		let transactionRecord: PaymentTransaction;
 
-		if (this.billingInvoiceRepository) {
-			await this.billingInvoiceRepository.create({
+		if (this.paymentTransactionRepository.createRenewalWithInvoice) {
+			transactionRecord = await this.paymentTransactionRepository.createRenewalWithInvoice({
+				transaction: {
+					restaurantId: input.restaurantId,
+					subscriptionId: subscription.id,
+					planId: plan.id,
+					razorpayOrderId: gatewayOrder.orderId,
+					amountPaise: plan.pricePaise,
+					currency: plan.currency,
+					status: PAYMENT_STATUS.CREATED,
+					metadata: {
+						receiptId,
+						isRenewal: true,
+						targetSubscriptionId: subscription.id,
+						planName: plan.name,
+						planCode: plan.code,
+						idempotencyKey,
+					},
+				},
+				invoice: {
+					invoiceNumber,
+					status: INVOICE_STATUS.DRAFT,
+				},
+			});
+		} else {
+			transactionRecord = await this.paymentTransactionRepository.create({
 				restaurantId: input.restaurantId,
 				subscriptionId: subscription.id,
-				paymentTransactionId: transactionRecord.id,
-				invoiceNumber: InvoiceNumber.generate(),
+				planId: plan.id,
+				razorpayOrderId: gatewayOrder.orderId,
 				amountPaise: plan.pricePaise,
 				currency: plan.currency,
-				status: INVOICE_STATUS.DRAFT,
+				status: PAYMENT_STATUS.CREATED,
+				metadata: {
+					receiptId,
+					isRenewal: true,
+					targetSubscriptionId: subscription.id,
+					planName: plan.name,
+					planCode: plan.code,
+					idempotencyKey,
+				},
 			});
+
+			if (this.billingInvoiceRepository) {
+				await this.billingInvoiceRepository.create({
+					restaurantId: input.restaurantId,
+					subscriptionId: subscription.id,
+					paymentTransactionId: transactionRecord.id,
+					invoiceNumber,
+					amountPaise: plan.pricePaise,
+					currency: plan.currency,
+					status: INVOICE_STATUS.DRAFT,
+				});
+			}
 		}
 
 		logger.info(

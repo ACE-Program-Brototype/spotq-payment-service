@@ -1,5 +1,6 @@
 import {
 	validateRequestBody,
+	validateRequestHeaders,
 	validateRequestParams,
 	validateRequestQuery,
 } from '@presentation/middleware/validation.middleware.ts';
@@ -95,6 +96,32 @@ describe('Validation Middleware', () => {
 
 			expect(mockReq.params).toEqual({ orderId: validUuid });
 			expect(mockRes.locals?.params).toEqual({ orderId: validUuid });
+			expect(nextFn).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('validateRequestHeaders', () => {
+		const headerSchema = z
+			.object({
+				'x-idempotency-key': z.string().min(1),
+			})
+			.passthrough();
+
+		it('should throw ZodError on invalid headers', async () => {
+			mockReq.headers = {};
+
+			await expect(
+				validateRequestHeaders(headerSchema)(mockReq as Request, mockRes as Response, nextFn),
+			).rejects.toThrow(z.ZodError);
+
+			expect(nextFn).not.toHaveBeenCalled();
+		});
+
+		it('should call next() on valid headers', async () => {
+			mockReq.headers = { 'x-idempotency-key': 'test-123' };
+
+			await validateRequestHeaders(headerSchema)(mockReq as Request, mockRes as Response, nextFn);
+
 			expect(nextFn).toHaveBeenCalledTimes(1);
 		});
 	});

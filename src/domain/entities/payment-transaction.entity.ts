@@ -1,7 +1,11 @@
 import {
+	CannotRefundUncapturedPaymentError,
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
+	PaymentAlreadyRefundedError,
 	PaymentOrderNotFoundError,
+	RefundAmountExceedsBalanceError,
+	RefundAmountInvalidError,
 } from '@domain/errors/payment.errors.ts';
 import { DEFAULT_PAYMENT_METHOD, PAYMENT_STATUS } from '@shared/constants/index.ts';
 
@@ -162,6 +166,40 @@ export class PaymentTransaction {
 		}
 		this.props.status = PAYMENT_STATUS.FAILED;
 		this.props.failureReason = reason;
+		this.props.updatedAt = new Date();
+	}
+
+	assertCanRefund(requestedAmountPaise?: number): void {
+		if (this.props.status === PAYMENT_STATUS.REFUNDED) {
+			throw new PaymentAlreadyRefundedError();
+		}
+		if (
+			this.props.status !== PAYMENT_STATUS.CAPTURED &&
+			this.props.status !== PAYMENT_STATUS.SUCCESS
+		) {
+			throw new CannotRefundUncapturedPaymentError();
+		}
+		if (!this.props.razorpayPaymentId) {
+			throw new CannotRefundUncapturedPaymentError();
+		}
+		if (requestedAmountPaise !== undefined) {
+			if (requestedAmountPaise > this.props.amountPaise) {
+				throw new RefundAmountExceedsBalanceError();
+			}
+			if (requestedAmountPaise < this.props.amountPaise) {
+				throw new RefundAmountInvalidError();
+			}
+		}
+	}
+
+	markRefunded(): void {
+		if (
+			this.props.status !== PAYMENT_STATUS.CAPTURED &&
+			this.props.status !== PAYMENT_STATUS.SUCCESS
+		) {
+			throw new InvalidPaymentStateTransitionError();
+		}
+		this.props.status = PAYMENT_STATUS.REFUNDED;
 		this.props.updatedAt = new Date();
 	}
 

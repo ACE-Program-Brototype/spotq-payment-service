@@ -39,6 +39,12 @@ export const config = {
 		keyId: env.RAZORPAY_TEST_API_KEY,
 		keySecret: env.RAZORPAY_TEST_SECRET_KEY,
 		webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+		circuitBreaker: {
+			timeoutMs: env.RAZORPAY_CB_TIMEOUT_MS,
+			errorThresholdPercent: env.RAZORPAY_CB_ERROR_THRESHOLD_PERCENT,
+			resetTimeoutMs: env.RAZORPAY_CB_RESET_TIMEOUT_MS,
+			volumeThreshold: env.RAZORPAY_CB_VOLUME_THRESHOLD,
+		},
 	},
 
 	s2s: {

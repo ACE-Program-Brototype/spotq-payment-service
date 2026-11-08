@@ -93,3 +93,15 @@ export const OUTBOX_STATUS = {
 } as const;
 
 export type OutboxStatus = (typeof OUTBOX_STATUS)[keyof typeof OUTBOX_STATUS];
+
+export const RAZORPAY_CIRCUIT_BREAKER = {
+	ORDERS_BREAKER_NAME: 'razorpay-orders',
+	PAYMENTS_BREAKER_NAME: 'razorpay-payments',
+	REFUNDS_BREAKER_NAME: 'razorpay-refunds',
+} as const;
+
+export const RAZORPAY_ERROR_CODES = {
+	BAD_REQUEST_ERROR: 'BAD_REQUEST_ERROR',
+} as const;
+
+export type RazorpayErrorCode = (typeof RAZORPAY_ERROR_CODES)[keyof typeof RAZORPAY_ERROR_CODES];

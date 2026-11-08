@@ -1,24 +1,68 @@
 import crypto from 'node:crypto';
 import { config } from '@config/index.ts';
-import type {
-	CreateOrderParams,
-	CreateRefundParams,
-	IPaymentGateway,
-	PaymentDetailsResult,
-	PaymentOrderResult,
-	PaymentRefundResult,
-	VerifyPaymentSignatureParams,
+import {
+	type CreateOrderParams,
+	type CreateRefundParams,
+	type IPaymentGateway,
+	type PaymentDetailsResult,
+	PaymentGatewayUnavailableError,
+	type PaymentOrderResult,
+	type PaymentRefundResult,
+	type VerifyPaymentSignatureParams,
 } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { DEFAULT_REFUND_SPEED, MESSAGES } from '@shared/constants/index.ts';
+import { DEFAULT_REFUND_SPEED, HttpStatusCode, MESSAGES } from '@shared/constants/index.ts';
+import {
+	RAZORPAY_CIRCUIT_BREAKER,
+	RAZORPAY_ERROR_CODES,
+} from '@shared/constants/payment.constants.ts';
+import { CircuitBreaker, CircuitBreakerOpenError } from '@spotq-org/circuit-breaker';
 import { injectable } from 'inversify';
 import Razorpay from 'razorpay';
 import { setRazorpayClient } from './razorpay.client.ts';
+
+type RazorpayOrderPayload = {
+	amount: number;
+	currency: string;
+	receipt?: string;
+	notes?: Record<string, string>;
+};
+
+type RazorpayRawOrder = {
+	id: string;
+	amount: string | number;
+	currency: string;
+	status: string;
+	receipt?: string | null;
+};
+
+type RazorpayRawPayment = PaymentDetailsResult;
+
+type RazorpayRefundPayload = {
+	amount: number;
+	speed?: string;
+	notes?: Record<string, string>;
+};
+
+type RazorpayRawRefund = {
+	id: string;
+	payment_id: string;
+	amount: string | number;
+	currency: string;
+	status: string;
+	arn?: string;
+};
 
 @injectable()
 export class RazorpayGateway implements IPaymentGateway {
 	private client: Razorpay | null = null;
 	private initialized = false;
+	private ordersBreaker: CircuitBreaker<[RazorpayOrderPayload], RazorpayRawOrder> | null = null;
+	private paymentsBreaker: CircuitBreaker<[string], RazorpayRawPayment> | null = null;
+	private refundsBreaker: CircuitBreaker<
+		[string, RazorpayRefundPayload],
+		RazorpayRawRefund
+	> | null = null;
 
 	async initialize(): Promise<void> {
 		try {
@@ -37,6 +81,8 @@ export class RazorpayGateway implements IPaymentGateway {
 				key_secret: keySecret,
 			});
 
+			this.setupCircuitBreakers();
+
 			setRazorpayClient(this.client);
 			this.initialized = true;
 
@@ -48,34 +94,187 @@ export class RazorpayGateway implements IPaymentGateway {
 		}
 	}
 
+	private setupCircuitBreakers(): void {
+		const client = this.client;
+		if (!client) {
+			return;
+		}
+
+		this.shutdown();
+
+		const cbConfig = config.razorpay.circuitBreaker;
+
+		this.ordersBreaker = new CircuitBreaker(
+			async (orderParams: RazorpayOrderPayload) => {
+				return (await client.orders.create(orderParams)) as RazorpayRawOrder;
+			},
+			{
+				name: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME,
+				timeoutMs: cbConfig.timeoutMs,
+				errorThresholdPercentage: cbConfig.errorThresholdPercent,
+				resetTimeoutMs: cbConfig.resetTimeoutMs,
+				volumeThreshold: cbConfig.volumeThreshold,
+				checkIsFailure: (err) => this.isGatewayFailure(err),
+				onOpen: () => {
+					logger.warn(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, state: 'OPEN' },
+						MESSAGES.RAZORPAY_ORDERS_CB_OPEN,
+					);
+				},
+				onHalfOpen: () => {
+					logger.info(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, state: 'HALF_OPEN' },
+						MESSAGES.RAZORPAY_ORDERS_CB_HALF_OPEN,
+					);
+				},
+				onClose: () => {
+					logger.info(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, state: 'CLOSED' },
+						MESSAGES.RAZORPAY_ORDERS_CB_CLOSED,
+					);
+				},
+			},
+		);
+
+		this.paymentsBreaker = new CircuitBreaker(
+			async (paymentId: string) => {
+				return (await client.payments.fetch(paymentId)) as unknown as RazorpayRawPayment;
+			},
+			{
+				name: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME,
+				timeoutMs: cbConfig.timeoutMs,
+				errorThresholdPercentage: cbConfig.errorThresholdPercent,
+				resetTimeoutMs: cbConfig.resetTimeoutMs,
+				volumeThreshold: cbConfig.volumeThreshold,
+				checkIsFailure: (err) => this.isGatewayFailure(err),
+				onOpen: () => {
+					logger.warn(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, state: 'OPEN' },
+						MESSAGES.RAZORPAY_PAYMENTS_CB_OPEN,
+					);
+				},
+				onHalfOpen: () => {
+					logger.info(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, state: 'HALF_OPEN' },
+						MESSAGES.RAZORPAY_PAYMENTS_CB_HALF_OPEN,
+					);
+				},
+				onClose: () => {
+					logger.info(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, state: 'CLOSED' },
+						MESSAGES.RAZORPAY_PAYMENTS_CB_CLOSED,
+					);
+				},
+			},
+		);
+
+		this.refundsBreaker = new CircuitBreaker(
+			async (paymentId: string, refundParams: RazorpayRefundPayload) => {
+				return (await client.payments.refund(
+					paymentId,
+					refundParams,
+				)) as unknown as RazorpayRawRefund;
+			},
+			{
+				name: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME,
+				timeoutMs: cbConfig.timeoutMs,
+				errorThresholdPercentage: cbConfig.errorThresholdPercent,
+				resetTimeoutMs: cbConfig.resetTimeoutMs,
+				volumeThreshold: cbConfig.volumeThreshold,
+				checkIsFailure: (err) => this.isGatewayFailure(err),
+				onOpen: () => {
+					logger.warn(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, state: 'OPEN' },
+						MESSAGES.RAZORPAY_REFUNDS_CB_OPEN,
+					);
+				},
+				onHalfOpen: () => {
+					logger.info(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, state: 'HALF_OPEN' },
+						MESSAGES.RAZORPAY_REFUNDS_CB_HALF_OPEN,
+					);
+				},
+				onClose: () => {
+					logger.info(
+						{ breaker: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, state: 'CLOSED' },
+						MESSAGES.RAZORPAY_REFUNDS_CB_CLOSED,
+					);
+				},
+			},
+		);
+	}
+
+	private isGatewayFailure(error: unknown): boolean {
+		if (typeof error === 'object' && error !== null) {
+			const err = error as { statusCode?: number; error?: { code?: string } };
+
+			if (
+				typeof err.statusCode === 'number' &&
+				err.statusCode >= HttpStatusCode.BAD_REQUEST &&
+				err.statusCode < HttpStatusCode.INTERNAL_SERVER_ERROR
+			) {
+				return false;
+			}
+
+			if (err.error?.code === RAZORPAY_ERROR_CODES.BAD_REQUEST_ERROR) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	isHealthy(): boolean {
 		if (!this.initialized || !this.client) {
 			return false;
 		}
 
 		const { keyId, keySecret } = config.razorpay;
-		return !!(keyId && keySecret && keyId.trim().length > 0 && keySecret.trim().length > 0);
+		const hasValidCredentials = !!(
+			keyId &&
+			keySecret &&
+			keyId.trim().length > 0 &&
+			keySecret.trim().length > 0
+		);
+
+		if (!hasValidCredentials) {
+			return false;
+		}
+
+		if (this.ordersBreaker?.isOpen || this.paymentsBreaker?.isOpen || this.refundsBreaker?.isOpen) {
+			return false;
+		}
+
+		return true;
 	}
 
 	async createOrder(params: CreateOrderParams): Promise<PaymentOrderResult> {
-		if (!this.client) {
+		if (!this.client || !this.ordersBreaker) {
 			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
 		}
 
-		const order = await this.client.orders.create({
-			amount: params.amountInPaise,
-			currency: params.currency,
-			receipt: params.receiptId,
-			notes: params.notes,
-		});
+		try {
+			const order = await this.ordersBreaker.execute({
+				amount: params.amountInPaise,
+				currency: params.currency,
+				receipt: params.receiptId,
+				notes: params.notes,
+			});
 
-		return {
-			orderId: order.id,
-			amount: Number(order.amount),
-			currency: order.currency,
-			status: order.status,
-			receipt: order.receipt ?? undefined,
-		};
+			return {
+				orderId: order.id,
+				amount: Number(order.amount),
+				currency: order.currency,
+				status: order.status,
+				receipt: order.receipt ?? undefined,
+			};
+		} catch (error) {
+			if (error instanceof CircuitBreakerOpenError) {
+				logger.warn({ err: error }, MESSAGES.FAST_FAIL_ORDER_CREATION_CB_OPEN);
+				throw new PaymentGatewayUnavailableError();
+			}
+			throw error;
+		}
 	}
 
 	verifyPaymentSignature(params: VerifyPaymentSignatureParams): boolean {
@@ -126,32 +325,57 @@ export class RazorpayGateway implements IPaymentGateway {
 	}
 
 	async getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult> {
-		if (!this.client) {
+		if (!this.client || !this.paymentsBreaker) {
 			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
 		}
 
-		const payment = await this.client.payments.fetch(paymentId);
-		return payment as unknown as PaymentDetailsResult;
+		try {
+			const payment = await this.paymentsBreaker.execute(paymentId);
+			return payment as unknown as PaymentDetailsResult;
+		} catch (error) {
+			if (error instanceof CircuitBreakerOpenError) {
+				logger.warn({ err: error, paymentId }, MESSAGES.FAST_FAIL_PAYMENT_FETCH_CB_OPEN);
+				throw new PaymentGatewayUnavailableError();
+			}
+			throw error;
+		}
 	}
 
 	async createRefund(params: CreateRefundParams): Promise<PaymentRefundResult> {
-		if (!this.client) {
+		if (!this.client || !this.refundsBreaker) {
 			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
 		}
 
-		const refund = await this.client.payments.refund(params.paymentId, {
-			amount: params.amountInPaise,
-			speed: params.speed ?? DEFAULT_REFUND_SPEED,
-			notes: params.notes,
-		});
+		try {
+			const refund = await this.refundsBreaker.execute(params.paymentId, {
+				amount: params.amountInPaise,
+				speed: params.speed ?? DEFAULT_REFUND_SPEED,
+				notes: params.notes,
+			});
 
-		return {
-			refundId: refund.id,
-			paymentId: refund.payment_id,
-			amount: Number(refund.amount),
-			currency: refund.currency,
-			status: refund.status,
-			arn: (refund as unknown as { arn?: string }).arn,
-		};
+			return {
+				refundId: refund.id,
+				paymentId: refund.payment_id,
+				amount: Number(refund.amount),
+				currency: refund.currency,
+				status: refund.status,
+				arn: refund.arn,
+			};
+		} catch (error) {
+			if (error instanceof CircuitBreakerOpenError) {
+				logger.warn({ err: error, paymentId: params.paymentId }, MESSAGES.FAST_FAIL_REFUND_CB_OPEN);
+				throw new PaymentGatewayUnavailableError();
+			}
+			throw error;
+		}
+	}
+
+	shutdown(): void {
+		this.ordersBreaker?.shutdown();
+		this.paymentsBreaker?.shutdown();
+		this.refundsBreaker?.shutdown();
+		this.ordersBreaker = null;
+		this.paymentsBreaker = null;
+		this.refundsBreaker = null;
 	}
 }

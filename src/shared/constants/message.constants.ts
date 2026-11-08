@@ -103,12 +103,16 @@ export enum MessageEnum {
 	INVALID_PLAN_ID = 'Invalid plan ID format',
 	FORBIDDEN_SUBSCRIPTION_ACCESS = 'You are not authorized to manage this restaurant subscription',
 	PAYMENT_GATEWAY_UNAVAILABLE = 'Payment provider is currently unavailable',
-	MISSING_IDEMPOTENCY_KEY = 'Idempotency-Key header is required',
+	MISSING_IDEMPOTENCY_KEY = 'Idempotency-Key header is missing',
 	INVALID_IDEMPOTENCY_KEY = 'Idempotency-Key must be 8 to 128 characters containing only letters, numbers, hyphens, underscores, colons, or dots',
 	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH = 'Idempotency-Key has already been used with different request parameters',
 	IDEMPOTENCY_REQUEST_IN_PROGRESS = 'A request with this Idempotency-Key is currently being processed',
 	IDEMPOTENCY_STORAGE_UNAVAILABLE = 'Idempotency and lock service is currently unavailable',
 	RENEWAL_ALREADY_IN_PROGRESS = 'Another renewal request for this subscription is currently in progress',
+	SUBSCRIPTION_BILLING_HISTORY_FETCHED = 'Subscription billing history fetched successfully',
+	INVALID_RESTAURANT_ID = 'Invalid restaurant ID format',
+	INVALID_STATUS_FILTER = 'Status filter must be one of: SUCCESS, FAILED, CREATED',
+	S3_OBJECT_DELETE_FAILED = 'Failed to delete S3 object',
 }
 
 export const MESSAGES = {
@@ -224,6 +228,10 @@ export const MESSAGES = {
 	IDEMPOTENCY_REQUEST_IN_PROGRESS: MessageEnum.IDEMPOTENCY_REQUEST_IN_PROGRESS,
 	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
 	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
+	SUBSCRIPTION_BILLING_HISTORY_FETCHED: MessageEnum.SUBSCRIPTION_BILLING_HISTORY_FETCHED,
+	INVALID_RESTAURANT_ID: MessageEnum.INVALID_RESTAURANT_ID,
+	INVALID_STATUS_FILTER: MessageEnum.INVALID_STATUS_FILTER,
+	S3_OBJECT_DELETE_FAILED: MessageEnum.S3_OBJECT_DELETE_FAILED,
 } as const;
 
 export const messages = MESSAGES;

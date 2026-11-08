@@ -1,8 +1,10 @@
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type {
 	CustomerContext,
+	PaginatedSubscriptionBillingHistoryResult,
 	PaginatedTransactionsResult,
 	RefundDetail,
+	SubscriptionBillingHistoryFilterParams,
 	TransactionDetail,
 	TransactionFilterParams,
 	TransactionSummary,
@@ -269,6 +271,75 @@ export class PrismaTransactionQueryRepository
 			refund,
 			createdAt: record.createdAt,
 			updatedAt: record.updatedAt,
+		};
+	}
+
+	async findSubscriptionBillingTransactions(
+		params: SubscriptionBillingHistoryFilterParams,
+	): Promise<PaginatedSubscriptionBillingHistoryResult> {
+		const where: Prisma.PaymentTransactionWhereInput = {
+			restaurantId: params.restaurantId,
+			orderId: null,
+			OR: [{ planId: { not: null } }, { subscriptionId: { not: null } }],
+		};
+
+		if (params.status) {
+			where.status = params.status as PaymentStatus;
+		}
+
+		const skip = (params.page - 1) * params.limit;
+		const take = params.limit;
+
+		const [records, totalRecords] = await Promise.all([
+			this.prisma.paymentTransaction.findMany({
+				where,
+				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+				skip,
+				take,
+				include: {
+					plan: true,
+					subscription: {
+						include: {
+							plan: true,
+						},
+					},
+					invoices: {
+						orderBy: { createdAt: 'desc' },
+						take: 1,
+					},
+				},
+			}),
+			this.prisma.paymentTransaction.count({ where }),
+		]);
+
+		return {
+			records: records.map((record) => {
+				const plan = record.plan ?? record.subscription?.plan ?? null;
+				const invoice = record.invoices[0] ?? null;
+
+				return {
+					id: record.id,
+					amountPaise: record.amountPaise,
+					currency: record.currency,
+					status: record.status,
+					razorpayPaymentId: record.razorpayPaymentId,
+					createdAt: record.createdAt,
+					plan: plan
+						? {
+								code: plan.code,
+								name: plan.name,
+								billingCycle: plan.billingCycle,
+							}
+						: null,
+					invoice: invoice
+						? {
+								invoiceNumber: invoice.invoiceNumber,
+								invoicePdfKey: invoice.invoicePdfKey,
+							}
+						: null,
+				};
+			}),
+			totalRecords,
 		};
 	}
 }

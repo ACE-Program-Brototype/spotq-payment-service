@@ -100,3 +100,33 @@ export interface TransactionDetail {
 	createdAt: Date;
 	updatedAt: Date;
 }
+
+export interface SubscriptionBillingHistoryFilterParams {
+	restaurantId: string;
+	page: number;
+	limit: number;
+	status?: 'SUCCESS' | 'FAILED' | 'CREATED';
+}
+
+export interface SubscriptionBillingTransactionRecord {
+	id: string;
+	amountPaise: number;
+	currency: string;
+	status: string;
+	razorpayPaymentId: string | null;
+	createdAt: Date;
+	plan: {
+		code: string;
+		name: string;
+		billingCycle: string;
+	} | null;
+	invoice: {
+		invoiceNumber: string;
+		invoicePdfKey: string | null;
+	} | null;
+}
+
+export interface PaginatedSubscriptionBillingHistoryResult {
+	records: SubscriptionBillingTransactionRecord[];
+	totalRecords: number;
+}

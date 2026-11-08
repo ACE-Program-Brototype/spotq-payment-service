@@ -34,6 +34,12 @@ const envSchema = z.object({
 	S2S_PRIVATE_KEY: z.string().min(1),
 
 	RESTAURANT_SERVICE_URL: z.string().url().default('http://restaurant-service:3001'),
+
+	AWS_REGION: z.string().trim().default('ap-south-1'),
+	AWS_ACCESS_KEY_ID: z.string().trim().default('test-access-key'),
+	AWS_SECRET_ACCESS_KEY: z.string().trim().default('test-secret-key'),
+	AWS_S3_BUCKET: z.string().trim().default('spotq-invoices'),
+	AWS_S3_PRESIGNED_URL_EXPIRATION_SECONDS: z.coerce.number().int().positive().default(900),
 });
 
 export const validateEnv = () => {

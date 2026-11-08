@@ -2,6 +2,7 @@ import type { IRestaurantServiceClient } from '@application/ports/external/resta
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import type { IIdempotencyService } from '@application/ports/services/idempotency.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
+import type { IStorageService } from '@application/ports/services/storage.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
@@ -15,6 +16,7 @@ import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
 import type { IProcessOrderRefundUseCase } from '@application/ports/use-cases/process-order-refund.use-case.port.ts';
+import type { IGetSubscriptionBillingHistoryUseCase } from '@application/ports/use-cases/subscriptions/get-subscription-billing-history.use-case.port.ts';
 import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IGetRestaurantTransactionsUseCase } from '@application/ports/use-cases/transactions/get-restaurant-transactions.use-case.port.ts';
 import type { IGetTransactionDetailUseCase } from '@application/ports/use-cases/transactions/get-transaction-detail.use-case.port.ts';
@@ -26,6 +28,7 @@ import {
 	GetAdminSubscriberDetailsUseCase,
 	GetAdminSubscribersUseCase,
 	GetOrderPaymentStatusUseCase,
+	GetSubscriptionBillingHistoryUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
@@ -64,6 +67,7 @@ import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prism
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PrismaTransactionQueryRepository } from '@infrastructure/repositories/prisma-transaction-query.repository.ts';
 import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
+import { S3StorageService } from '@infrastructure/services/s3-storage.service.ts';
 import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subscription-expiry.service.ts';
 import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
@@ -155,8 +159,17 @@ container
 container.bind<ICacheService>(TYPES.Services.CacheService).to(RedisService).inSingletonScope();
 
 container
+	.bind<IStorageService>(TYPES.Services.StorageService)
+	.to(S3StorageService)
+	.inSingletonScope();
+
+container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)
 	.to(CreateSubscriptionOrderUseCase);
+
+container
+	.bind<IGetSubscriptionBillingHistoryUseCase>(TYPES.UseCases.GetSubscriptionBillingHistoryUseCase)
+	.to(GetSubscriptionBillingHistoryUseCase);
 
 container
 	.bind<IRenewSubscriptionUseCase>(TYPES.UseCases.RenewSubscriptionUseCase)

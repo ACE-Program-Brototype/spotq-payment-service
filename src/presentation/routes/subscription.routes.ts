@@ -4,14 +4,19 @@ import {
 	validateRequestBody,
 	validateRequestHeaders,
 	validateRequestParams,
+	validateRequestQuery,
 } from '@presentation/middleware/validation.middleware.ts';
 import {
 	renewSubscriptionBodySchema,
 	renewSubscriptionHeadersSchema,
 	renewSubscriptionParamsSchema,
 } from '@presentation/validators/subscriptions/renew-subscription.validator.ts';
+import {
+	subscriptionBillingHistoryParamsSchema,
+	subscriptionBillingHistoryQuerySchema,
+} from '@presentation/validators/subscriptions/subscription-billing-history.validator.ts';
 import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
-import { Router } from 'express';
+import { type Request, type Response, Router } from 'express';
 
 export const subscriptionRouter = Router();
 
@@ -23,9 +28,19 @@ const renewSubscriptionPipeline = [
 	subscriptionController.renewSubscription,
 ] as const;
 
+const getBillingHistoryPipeline = [
+	restaurantAdminAuthMiddleware,
+	validateRequestParams(subscriptionBillingHistoryParamsSchema),
+	validateRequestQuery(subscriptionBillingHistoryQuerySchema),
+	(req: Request, res: Response) => subscriptionController.getBillingHistory(req, res),
+] as const;
+
 subscriptionRouter.get(SUBSCRIPTION_ROUTES.PLANS, (req, res) =>
 	subscriptionController.getPlans(req, res),
 );
+
+subscriptionRouter.get(SUBSCRIPTION_ROUTES.HISTORY, ...getBillingHistoryPipeline);
+subscriptionRouter.get(SUBSCRIPTION_ROUTES.API_V1_HISTORY, ...getBillingHistoryPipeline);
 
 subscriptionRouter.post(SUBSCRIPTION_ROUTES.ORDER, (req, res) =>
 	subscriptionController.createOrder(req, res),

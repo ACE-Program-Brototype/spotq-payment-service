@@ -2,15 +2,20 @@ import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cas
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
+import type { IGetSubscriptionBillingHistoryUseCase } from '@application/ports/use-cases/subscriptions/get-subscription-billing-history.use-case.port.ts';
 import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { DomainError } from '@domain/errors/payment.errors.ts';
+import { DomainError, ForbiddenSubscriptionAccessError } from '@domain/errors/payment.errors.ts';
 import type {
 	RenewSubscriptionBodyDTO,
 	RenewSubscriptionHeadersDTO,
 	RenewSubscriptionParamsDTO,
 } from '@presentation/validators/subscriptions/renew-subscription.validator.ts';
+import type {
+	SubscriptionBillingHistoryParamsDTO,
+	SubscriptionBillingHistoryQueryDTO,
+} from '@presentation/validators/subscriptions/subscription-billing-history.validator.ts';
 import {
 	ERROR_CODES,
 	getStatusCodeForDomainError,
@@ -39,6 +44,8 @@ export class SubscriptionController {
 		private readonly createSubscriptionOrderUseCase: ICreateSubscriptionOrderUseCase,
 		@inject(TYPES.UseCases.RenewSubscriptionUseCase)
 		private readonly renewSubscriptionUseCase: IRenewSubscriptionUseCase,
+		@inject(TYPES.UseCases.GetSubscriptionBillingHistoryUseCase)
+		private readonly getSubscriptionBillingHistoryUseCase: IGetSubscriptionBillingHistoryUseCase,
 		@inject(TYPES.UseCases.VerifyPaymentUseCase)
 		private readonly verifyPaymentUseCase: IVerifyPaymentUseCase,
 		@inject(TYPES.UseCases.GetSubscriptionStatusUseCase)
@@ -117,6 +124,38 @@ export class SubscriptionController {
 			MESSAGES.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
 			HTTP_STATUS.CREATED,
 		);
+	};
+
+	getBillingHistory = async (req: Request, res: Response): Promise<void> => {
+		try {
+			const params = (res.locals.params ?? req.params) as SubscriptionBillingHistoryParamsDTO;
+			const query = (res.locals.query ?? req.query) as SubscriptionBillingHistoryQueryDTO;
+
+			const userRestaurantId = req.headers['x-restaurant-id'] as string;
+			const userRole = (req.headers['x-user-role'] as string)?.toUpperCase().trim();
+
+			if (userRole !== 'PLATFORM_ADMIN' && userRole !== 'SUPER_ADMIN') {
+				if (userRestaurantId !== params.restaurantId) {
+					throw new ForbiddenSubscriptionAccessError();
+				}
+			}
+
+			const result = await this.getSubscriptionBillingHistoryUseCase.execute({
+				restaurantId: params.restaurantId,
+				page: query.page,
+				limit: query.limit,
+				status: query.status,
+			});
+
+			sendSuccessResponse(
+				res,
+				result,
+				MESSAGES.SUBSCRIPTION_BILLING_HISTORY_FETCHED,
+				HTTP_STATUS.OK,
+			);
+		} catch (error: unknown) {
+			this.handleError(res, error);
+		}
 	};
 
 	verifyPayment = async (req: Request, res: Response): Promise<void> => {

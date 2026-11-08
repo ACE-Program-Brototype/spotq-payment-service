@@ -16,6 +16,7 @@ export const TYPES = {
 		RestaurantServiceClient: Symbol.for('IRestaurantServiceClient'),
 	},
 	Services: {
+		CacheService: Symbol.for('ICacheService'),
 		IdempotencyService: Symbol.for('IIdempotencyService'),
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),
@@ -37,6 +38,7 @@ export const TYPES = {
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
+		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
 		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
 		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
 	},

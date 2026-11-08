@@ -1,3 +1,4 @@
+import type { PaymentRefund, RefundStatus } from '../entities/payment-refund.entity.ts';
 import type { PaymentStatus, PaymentTransaction } from '../entities/payment-transaction.entity.ts';
 
 export interface CreatePaymentTransactionInput {
@@ -39,7 +40,35 @@ export interface CreateRenewalOrderWithInvoiceParams {
 	};
 }
 
+export interface ProcessOrderRefundParams {
+	transaction: PaymentTransaction;
+	refund: {
+		razorpayRefundId: string;
+		amountPaise: number;
+		currency: string;
+		status: RefundStatus;
+		reason?: string | null;
+		arn?: string | null;
+		paymentMethod?: string | null;
+	};
+}
+
+export interface ProcessOrderRefundResult {
+	transaction: PaymentTransaction;
+	refund: PaymentRefund;
+}
+
+export interface SyncRefundFromWebhookParams {
+	razorpayRefundId: string;
+	razorpayPaymentId?: string | null;
+	status: RefundStatus;
+	amountPaise?: number;
+	currency?: string;
+	arn?: string | null;
+	reason?: string | null;
+}
 export interface IPaymentTransactionRepository {
+	findById(id: string): Promise<PaymentTransaction | null>;
 	findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null>;
 	findByCustomerOrderId(orderId: string): Promise<PaymentTransaction | null>;
 	findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null>;
@@ -59,6 +88,8 @@ export interface IPaymentTransactionRepository {
 		params: CaptureOrderPaymentWithOutboxParams,
 	): Promise<PaymentTransaction>;
 	failOrderPaymentWithOutbox(params: FailOrderPaymentWithOutboxParams): Promise<PaymentTransaction>;
+	processOrderRefund(params: ProcessOrderRefundParams): Promise<ProcessOrderRefundResult>;
+	syncRefundFromWebhook(params: SyncRefundFromWebhookParams): Promise<void>;
 	markSuccess(params: {
 		razorpayOrderId: string;
 		razorpayPaymentId: string;

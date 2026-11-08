@@ -71,6 +71,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 	};
 
 	const mockTxRepo = {
+		findById: jest.fn().mockResolvedValue(null),
 		findByOrderId: jest.fn().mockResolvedValue(null),
 		findByCustomerOrderId: jest.fn().mockResolvedValue(null),
 		findByPaymentId: jest.fn().mockResolvedValue(null),
@@ -83,6 +84,8 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		})),
 		captureOrderPaymentWithOutbox: jest.fn(),
 		failOrderPaymentWithOutbox: jest.fn(),
+		processOrderRefund: jest.fn(),
+		syncRefundFromWebhook: jest.fn(),
 		markSuccess: jest.fn(),
 		markFailed: jest.fn(),
 		resetToCreated: jest.fn().mockResolvedValue({}),
@@ -100,6 +103,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		verifyPaymentSignature: jest.fn().mockReturnValue(true),
 		verifyWebhookSignature: jest.fn().mockReturnValue(true),
 		getPaymentDetails: jest.fn().mockResolvedValue({}),
+		createRefund: jest.fn().mockResolvedValue({}),
 	};
 
 	const mockInvoiceRepo = {

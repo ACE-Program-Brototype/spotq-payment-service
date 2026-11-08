@@ -1,3 +1,5 @@
+import type { RazorpayRefundSpeed } from '@shared/constants';
+
 export interface CreateOrderParams {
 	amountInPaise: number;
 	currency: string;
@@ -35,6 +37,22 @@ export interface PaymentDetailsResult {
 	[key: string]: unknown;
 }
 
+export interface CreateRefundParams {
+	paymentId: string;
+	amountInPaise: number;
+	speed?: RazorpayRefundSpeed;
+	notes?: Record<string, string>;
+}
+
+export interface PaymentRefundResult {
+	refundId: string;
+	paymentId: string;
+	amount: number;
+	currency: string;
+	status: string;
+	arn?: string;
+}
+
 export interface IPaymentGateway {
 	initialize(): Promise<void>;
 	isHealthy(): boolean;
@@ -42,4 +60,5 @@ export interface IPaymentGateway {
 	verifyPaymentSignature(params: VerifyPaymentSignatureParams): boolean;
 	verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string): boolean;
 	getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult>;
+	createRefund(params: CreateRefundParams): Promise<PaymentRefundResult>;
 }

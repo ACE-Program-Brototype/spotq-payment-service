@@ -19,6 +19,7 @@ import {
 	PAYMENT_EVENTS,
 	PAYMENT_STATUS,
 	RAZORPAY_WEBHOOK_EVENTS,
+	REFUND_STATUS,
 	SUBSCRIPTION_EVENTS,
 	SUBSCRIPTION_STATUS,
 } from '@shared/constants/index.ts';
@@ -217,6 +218,54 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 					);
 				}
 			}
+		}
+
+		if (
+			eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_PROCESSED ||
+			eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_FAILED
+		) {
+			const refundEntity = params.parsedPayload.payload?.refund?.entity;
+			const paymentEntity = params.parsedPayload.payload?.payment?.entity;
+
+			const refundId = refundEntity?.id;
+			if (!refundId) {
+				logger.warn('Refund webhook received without valid refund entity id; acknowledging');
+				return { received: true };
+			}
+
+			const refundStatus =
+				eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_PROCESSED
+					? REFUND_STATUS.PROCESSED
+					: REFUND_STATUS.FAILED;
+
+			const paymentId = refundEntity.payment_id || paymentEntity?.id || null;
+			const amountPaise = refundEntity.amount;
+			const currency = refundEntity.currency;
+			const arn = refundEntity.arn ?? null;
+			const notes = refundEntity.notes;
+			const reason = typeof notes?.reason === 'string' ? notes.reason : null;
+
+			await this.paymentTransactionRepository.syncRefundFromWebhook({
+				razorpayRefundId: refundId,
+				razorpayPaymentId: paymentId,
+				status: refundStatus,
+				amountPaise,
+				currency,
+				arn,
+				reason,
+			});
+
+			logger.info(
+				{
+					refundId,
+					paymentId,
+					status: refundStatus,
+					arn,
+				},
+				'Processed refund webhook from Razorpay',
+			);
+
+			return { received: true };
 		}
 
 		return { received: true };

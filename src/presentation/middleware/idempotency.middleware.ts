@@ -35,7 +35,9 @@ export function idempotencyMiddleware(
 	const lockTtl = options.lockTtlSeconds ?? REFUND_LOCK_TTL_SECONDS;
 
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-		const rawKey = getHeaderValue(req.headers[HTTP_HEADERS.IDEMPOTENCY_KEY]);
+		const rawKey = getHeaderValue(
+			req.headers[HTTP_HEADERS.X_IDEMPOTENCY_KEY] ?? req.headers[HTTP_HEADERS.IDEMPOTENCY_KEY],
+		);
 		const idempotencyKey = rawKey?.trim();
 
 		if (!idempotencyKey) {

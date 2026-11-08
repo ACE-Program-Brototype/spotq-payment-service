@@ -29,9 +29,9 @@ export const processOrderRefundSchema = z.object({
 
 export const processOrderRefundHeadersSchema = z
 	.object({
-		[HTTP_HEADERS.IDEMPOTENCY_KEY]: z
+		[HTTP_HEADERS.X_IDEMPOTENCY_KEY]: z
 			.string()
-			.min(1, `${HTTP_HEADERS.IDEMPOTENCY_KEY} header is required`),
+			.min(1, `${HTTP_HEADERS.X_IDEMPOTENCY_KEY} header is required`),
 	})
 	.loose();
 

@@ -65,6 +65,7 @@ describe('ProcessOrderRefundUseCase', () => {
 			findByCustomerOrderId: jest.fn().mockResolvedValue(createMockTransaction()),
 			findByPaymentId: jest.fn(),
 			findPendingByRestaurantAndPlan: jest.fn(),
+			findPendingRenewalBySubscriptionAndPlan: jest.fn(),
 			create: jest.fn(),
 			captureOrderPaymentWithOutbox: jest.fn(),
 			failOrderPaymentWithOutbox: jest.fn(),

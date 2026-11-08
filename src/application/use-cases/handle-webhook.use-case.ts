@@ -6,6 +6,8 @@ import type { IOutboxRelayService } from '@application/ports/services/outbox-rel
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
+import type { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
+import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
@@ -158,34 +160,8 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			if (!plan) return { received: true };
 
 			const now = new Date();
-			const currentPeriodEnd = plan.calculatePeriodEnd(now);
-
-			await this.subscriptionRepository.activateSubscriptionWithOutbox({
-				subscription: {
-					restaurantId: existingTx.restaurantId,
-					planId: plan.id,
-					status: SUBSCRIPTION_STATUS.ACTIVE,
-					currentPeriodStart: now,
-					currentPeriodEnd: currentPeriodEnd,
-				},
-				payment: {
-					razorpayOrderId: existingTx.razorpayOrderId,
-					razorpayPaymentId: paymentId || existingTx.razorpayPaymentId || '',
-					razorpaySignature: '',
-				},
-				outbox: {
-					eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
-					aggregateId: existingTx.restaurantId,
-					payload: {
-						restaurantId: existingTx.restaurantId,
-						planCode: plan.code,
-						status: SUBSCRIPTION_STATUS.ACTIVE,
-						currentPeriodStart: now.toISOString(),
-						currentPeriodEnd: currentPeriodEnd.toISOString(),
-						timestamp: now.toISOString(),
-					},
-				},
-			});
+			const resolvedPaymentId = paymentId || existingTx.razorpayPaymentId || '';
+			await this.processSubscriptionCaptureWebhook(existingTx, plan, resolvedPaymentId, now);
 
 			this.outboxRelayService.processPendingEvents().catch((err) => {
 				logger.error({ err }, 'Error triggering outbox relay after webhook');
@@ -293,5 +269,86 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 		}
 
 		return { received: true };
+	}
+
+	private async processSubscriptionCaptureWebhook(
+		existingTx: PaymentTransaction,
+		plan: SubscriptionPlan,
+		razorpayPaymentId: string,
+		now: Date,
+	): Promise<void> {
+		const targetSubscriptionId = existingTx.renewalTargetSubscriptionId;
+
+		if (existingTx.isSubscriptionRenewal() && targetSubscriptionId) {
+			const targetSub = await this.subscriptionRepository.findById(targetSubscriptionId);
+			if (!targetSub) {
+				logger.warn(
+					{ orderId: existingTx.razorpayOrderId, targetSubscriptionId },
+					'Target subscription not found for renewal webhook; skipping activation',
+				);
+				return;
+			}
+
+			const renewalPeriod = targetSub.calculateRenewalPeriod(plan, now);
+
+			await this.subscriptionRepository.renewSubscriptionWithOutbox({
+				subscription: {
+					subscriptionId: targetSub.id,
+					restaurantId: existingTx.restaurantId,
+					planId: plan.id,
+					status: SUBSCRIPTION_STATUS.ACTIVE,
+					currentPeriodStart: renewalPeriod.currentPeriodStart,
+					currentPeriodEnd: renewalPeriod.currentPeriodEnd,
+				},
+				payment: {
+					razorpayOrderId: existingTx.razorpayOrderId,
+					razorpayPaymentId,
+					razorpaySignature: '',
+				},
+				outbox: {
+					eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
+					aggregateId: existingTx.restaurantId,
+					payload: {
+						restaurantId: existingTx.restaurantId,
+						planCode: plan.tierCode,
+						status: SUBSCRIPTION_STATUS.ACTIVE,
+						currentPeriodStart: renewalPeriod.currentPeriodStart.toISOString(),
+						currentPeriodEnd: renewalPeriod.currentPeriodEnd.toISOString(),
+						timestamp: now.toISOString(),
+						subscriptionId: targetSub.id,
+					},
+				},
+			});
+			return;
+		}
+
+		const currentPeriodEnd = plan.calculatePeriodEnd(now);
+
+		await this.subscriptionRepository.activateSubscriptionWithOutbox({
+			subscription: {
+				restaurantId: existingTx.restaurantId,
+				planId: plan.id,
+				status: SUBSCRIPTION_STATUS.ACTIVE,
+				currentPeriodStart: now,
+				currentPeriodEnd,
+			},
+			payment: {
+				razorpayOrderId: existingTx.razorpayOrderId,
+				razorpayPaymentId,
+				razorpaySignature: '',
+			},
+			outbox: {
+				eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
+				aggregateId: existingTx.restaurantId,
+				payload: {
+					restaurantId: existingTx.restaurantId,
+					planCode: plan.tierCode,
+					status: SUBSCRIPTION_STATUS.ACTIVE,
+					currentPeriodStart: now.toISOString(),
+					currentPeriodEnd: currentPeriodEnd.toISOString(),
+					timestamp: now.toISOString(),
+				},
+			},
+		});
 	}
 }

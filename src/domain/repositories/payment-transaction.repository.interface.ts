@@ -3,6 +3,7 @@ import type { PaymentStatus, PaymentTransaction } from '../entities/payment-tran
 
 export interface CreatePaymentTransactionInput {
 	restaurantId: string;
+	subscriptionId?: string | null;
 	planId?: string | null;
 	orderId?: string | null;
 	customerId?: string | null;
@@ -28,6 +29,14 @@ export interface FailOrderPaymentWithOutboxParams {
 		eventType: string;
 		aggregateId: string;
 		payload: Record<string, unknown>;
+	};
+}
+
+export interface CreateRenewalOrderWithInvoiceParams {
+	transaction: CreatePaymentTransactionInput;
+	invoice: {
+		invoiceNumber: string;
+		status: 'DRAFT' | 'PAID' | 'VOID';
 	};
 }
 
@@ -58,7 +67,6 @@ export interface SyncRefundFromWebhookParams {
 	arn?: string | null;
 	reason?: string | null;
 }
-
 export interface IPaymentTransactionRepository {
 	findById(id: string): Promise<PaymentTransaction | null>;
 	findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null>;
@@ -68,7 +76,14 @@ export interface IPaymentTransactionRepository {
 		restaurantId: string,
 		planId: string,
 	): Promise<PaymentTransaction | null>;
+	findPendingRenewalBySubscriptionAndPlan(
+		subscriptionId: string,
+		planId: string,
+	): Promise<PaymentTransaction | null>;
 	create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction>;
+	createRenewalWithInvoice?(
+		params: CreateRenewalOrderWithInvoiceParams,
+	): Promise<PaymentTransaction>;
 	captureOrderPaymentWithOutbox(
 		params: CaptureOrderPaymentWithOutboxParams,
 	): Promise<PaymentTransaction>;

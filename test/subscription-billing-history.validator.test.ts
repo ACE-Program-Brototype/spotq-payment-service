@@ -2,6 +2,7 @@ import {
 	subscriptionBillingHistoryParamsSchema,
 	subscriptionBillingHistoryQuerySchema,
 } from '@presentation/validators/subscriptions/subscription-billing-history.validator.ts';
+import { MESSAGES } from '@shared/constants/message.constants.ts';
 
 describe('SubscriptionBillingHistoryValidators', () => {
 	describe('subscriptionBillingHistoryParamsSchema', () => {
@@ -17,6 +18,9 @@ describe('SubscriptionBillingHistoryValidators', () => {
 				restaurantId: 'not-a-uuid',
 			});
 			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.issues[0]?.message).toBe(MESSAGES.INVALID_RESTAURANT_ID);
+			}
 		});
 
 		it('should reject unknown extra properties due to strict mode', () => {
@@ -60,6 +64,9 @@ describe('SubscriptionBillingHistoryValidators', () => {
 				status: 'CAPTURED',
 			});
 			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.issues[0]?.message).toBe(MESSAGES.INVALID_STATUS_FILTER);
+			}
 		});
 
 		it('should reject page < 1', () => {
@@ -67,6 +74,9 @@ describe('SubscriptionBillingHistoryValidators', () => {
 				page: 0,
 			});
 			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.issues[0]?.message).toBe(MESSAGES.PAGE_MIN_ONE);
+			}
 		});
 
 		it('should reject limit > 50', () => {
@@ -74,6 +84,9 @@ describe('SubscriptionBillingHistoryValidators', () => {
 				limit: 51,
 			});
 			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.issues[0]?.message).toBe(MESSAGES.LIMIT_MAX_FIFTY);
+			}
 		});
 
 		it('should reject unknown properties due to strict mode', () => {

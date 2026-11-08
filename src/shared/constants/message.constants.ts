@@ -112,6 +112,9 @@ export enum MessageEnum {
 	SUBSCRIPTION_BILLING_HISTORY_FETCHED = 'Subscription billing history fetched successfully',
 	INVALID_RESTAURANT_ID = 'Invalid restaurant ID format',
 	INVALID_STATUS_FILTER = 'Status filter must be one of: SUCCESS, FAILED, CREATED',
+	PAGE_MIN_ONE = 'Page must be at least 1',
+	LIMIT_MIN_ONE = 'Limit must be at least 1',
+	LIMIT_MAX_FIFTY = 'Limit cannot exceed 50',
 	S3_OBJECT_DELETE_FAILED = 'Failed to delete S3 object',
 }
 
@@ -231,6 +234,9 @@ export const MESSAGES = {
 	SUBSCRIPTION_BILLING_HISTORY_FETCHED: MessageEnum.SUBSCRIPTION_BILLING_HISTORY_FETCHED,
 	INVALID_RESTAURANT_ID: MessageEnum.INVALID_RESTAURANT_ID,
 	INVALID_STATUS_FILTER: MessageEnum.INVALID_STATUS_FILTER,
+	PAGE_MIN_ONE: MessageEnum.PAGE_MIN_ONE,
+	LIMIT_MIN_ONE: MessageEnum.LIMIT_MIN_ONE,
+	LIMIT_MAX_FIFTY: MessageEnum.LIMIT_MAX_FIFTY,
 	S3_OBJECT_DELETE_FAILED: MessageEnum.S3_OBJECT_DELETE_FAILED,
 } as const;
 

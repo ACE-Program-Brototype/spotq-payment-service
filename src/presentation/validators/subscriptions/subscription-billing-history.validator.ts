@@ -14,15 +14,15 @@ export const subscriptionBillingHistoryQuerySchema = z
 	.object({
 		page: z.preprocess(
 			emptyStringToUndefined,
-			z.coerce.number().int().min(1, { message: 'Page must be at least 1' }).default(1),
+			z.coerce.number().int().min(1, { message: MESSAGES.PAGE_MIN_ONE }).default(1),
 		),
 		limit: z.preprocess(
 			emptyStringToUndefined,
 			z.coerce
 				.number()
 				.int()
-				.min(1, { message: 'Limit must be at least 1' })
-				.max(50, { message: 'Limit cannot exceed 50' })
+				.min(1, { message: MESSAGES.LIMIT_MIN_ONE })
+				.max(50, { message: MESSAGES.LIMIT_MAX_FIFTY })
 				.default(10),
 		),
 		status: z.preprocess(

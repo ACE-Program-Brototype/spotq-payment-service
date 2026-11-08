@@ -1,5 +1,6 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
+import { orderInvoiceConsumer } from '@di/consumer.resolution.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
@@ -22,6 +23,7 @@ export async function initInfrastructure(): Promise<void> {
 	try {
 		const rabbitMQService = container.get<RabbitMQService>(TYPES.Services.RabbitMQService);
 		await rabbitMQService.connect();
+		await orderInvoiceConsumer.start();
 	} catch (error) {
 		logger.error({ err: error }, MESSAGES.RABBITMQ_INIT_FAILED);
 		throw error;
@@ -53,6 +55,12 @@ export async function initInfrastructure(): Promise<void> {
 export async function shutdownInfrastructure(): Promise<void> {
 	container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService).stop();
 	container.get<IPaymentSubscriptionExpiryService>(TYPES.Services.SubscriptionExpiryService).stop();
+
+	try {
+		await orderInvoiceConsumer.stop();
+	} catch (error) {
+		logger.error({ err: error }, 'Error stopping OrderInvoiceConsumer during shutdown');
+	}
 
 	try {
 		await container

@@ -25,6 +25,14 @@ const envSchema = z.object({
 	ORDER_S2S_PUBLIC_KEY: z.string().min(1),
 	S2S_AUDIENCE: z.string().min(1).default('payment-service'),
 	S2S_PRIVATE_KEY: z.string().min(1),
+
+	GOTENBERG_URL: z.string().url().default('http://gotenberg:3008'),
+
+	AWS_ACCESS_KEY_ID: z.string().trim().min(1),
+	AWS_SECRET_ACCESS_KEY: z.string().trim().min(1),
+	AWS_REGION: z.string().trim().min(1).default('ap-south-1'),
+	AWS_S3_BUCKET: z.string().trim().min(1).default('spotq-order-invoices'),
+	AWS_S3_ENDPOINT: z.string().url().optional(),
 });
 
 export const validateEnv = () => {

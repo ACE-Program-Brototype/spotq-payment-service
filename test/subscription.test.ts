@@ -62,6 +62,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findByRestaurantId: jest.fn().mockResolvedValue([]),
 		create: jest.fn().mockResolvedValue({}),
 		update: jest.fn().mockResolvedValue({}),
+		updatePdfKey: jest.fn().mockResolvedValue(null),
 		delete: jest.fn().mockResolvedValue(true),
 		findById: jest.fn().mockResolvedValue(null),
 	};

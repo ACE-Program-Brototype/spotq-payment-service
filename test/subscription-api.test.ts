@@ -9,6 +9,7 @@ import { PlanBillingCycle, SubscriptionPlan } from '@domain/entities/subscriptio
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { databaseService } from '@infrastructure/database/index.ts';
@@ -30,6 +31,9 @@ const paymentTransactionRepository = container.get<IPaymentTransactionRepository
 );
 const billingInvoiceRepository = container.get<IBillingInvoiceRepository>(
 	TYPES.Repositories.BillingInvoiceRepository,
+);
+const restaurantWalletRepository = container.get<IRestaurantWalletRepository>(
+	TYPES.Repositories.RestaurantWalletRepository,
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
@@ -158,6 +162,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	describe(`POST ${SUBSCRIPTION_ROUTES.VERIFY}`, () => {
 		it('should verify payment signature and activate subscription', async () => {
 			jest.spyOn(razorpayGateway, 'verifyPaymentSignature').mockReturnValueOnce(true);
+			jest.spyOn(restaurantWalletRepository, 'findByRestaurantId').mockResolvedValueOnce(null);
 
 			const mockTx = new PaymentTransaction({
 				id: 'b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e',

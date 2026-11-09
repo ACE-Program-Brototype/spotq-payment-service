@@ -1,16 +1,28 @@
 import { RestaurantWallet } from '@domain/entities/restaurant-wallet.entity.ts';
-import type {
-	RestaurantWalletOverviewData,
-	RestaurantWalletTodayStats,
-} from '@domain/repositories/restaurant-wallet.repository.interface.ts';
+import type { RestaurantWalletOverviewData } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { RestaurantWallet as PrismaRestaurantWallet } from '@prisma/client';
 
 export type RestaurantWalletOverviewRecord = {
-	wallet: PrismaRestaurantWallet;
-} & RestaurantWalletTodayStats;
+	walletId: string;
+	walletRestaurantId: string;
+	walletBalancePaise: bigint;
+	walletCurrency: string;
+	walletIsLocked: boolean;
+	walletRazorpayFundAccountId: string | null;
+	walletRazorpayContactId: string | null;
+	walletBankName: string | null;
+	walletBankAccountLast4: string | null;
+	walletCreatedAt: Date;
+	walletUpdatedAt: Date;
+	todayCreditsPaise: bigint;
+	todayRefundsPaise: bigint;
+	withdrawnPaise: bigint;
+	pendingWithdrawalsPaise: bigint;
+	pendingPayoutsCount: bigint;
+};
 
 export const RestaurantWalletPersistenceMapper = {
-	toPersistance(wallet: RestaurantWallet) {
+	toPersistence(wallet: RestaurantWallet) {
 		return {
 			id: wallet.id,
 			restaurantId: wallet.restaurantId,
@@ -26,7 +38,7 @@ export const RestaurantWalletPersistenceMapper = {
 		};
 	},
 
-	toUpdatePersistance(wallet: RestaurantWallet) {
+	toUpdatePersistence(wallet: RestaurantWallet) {
 		return {
 			balancePaise: wallet.balancePaise,
 			currency: wallet.currency,
@@ -56,12 +68,25 @@ export const RestaurantWalletPersistenceMapper = {
 
 	toOverview(record: RestaurantWalletOverviewRecord): RestaurantWalletOverviewData {
 		return {
-			wallet: RestaurantWalletPersistenceMapper.toDomain(record.wallet),
+			wallet: RestaurantWalletPersistenceMapper.toDomain({
+				id: record.walletId,
+				restaurantId: record.walletRestaurantId,
+				balancePaise: record.walletBalancePaise,
+				currency: record.walletCurrency,
+				isLocked: record.walletIsLocked,
+				razorpayFundAccountId: record.walletRazorpayFundAccountId,
+				razorpayContactId: record.walletRazorpayContactId,
+				bankName: record.walletBankName,
+				bankAccountLast4: record.walletBankAccountLast4,
+				createdAt: record.walletCreatedAt,
+				updatedAt: record.walletUpdatedAt,
+			}),
 			todayStats: {
 				todayCreditsPaise: record.todayCreditsPaise,
 				todayRefundsPaise: record.todayRefundsPaise,
 				withdrawnPaise: record.withdrawnPaise,
-				pendingPayoutsCount: record.pendingPayoutsCount,
+				pendingWithdrawalsPaise: record.pendingWithdrawalsPaise,
+				pendingPayoutsCount: Number(record.pendingPayoutsCount),
 			},
 		};
 	},

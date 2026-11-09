@@ -163,6 +163,9 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 		it('should verify payment signature and activate subscription', async () => {
 			jest.spyOn(razorpayGateway, 'verifyPaymentSignature').mockReturnValueOnce(true);
 			jest.spyOn(restaurantWalletRepository, 'findByRestaurantId').mockResolvedValueOnce(null);
+			jest
+				.spyOn(restaurantWalletRepository, 'create')
+				.mockImplementationOnce(async (wallet) => wallet);
 
 			const mockTx = new PaymentTransaction({
 				id: 'b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e',

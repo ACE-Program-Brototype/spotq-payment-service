@@ -60,7 +60,7 @@ export class RestaurantWalletController {
 	withdraw = async (req: Request, res: Response) => {
 		const { restaurantId } = req.user ?? {};
 		const { amountPaise, mode } = req.body as WithdrawFromRestaurantWalletBody;
-		
+
 		if (!restaurantId) throw new RestaurantIdNotFound();
 
 		const response = await this.withdrawFromRestaurantWalletUseCase.execute({
@@ -69,6 +69,11 @@ export class RestaurantWalletController {
 			mode,
 		});
 
-		return sendSuccessResponse(res, response, 'Withdrawal initiated successfully', HTTP_STATUS.OK);
+		return sendSuccessResponse(
+			res,
+			response,
+			MESSAGES.WITHDRAWAL_INITIATED_SUCCESS,
+			HTTP_STATUS.OK,
+		);
 	};
 }

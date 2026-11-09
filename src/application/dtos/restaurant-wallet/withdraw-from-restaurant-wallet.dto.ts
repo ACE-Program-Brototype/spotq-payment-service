@@ -1,3 +1,4 @@
+import type { WalletLedgerStatus } from '@domain/constants/wallet-ledger.constants';
 import type { RestaurantWalletWithdrawalMode } from '@shared/constants/restaurant-wallet.constants.ts';
 
 export type { RestaurantWalletWithdrawalMode } from '@shared/constants/restaurant-wallet.constants.ts';
@@ -17,6 +18,6 @@ export interface WithdrawFromRestaurantWalletOutputDTO {
 		accountNumberMasked: string;
 		mode: RestaurantWalletWithdrawalMode;
 	};
-	status: 'PROCESSING';
+	status: WalletLedgerStatus;
 	createdAt: string;
 }

@@ -67,8 +67,9 @@ export enum MessageEnum {
 	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
 
 	// restaurant wallet
-	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet recieved successfully',
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet received successfully',
 	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS = 'Bank account linked successfully',
+	WITHDRAWAL_INITIATED_SUCCESS = 'Withdrawal initiated successfully',
 	BANK_NAME_REQUIRED = 'Bank name is required',
 	INVALID_BANK_ACCOUNT_NUMBER = 'Account number must contain 9 to 18 digits',
 	INVALID_IFSC_CODE = 'IFSC code is invalid',
@@ -178,6 +179,7 @@ export const MESSAGES = {
 	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS: MessageEnum.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
 	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS:
 		MessageEnum.LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS,
+	WITHDRAWAL_INITIATED_SUCCESS: MessageEnum.WITHDRAWAL_INITIATED_SUCCESS,
 	BANK_NAME_REQUIRED: MessageEnum.BANK_NAME_REQUIRED,
 	INVALID_BANK_ACCOUNT_NUMBER: MessageEnum.INVALID_BANK_ACCOUNT_NUMBER,
 	INVALID_IFSC_CODE: MessageEnum.INVALID_IFSC_CODE,

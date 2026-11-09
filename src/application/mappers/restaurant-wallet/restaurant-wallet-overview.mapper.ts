@@ -22,6 +22,7 @@ export const RestaurantWalletOverviewMapper = {
 				todayCreditsPaise: Number(overview.todayStats.todayCreditsPaise),
 				todayRefundsPaise: Number(overview.todayStats.todayRefundsPaise),
 				withdrawnPaise: Number(overview.todayStats.withdrawnPaise),
+				pendingWithdrawalsPaise: Number(overview.todayStats.pendingWithdrawalsPaise),
 				pendingPayoutsCount: overview.todayStats.pendingPayoutsCount,
 			},
 		};

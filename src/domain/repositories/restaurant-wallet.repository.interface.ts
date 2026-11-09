@@ -1,11 +1,12 @@
-import type { RestaurantWallet } from '../entities/restaurant-wallet.entity.ts';
 import type { WalletWithdrawalFailureStatus } from '../constants/wallet-ledger.constants.ts';
+import type { RestaurantWallet } from '../entities/restaurant-wallet.entity.ts';
 import type { IBaseRepository } from './base.repository.interface.ts';
 
 export interface RestaurantWalletTodayStats {
 	todayCreditsPaise: bigint;
 	todayRefundsPaise: bigint;
 	withdrawnPaise: bigint;
+	pendingWithdrawalsPaise: bigint;
 	pendingPayoutsCount: number;
 }
 
@@ -36,7 +37,7 @@ export interface IRestaurantWalletRepository extends IBaseRepository<RestaurantW
 		nextBusinessDayStart: Date,
 	): Promise<bigint>;
 	reserveWithdrawal(
-		restaurantId: string,
+		walletId: string,
 		amountPaise: bigint,
 		reference: string,
 	): Promise<WalletWithdrawalReservation>;

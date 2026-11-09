@@ -2,6 +2,7 @@ import type {
 	LinkRestaurantWalletBankAccountInputDTO,
 	LinkRestaurantWalletBankAccountOutputDTO,
 } from '@application/dtos/restaurant-wallet/link-restaurant-wallet-bank-account.dto';
+import { LinkBankAccountMapper } from '@application/mappers';
 import type { ILogger } from '@application/ports/services/logger.service.port';
 import type { ILinkBankAccountUseCase } from '@application/ports/use-cases/restaurant-wallet/link-bank-account.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
@@ -47,8 +48,7 @@ export class LinkBankAccountUseCase implements ILinkBankAccountUseCase {
 		// if not create a new fundAccount and deactivates current one
 		if (previousFundAccountId) {
 			try {
-				const existingFundAccount =
-					await this.paymentGateway.getFundAccount(previousFundAccountId);
+				const existingFundAccount = await this.paymentGateway.getFundAccount(previousFundAccountId);
 
 				const isSameAccount =
 					existingFundAccount.accountNumber === accountNumber &&
@@ -89,10 +89,7 @@ export class LinkBankAccountUseCase implements ILinkBankAccountUseCase {
 		await this.walletRepository.update(wallet.id, wallet);
 
 		// if created new fund Account and prev exists deactivate the previous account
-		if (
-			previousFundAccountId &&
-			previousFundAccountId !== fundAccount.fundAccountId
-		) {
+		if (previousFundAccountId && previousFundAccountId !== fundAccount.fundAccountId) {
 			try {
 				await this.paymentGateway.deactivateFundAccount(previousFundAccountId);
 			} catch (error) {
@@ -103,11 +100,6 @@ export class LinkBankAccountUseCase implements ILinkBankAccountUseCase {
 			}
 		}
 
-		return {
-			isLinked: true,
-			bankName: fundAccount.bankName,
-			accountNumberMasked: `•••• •••• ${wallet.bankAccountLast4}`,
-			linkedAt: wallet.updatedAt.toISOString(),
-		};
+		return LinkBankAccountMapper.toDto(fundAccount.bankName, wallet);
 	}
 }

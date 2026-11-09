@@ -5,4 +5,5 @@ export * from './handle-webhook.use-case.ts';
 export * from './order-payment/index.ts';
 export * from './restaurant-wallet/get-restaurant-wallet-overview.use-case.ts';
 export * from './restaurant-wallet/link-bank-account.use-case.ts';
+export * from './restaurant-wallet/withdraw-from-restaurant-wallet.use-case.ts';
 export * from './verify-payment.use-case.ts';

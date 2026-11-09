@@ -13,6 +13,7 @@ export interface GetRestaurantWalletOverviewOutputDTO {
 		todayCreditsPaise: number;
 		todayRefundsPaise: number;
 		withdrawnPaise: number;
+		pendingWithdrawalsPaise: number;
 		pendingPayoutsCount: number;
 	};
 }

@@ -35,7 +35,7 @@ export class PrismaRestaurantWalletRepository
 
 	async create(wallet: RestaurantWallet): Promise<RestaurantWallet> {
 		const record = await this.prisma.restaurantWallet.create({
-			data: RestaurantWalletPersistenceMapper.toPersistance(wallet),
+			data: RestaurantWalletPersistenceMapper.toPersistence(wallet),
 		});
 		return RestaurantWalletPersistenceMapper.toDomain(record);
 	}
@@ -43,7 +43,7 @@ export class PrismaRestaurantWalletRepository
 	async update(id: string, wallet: RestaurantWallet): Promise<RestaurantWallet> {
 		const record = await this.prisma.restaurantWallet.update({
 			where: { id },
-			data: RestaurantWalletPersistenceMapper.toUpdatePersistance(wallet),
+			data: RestaurantWalletPersistenceMapper.toUpdatePersistence(wallet),
 		});
 		return RestaurantWalletPersistenceMapper.toDomain(record);
 	}
@@ -51,18 +51,17 @@ export class PrismaRestaurantWalletRepository
 	async getOverview(restaurantId: string): Promise<RestaurantWalletOverviewData | null> {
 		const query = Prisma.sql`
 			SELECT
-				jsonb_build_object(
-					'id', w.id,
-					'restaurantId', w.restaurant_id,
-					'balancePaise', w.balance_paise,
-					'currency', w.currency,
-					'isLocked', w.is_locked,
-					'razorpayFundAccountId', w.razorpay_fund_account_id,
-					'bankName', w.bank_name,
-					'bankAccountLast4', w.bank_account_last4,
-					'createdAt', w.created_at,
-					'updatedAt', w.updated_at
-				) AS wallet,
+				w.id AS "walletId",
+				w.restaurant_id AS "walletRestaurantId",
+				w.balance_paise AS "walletBalancePaise",
+				w.currency AS "walletCurrency",
+				w.is_locked AS "walletIsLocked",
+				w.razorpay_fund_account_id AS "walletRazorpayFundAccountId",
+				w.razorpay_contact_id AS "walletRazorpayContactId",
+				w.bank_name AS "walletBankName",
+				w.bank_account_last4 AS "walletBankAccountLast4",
+				w.created_at AS "walletCreatedAt",
+				w.updated_at AS "walletUpdatedAt",
 
 				COALESCE(SUM(le.amount_paise) FILTER (
 					WHERE le.type = ${Prisma.raw(`'${WALLET_LEDGER_TYPES.CREDIT_ORDER_PAYMENT}'`)}
@@ -78,6 +77,11 @@ export class PrismaRestaurantWalletRepository
 				), 0) AS "withdrawnPaise",
 
 				COALESCE(SUM(le.amount_paise) FILTER (
+					WHERE le.type = ${Prisma.raw(`'${WALLET_LEDGER_TYPES.DEBIT_PAYOUT_WITHDRAWAL}'`)}
+						AND le.status = ${Prisma.raw(`'${WALLET_LEDGER_STATUSES.PROCESSING}'`)}
+				), 0) AS "pendingWithdrawalsPaise",
+
+				COALESCE(SUM(le.amount_paise) FILTER (
 					WHERE le.type = ${Prisma.raw(`'${WALLET_LEDGER_TYPES.DEBIT_ORDER_REFUND}'`)}
 						AND le.created_at >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Kolkata')
 											AT TIME ZONE 'Asia/Kolkata'
@@ -88,7 +92,7 @@ export class PrismaRestaurantWalletRepository
 				COUNT(le.id) FILTER (
 					WHERE le.type = ${Prisma.raw(`'${WALLET_LEDGER_TYPES.DEBIT_PAYOUT_WITHDRAWAL}'`)}
 						AND le.status = ${Prisma.raw(`'${WALLET_LEDGER_STATUSES.PROCESSING}'`)}
-				) AS "pendingPayoutCount"
+				) AS "pendingPayoutsCount"
 
 			FROM restaurant_wallets w
 
@@ -99,7 +103,7 @@ export class PrismaRestaurantWalletRepository
 			GROUP BY w.id;
 `;
 		const walletRecord = await this.prisma.$queryRaw<RestaurantWalletOverviewRecord[]>(query);
-		if (!walletRecord) return null;
+		if (walletRecord.length === 0) return null;
 		return RestaurantWalletPersistenceMapper.toOverview(walletRecord[0]);
 	}
 
@@ -128,19 +132,14 @@ export class PrismaRestaurantWalletRepository
 		return credits - refunds;
 	}
 	async reserveWithdrawal(
-		restaurantId: string,
+		walletId: string,
 		amountPaise: bigint,
 		reference: string,
 	): Promise<WalletWithdrawalReservation> {
 		return this.prisma.$transaction(
 			async (transaction) => {
 				const wallet = await transaction.restaurantWallet.update({
-					where: {
-						restaurantId,
-						balancePaise: { gte: amountPaise },
-						isLocked: false,
-						razorpayFundAccountId: { not: null },
-					},
+					where: { id: walletId },
 					data: {
 						balancePaise: { decrement: amountPaise },
 					},

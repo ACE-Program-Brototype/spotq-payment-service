@@ -1,7 +1,7 @@
 import { restaurantWalletController } from '@di/controller.resolution';
 import { redisService } from '@infrastructure/redis/redis.service.ts';
 import { idempotencyMiddleware } from '@presentation/middleware/idempotency.middleware.ts';
-import { restaurantAdminAuthMiddleware } from '@presentation/middleware/restaurant-admin.auth.middleware';
+import { restaurantAdminAuthMiddleware } from '@presentation/middleware/restaurant-admin-auth.middleware.ts';
 import {
 	validateRequestBody,
 	validateRequestHeaders,

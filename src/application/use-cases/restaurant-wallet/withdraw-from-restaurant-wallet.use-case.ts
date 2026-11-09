@@ -3,13 +3,9 @@ import type {
 	WithdrawFromRestaurantWalletInputDTO,
 	WithdrawFromRestaurantWalletOutputDTO,
 } from '@application/dtos/restaurant-wallet/withdraw-from-restaurant-wallet.dto.ts';
+import { WithdrawFromRestaurantWalletMapper } from '@application/mappers';
 import type { IWithdrawFromRestaurantWalletUseCase } from '@application/ports/use-cases/restaurant-wallet/withdraw-from-restaurant-wallet.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { WALLET_LEDGER_STATUSES } from '@domain/constants/wallet-ledger.constants';
-import {
-	PaymentGatewayError,
-	PaymentGatewayRequestNotSentError,
-} from '@domain/errors/payment.errors.ts';
 import { RestaurantWalletNotFoundError } from '@domain/errors/restaurant.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
@@ -45,13 +41,12 @@ export class WithdrawFromRestaurantWalletUseCase implements IWithdrawFromRestaur
 
 		const reference = randomUUID();
 		const reservation = await this.walletRepository.reserveWithdrawal(
-			input.restaurantId,
+			wallet.id,
 			amountPaise,
 			reference,
 		);
 
-		let payoutId = reservation.withdrawalReference;
-
+		let payoutId: string;
 		try {
 			const payout = await this.paymentGateway.createPayout({
 				fundAccountId: reservation.fundAccountId,
@@ -62,28 +57,11 @@ export class WithdrawFromRestaurantWalletUseCase implements IWithdrawFromRestaur
 			});
 			payoutId = payout.payoutId;
 		} catch (error) {
-			if (
-				error instanceof PaymentGatewayRequestNotSentError ||
-				error instanceof PaymentGatewayError
-			) {
-				await this.walletRepository.failWithdrawal(reservation.withdrawalReference);
-				throw error;
-			}
-			// Keep other failures reserved until Razorpay's webhook confirms the payout outcome.
+			await this.walletRepository.failWithdrawal(reservation.withdrawalReference);
+			throw error;
 		}
 
-		return {
-			payoutId,
-			withdrawnPaise: Number(reservation.withdrawnPaise),
-			remainingBalancePaise: Number(reservation.remainingBalancePaise),
-			destination: {
-				bankName: reservation.bankName,
-				accountNumberMasked: `•••• •••• ${reservation.bankAccountLast4}`,
-				mode: input.mode,
-			},
-			status: WALLET_LEDGER_STATUSES.PROCESSING,
-			createdAt: reservation.createdAt.toISOString(),
-		};
+		return WithdrawFromRestaurantWalletMapper.toDto(payoutId, reservation, input.mode);
 	}
 
 	getIndiaBusinessDayBounds(now: Date): { todayStart: Date; tomorrowStart: Date } {

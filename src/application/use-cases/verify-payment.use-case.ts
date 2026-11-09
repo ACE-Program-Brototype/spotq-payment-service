@@ -111,7 +111,9 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		const now = new Date();
 		const currentPeriodEnd = plan.calculatePeriodEnd(now);
 
-		const wallet = this.restaurantWalletRepository.findByRestaurantId(existingTx.restaurantId);
+		const wallet = await this.restaurantWalletRepository.findByRestaurantId(
+			existingTx.restaurantId,
+		);
 
 		if (!wallet) {
 			const wallet = RestaurantWallet.create(existingTx.restaurantId);

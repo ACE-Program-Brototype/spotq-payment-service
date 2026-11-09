@@ -41,6 +41,12 @@ describe('RazorpayGateway Circuit Breaker Integration (SCRUM-1259)', () => {
 			expect(gateway.isHealthy()).toBe(true);
 		});
 
+		it('should gracefully nullify breakers on shutdown without errors', () => {
+			expect(gateway.isHealthy()).toBe(true);
+			gateway.shutdown();
+			expect(() => gateway.shutdown()).not.toThrow();
+		});
+
 		it('should successfully create an order through circuit breaker', async () => {
 			mockOrdersCreate.mockResolvedValueOnce({
 				id: 'order_test_123',
@@ -344,7 +350,7 @@ describe('RazorpayGateway Circuit Breaker Integration (SCRUM-1259)', () => {
 						currency: 'INR',
 						receiptId: `rcpt_slow_${i}`,
 					}),
-				).rejects.toThrow();
+				).rejects.toThrow(PaymentGatewayUnavailableError);
 			}
 
 			// Should trip to OPEN due to timeouts
@@ -360,6 +366,22 @@ describe('RazorpayGateway Circuit Breaker Integration (SCRUM-1259)', () => {
 				}),
 			).rejects.toThrow(PaymentGatewayUnavailableError);
 			expect(Date.now() - start).toBeLessThan(50);
+		});
+
+		it('should convert timeouts in getPaymentDetails and createRefund to PaymentGatewayUnavailableError', async () => {
+			mockPaymentsFetch.mockImplementation(
+				() => new Promise((resolve) => setTimeout(resolve, 250)),
+			);
+			await expect(gateway.getPaymentDetails('pay_slow')).rejects.toThrow(
+				PaymentGatewayUnavailableError,
+			);
+
+			mockPaymentsRefund.mockImplementation(
+				() => new Promise((resolve) => setTimeout(resolve, 250)),
+			);
+			await expect(
+				gateway.createRefund({ paymentId: 'pay_slow', amountInPaise: 1000 }),
+			).rejects.toThrow(PaymentGatewayUnavailableError);
 		});
 	});
 

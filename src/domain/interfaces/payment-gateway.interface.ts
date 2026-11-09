@@ -61,4 +61,5 @@ export interface IPaymentGateway {
 	verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string): boolean;
 	getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult>;
 	createRefund(params: CreateRefundParams): Promise<PaymentRefundResult>;
+	shutdown?(): void;
 }

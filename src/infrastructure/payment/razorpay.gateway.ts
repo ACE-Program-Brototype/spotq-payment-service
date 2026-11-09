@@ -16,7 +16,12 @@ import {
 	RAZORPAY_CIRCUIT_BREAKER,
 	RAZORPAY_ERROR_CODES,
 } from '@shared/constants/payment.constants.ts';
-import { CircuitBreaker, CircuitBreakerOpenError } from '@spotq-org/circuit-breaker';
+import {
+	CircuitBreaker,
+	CircuitBreakerOpenError,
+	type CircuitBreakerOptions,
+	CircuitBreakerTimeoutError,
+} from '@spotq-org/circuit-breaker';
 import { injectable } from 'inversify';
 import Razorpay from 'razorpay';
 import { setRazorpayClient } from './razorpay.client.ts';
@@ -94,6 +99,30 @@ export class RazorpayGateway implements IPaymentGateway {
 		}
 	}
 
+	private createBreakerOptions<TArgs extends unknown[], TReturn>(
+		name: string,
+		messages: { open: string; halfOpen: string; close: string },
+	): CircuitBreakerOptions<TArgs, TReturn> {
+		const cbConfig = config.razorpay.circuitBreaker;
+		return {
+			name,
+			timeoutMs: cbConfig.timeoutMs,
+			errorThresholdPercentage: cbConfig.errorThresholdPercent,
+			resetTimeoutMs: cbConfig.resetTimeoutMs,
+			volumeThreshold: cbConfig.volumeThreshold,
+			checkIsFailure: (err: unknown, ..._args: TArgs) => this.isGatewayFailure(err),
+			onOpen: () => {
+				logger.warn({ breaker: name, state: 'OPEN' }, messages.open);
+			},
+			onHalfOpen: () => {
+				logger.info({ breaker: name, state: 'HALF_OPEN' }, messages.halfOpen);
+			},
+			onClose: () => {
+				logger.info({ breaker: name, state: 'CLOSED' }, messages.close);
+			},
+		};
+	}
+
 	private setupCircuitBreakers(): void {
 		const client = this.client;
 		if (!client) {
@@ -102,70 +131,26 @@ export class RazorpayGateway implements IPaymentGateway {
 
 		this.shutdown();
 
-		const cbConfig = config.razorpay.circuitBreaker;
-
 		this.ordersBreaker = new CircuitBreaker(
 			async (orderParams: RazorpayOrderPayload) => {
 				return (await client.orders.create(orderParams)) as RazorpayRawOrder;
 			},
-			{
-				name: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME,
-				timeoutMs: cbConfig.timeoutMs,
-				errorThresholdPercentage: cbConfig.errorThresholdPercent,
-				resetTimeoutMs: cbConfig.resetTimeoutMs,
-				volumeThreshold: cbConfig.volumeThreshold,
-				checkIsFailure: (err) => this.isGatewayFailure(err),
-				onOpen: () => {
-					logger.warn(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, state: 'OPEN' },
-						MESSAGES.RAZORPAY_ORDERS_CB_OPEN,
-					);
-				},
-				onHalfOpen: () => {
-					logger.info(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, state: 'HALF_OPEN' },
-						MESSAGES.RAZORPAY_ORDERS_CB_HALF_OPEN,
-					);
-				},
-				onClose: () => {
-					logger.info(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, state: 'CLOSED' },
-						MESSAGES.RAZORPAY_ORDERS_CB_CLOSED,
-					);
-				},
-			},
+			this.createBreakerOptions(RAZORPAY_CIRCUIT_BREAKER.ORDERS_BREAKER_NAME, {
+				open: MESSAGES.RAZORPAY_ORDERS_CB_OPEN,
+				halfOpen: MESSAGES.RAZORPAY_ORDERS_CB_HALF_OPEN,
+				close: MESSAGES.RAZORPAY_ORDERS_CB_CLOSED,
+			}),
 		);
 
 		this.paymentsBreaker = new CircuitBreaker(
 			async (paymentId: string) => {
 				return (await client.payments.fetch(paymentId)) as unknown as RazorpayRawPayment;
 			},
-			{
-				name: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME,
-				timeoutMs: cbConfig.timeoutMs,
-				errorThresholdPercentage: cbConfig.errorThresholdPercent,
-				resetTimeoutMs: cbConfig.resetTimeoutMs,
-				volumeThreshold: cbConfig.volumeThreshold,
-				checkIsFailure: (err) => this.isGatewayFailure(err),
-				onOpen: () => {
-					logger.warn(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, state: 'OPEN' },
-						MESSAGES.RAZORPAY_PAYMENTS_CB_OPEN,
-					);
-				},
-				onHalfOpen: () => {
-					logger.info(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, state: 'HALF_OPEN' },
-						MESSAGES.RAZORPAY_PAYMENTS_CB_HALF_OPEN,
-					);
-				},
-				onClose: () => {
-					logger.info(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, state: 'CLOSED' },
-						MESSAGES.RAZORPAY_PAYMENTS_CB_CLOSED,
-					);
-				},
-			},
+			this.createBreakerOptions(RAZORPAY_CIRCUIT_BREAKER.PAYMENTS_BREAKER_NAME, {
+				open: MESSAGES.RAZORPAY_PAYMENTS_CB_OPEN,
+				halfOpen: MESSAGES.RAZORPAY_PAYMENTS_CB_HALF_OPEN,
+				close: MESSAGES.RAZORPAY_PAYMENTS_CB_CLOSED,
+			}),
 		);
 
 		this.refundsBreaker = new CircuitBreaker(
@@ -175,32 +160,11 @@ export class RazorpayGateway implements IPaymentGateway {
 					refundParams,
 				)) as unknown as RazorpayRawRefund;
 			},
-			{
-				name: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME,
-				timeoutMs: cbConfig.timeoutMs,
-				errorThresholdPercentage: cbConfig.errorThresholdPercent,
-				resetTimeoutMs: cbConfig.resetTimeoutMs,
-				volumeThreshold: cbConfig.volumeThreshold,
-				checkIsFailure: (err) => this.isGatewayFailure(err),
-				onOpen: () => {
-					logger.warn(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, state: 'OPEN' },
-						MESSAGES.RAZORPAY_REFUNDS_CB_OPEN,
-					);
-				},
-				onHalfOpen: () => {
-					logger.info(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, state: 'HALF_OPEN' },
-						MESSAGES.RAZORPAY_REFUNDS_CB_HALF_OPEN,
-					);
-				},
-				onClose: () => {
-					logger.info(
-						{ breaker: RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, state: 'CLOSED' },
-						MESSAGES.RAZORPAY_REFUNDS_CB_CLOSED,
-					);
-				},
-			},
+			this.createBreakerOptions(RAZORPAY_CIRCUIT_BREAKER.REFUNDS_BREAKER_NAME, {
+				open: MESSAGES.RAZORPAY_REFUNDS_CB_OPEN,
+				halfOpen: MESSAGES.RAZORPAY_REFUNDS_CB_HALF_OPEN,
+				close: MESSAGES.RAZORPAY_REFUNDS_CB_CLOSED,
+			}),
 		);
 	}
 
@@ -269,7 +233,7 @@ export class RazorpayGateway implements IPaymentGateway {
 				receipt: order.receipt ?? undefined,
 			};
 		} catch (error) {
-			if (error instanceof CircuitBreakerOpenError) {
+			if (error instanceof CircuitBreakerOpenError || error instanceof CircuitBreakerTimeoutError) {
 				logger.warn({ err: error }, MESSAGES.FAST_FAIL_ORDER_CREATION_CB_OPEN);
 				throw new PaymentGatewayUnavailableError();
 			}
@@ -333,7 +297,7 @@ export class RazorpayGateway implements IPaymentGateway {
 			const payment = await this.paymentsBreaker.execute(paymentId);
 			return payment as unknown as PaymentDetailsResult;
 		} catch (error) {
-			if (error instanceof CircuitBreakerOpenError) {
+			if (error instanceof CircuitBreakerOpenError || error instanceof CircuitBreakerTimeoutError) {
 				logger.warn({ err: error, paymentId }, MESSAGES.FAST_FAIL_PAYMENT_FETCH_CB_OPEN);
 				throw new PaymentGatewayUnavailableError();
 			}
@@ -362,7 +326,7 @@ export class RazorpayGateway implements IPaymentGateway {
 				arn: refund.arn,
 			};
 		} catch (error) {
-			if (error instanceof CircuitBreakerOpenError) {
+			if (error instanceof CircuitBreakerOpenError || error instanceof CircuitBreakerTimeoutError) {
 				logger.warn({ err: error, paymentId: params.paymentId }, MESSAGES.FAST_FAIL_REFUND_CB_OPEN);
 				throw new PaymentGatewayUnavailableError();
 			}

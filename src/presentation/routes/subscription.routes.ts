@@ -16,7 +16,7 @@ import {
 	subscriptionBillingHistoryQuerySchema,
 } from '@presentation/validators/subscriptions/subscription-billing-history.validator.ts';
 import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
-import { type Request, type Response, Router } from 'express';
+import { Router } from 'express';
 
 export const subscriptionRouter = Router();
 
@@ -32,7 +32,7 @@ const getBillingHistoryPipeline = [
 	restaurantAdminAuthMiddleware,
 	validateRequestParams(subscriptionBillingHistoryParamsSchema),
 	validateRequestQuery(subscriptionBillingHistoryQuerySchema),
-	(req: Request, res: Response) => subscriptionController.getBillingHistory(req, res),
+	subscriptionController.getBillingHistory,
 ] as const;
 
 subscriptionRouter.get(SUBSCRIPTION_ROUTES.PLANS, (req, res) =>

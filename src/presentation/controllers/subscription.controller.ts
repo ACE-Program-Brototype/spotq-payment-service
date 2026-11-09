@@ -127,35 +127,26 @@ export class SubscriptionController {
 	};
 
 	getBillingHistory = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const params = (res.locals.params ?? req.params) as SubscriptionBillingHistoryParamsDTO;
-			const query = (res.locals.query ?? req.query) as SubscriptionBillingHistoryQueryDTO;
+		const params = (res.locals.params ?? req.params) as SubscriptionBillingHistoryParamsDTO;
+		const query = (res.locals.query ?? req.query) as SubscriptionBillingHistoryQueryDTO;
 
-			const userRestaurantId = req.headers['x-restaurant-id'] as string;
-			const userRole = (req.headers['x-user-role'] as string)?.toUpperCase().trim();
+		const userRestaurantId = req.headers['x-restaurant-id'] as string;
+		const userRole = (req.headers['x-user-role'] as string)?.toUpperCase().trim();
 
-			if (userRole !== 'PLATFORM_ADMIN' && userRole !== 'SUPER_ADMIN') {
-				if (userRestaurantId !== params.restaurantId) {
-					throw new ForbiddenSubscriptionAccessError();
-				}
+		if (userRole !== 'PLATFORM_ADMIN' && userRole !== 'SUPER_ADMIN') {
+			if (userRestaurantId !== params.restaurantId) {
+				throw new ForbiddenSubscriptionAccessError();
 			}
-
-			const result = await this.getSubscriptionBillingHistoryUseCase.execute({
-				restaurantId: params.restaurantId,
-				page: query.page,
-				limit: query.limit,
-				status: query.status,
-			});
-
-			sendSuccessResponse(
-				res,
-				result,
-				MESSAGES.SUBSCRIPTION_BILLING_HISTORY_FETCHED,
-				HTTP_STATUS.OK,
-			);
-		} catch (error: unknown) {
-			this.handleError(res, error);
 		}
+
+		const result = await this.getSubscriptionBillingHistoryUseCase.execute({
+			restaurantId: params.restaurantId,
+			page: query.page,
+			limit: query.limit,
+			status: query.status,
+		});
+
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_BILLING_HISTORY_FETCHED, HTTP_STATUS.OK);
 	};
 
 	verifyPayment = async (req: Request, res: Response): Promise<void> => {

@@ -57,6 +57,14 @@ export const INVOICE_STATUS = {
 	VOID: 'VOID',
 } as const;
 
+export const SUBSCRIPTION_BILLING_HISTORY_PAGINATION = {
+	DEFAULT_PAGE: 1,
+	DEFAULT_LIMIT: 10,
+	MAX_LIMIT: 50,
+} as const;
+
+export const INVOICE_URL_EXPIRATION_SECONDS = 900;
+
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS];
 export type InvoiceStatus = (typeof INVOICE_STATUS)[keyof typeof INVOICE_STATUS];
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];

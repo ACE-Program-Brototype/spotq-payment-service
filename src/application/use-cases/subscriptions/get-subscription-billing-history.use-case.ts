@@ -8,12 +8,11 @@ import type { IGetSubscriptionBillingHistoryUseCase } from '@application/ports/u
 import { TYPES } from '@di/types.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import {
+	INVOICE_URL_EXPIRATION_SECONDS,
+	SUBSCRIPTION_BILLING_HISTORY_PAGINATION,
+} from '@shared/constants/index.ts';
 import { inject, injectable } from 'inversify';
-
-const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
-const MAX_LIMIT = 50;
-const INVOICE_URL_EXPIRATION_SECONDS = 900;
 
 @injectable()
 export class GetSubscriptionBillingHistoryUseCase implements IGetSubscriptionBillingHistoryUseCase {
@@ -27,8 +26,12 @@ export class GetSubscriptionBillingHistoryUseCase implements IGetSubscriptionBil
 	async execute(
 		dto: GetSubscriptionBillingHistoryQueryDTO,
 	): Promise<SubscriptionBillingHistoryResponseDTO> {
-		const page = dto.page && dto.page > 0 ? dto.page : DEFAULT_PAGE;
-		const limit = dto.limit && dto.limit > 0 ? Math.min(dto.limit, MAX_LIMIT) : DEFAULT_LIMIT;
+		const page =
+			dto.page && dto.page > 0 ? dto.page : SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_PAGE;
+		const limit =
+			dto.limit && dto.limit > 0
+				? Math.min(dto.limit, SUBSCRIPTION_BILLING_HISTORY_PAGINATION.MAX_LIMIT)
+				: SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_LIMIT;
 
 		const { records, totalRecords } =
 			await this.transactionQueryRepository.findSubscriptionBillingTransactions({

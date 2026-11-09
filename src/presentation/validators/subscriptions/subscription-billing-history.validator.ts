@@ -1,4 +1,4 @@
-import { MESSAGES } from '@shared/constants/message.constants.ts';
+import { MESSAGES, SUBSCRIPTION_BILLING_HISTORY_PAGINATION } from '@shared/constants/index.ts';
 import { z } from 'zod';
 
 const emptyStringToUndefined = (val: unknown): unknown =>
@@ -14,7 +14,11 @@ export const subscriptionBillingHistoryQuerySchema = z
 	.object({
 		page: z.preprocess(
 			emptyStringToUndefined,
-			z.coerce.number().int().min(1, { message: MESSAGES.PAGE_MIN_ONE }).default(1),
+			z.coerce
+				.number()
+				.int()
+				.min(1, { message: MESSAGES.PAGE_MIN_ONE })
+				.default(SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_PAGE),
 		),
 		limit: z.preprocess(
 			emptyStringToUndefined,
@@ -22,8 +26,10 @@ export const subscriptionBillingHistoryQuerySchema = z
 				.number()
 				.int()
 				.min(1, { message: MESSAGES.LIMIT_MIN_ONE })
-				.max(50, { message: MESSAGES.LIMIT_MAX_FIFTY })
-				.default(10),
+				.max(SUBSCRIPTION_BILLING_HISTORY_PAGINATION.MAX_LIMIT, {
+					message: MESSAGES.LIMIT_MAX_FIFTY,
+				})
+				.default(SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_LIMIT),
 		),
 		status: z.preprocess(
 			emptyStringToUndefined,

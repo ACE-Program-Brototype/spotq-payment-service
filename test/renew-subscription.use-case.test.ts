@@ -75,6 +75,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		findByOrderId: jest.fn().mockResolvedValue(null),
 		findByCustomerOrderId: jest.fn().mockResolvedValue(null),
 		findByPaymentId: jest.fn().mockResolvedValue(null),
+		findCapturedByOrderId: jest.fn().mockResolvedValue(null),
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
 		findPendingRenewalBySubscriptionAndPlan: jest.fn().mockResolvedValue(null),
 		create: jest.fn().mockResolvedValue({ id: 'tx-renew-1' }),

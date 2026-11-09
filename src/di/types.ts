@@ -38,6 +38,8 @@ export const TYPES = {
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
+		GetCustomerPaymentHistoryUseCase: Symbol.for('IGetCustomerPaymentHistoryUseCase'),
+		RetryCustomerPaymentUseCase: Symbol.for('IRetryCustomerPaymentUseCase'),
 		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
 		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
 		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
@@ -47,6 +49,7 @@ export const TYPES = {
 		SubscriptionController: Symbol.for('SubscriptionController'),
 		RestaurantTransactionController: Symbol.for('RestaurantTransactionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
+		CustomerPaymentController: Symbol.for('CustomerPaymentController'),
 		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
 	},
 } as const;

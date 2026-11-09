@@ -93,3 +93,25 @@ export const OUTBOX_STATUS = {
 } as const;
 
 export type OutboxStatus = (typeof OUTBOX_STATUS)[keyof typeof OUTBOX_STATUS];
+
+export const PAYMENT_SORT_FIELDS = {
+	CREATED_AT: 'createdAt',
+	AMOUNT_PAISE: 'amountPaise',
+} as const;
+
+export type PaymentSortField = (typeof PAYMENT_SORT_FIELDS)[keyof typeof PAYMENT_SORT_FIELDS];
+
+export const SORT_DIRECTIONS = {
+	ASC: 'asc',
+	DESC: 'desc',
+} as const;
+
+export type SortDirection = (typeof SORT_DIRECTIONS)[keyof typeof SORT_DIRECTIONS];
+
+export const PAGINATION = {
+	DEFAULT_PAGE: 1,
+	DEFAULT_LIMIT: 10,
+	MAX_LIMIT: 50,
+} as const;
+
+export const PENDING_ORDER_REUSE_WINDOW_MS = 15 * 60 * 1000;

@@ -95,6 +95,14 @@ export enum MessageEnum {
 	INVALID_DATE_FORMAT = 'Date must be a valid calendar date in YYYY-MM-DD format',
 	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
 
+	// customer payment history & retry (SCRUM-35)
+	PAYMENT_HISTORY_RETRIEVED = 'Payment history retrieved successfully',
+	PAYMENT_RETRY_INITIATED = 'Payment retry initiated successfully',
+	ALREADY_PAID = 'The associated food order has already been successfully paid',
+	ORDER_EXPIRED = 'Payment retry window has expired',
+	NOT_RETRYABLE = 'Only failed payment transactions can be retried',
+
+	// subscription renewal (SCRUM-1241)
 	SUBSCRIPTION_RENEWAL_ORDER_CREATED = 'Subscription renewal order created successfully',
 	SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
 	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL = 'Subscription is not eligible for renewal',
@@ -210,6 +218,14 @@ export const MESSAGES = {
 	INVALID_DATE_FORMAT: MessageEnum.INVALID_DATE_FORMAT,
 	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
 
+	// customer payment history & retry (SCRUM-35)
+	PAYMENT_HISTORY_RETRIEVED: MessageEnum.PAYMENT_HISTORY_RETRIEVED,
+	PAYMENT_RETRY_INITIATED: MessageEnum.PAYMENT_RETRY_INITIATED,
+	ALREADY_PAID: MessageEnum.ALREADY_PAID,
+	ORDER_EXPIRED: MessageEnum.ORDER_EXPIRED,
+	NOT_RETRYABLE: MessageEnum.NOT_RETRYABLE,
+
+	// subscription renewal (SCRUM-1241)
 	SUBSCRIPTION_RENEWAL_ORDER_CREATED: MessageEnum.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
 	SUBSCRIPTION_NOT_FOUND: MessageEnum.SUBSCRIPTION_NOT_FOUND,
 	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL: MessageEnum.SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL,
@@ -238,6 +254,9 @@ export const ERROR_CODES = {
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
 	CONFLICT: 'CONFLICT',
+	ALREADY_PAID: 'ALREADY_PAID',
+	ORDER_EXPIRED: 'ORDER_EXPIRED',
+	NOT_RETRYABLE: 'NOT_RETRYABLE',
 	UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
 	BAD_GATEWAY: 'BAD_GATEWAY',
 } as const;

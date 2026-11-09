@@ -2,6 +2,7 @@ export * from './admin-subscribers/get-admin-subscriber-details.use-case.port.ts
 export * from './admin-subscribers/get-admin-subscribers.use-case.port.ts';
 export * from './create-order-payment.use-case.port.ts';
 export * from './create-subscription-order.use-case.port.ts';
+export * from './customer-payment/index.ts';
 export * from './get-order-payment-status.use-case.port.ts';
 export * from './get-subscription-plans.use-case.port.ts';
 export * from './get-subscription-status.use-case.port.ts';

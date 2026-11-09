@@ -7,6 +7,8 @@ import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-c
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
+import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
+import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases/get-order-payment-status.use-case.port.ts';
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
@@ -25,12 +27,14 @@ import {
 	CreateSubscriptionOrderUseCase,
 	GetAdminSubscriberDetailsUseCase,
 	GetAdminSubscribersUseCase,
+	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
 	ProcessOrderRefundUseCase,
 	RenewSubscriptionUseCase,
+	RetryCustomerPaymentUseCase,
 	VerifyOrderPaymentUseCase,
 	VerifyPaymentUseCase,
 } from '@application/use-cases/index.ts';
@@ -66,6 +70,7 @@ import { PrismaTransactionQueryRepository } from '@infrastructure/repositories/p
 import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
 import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subscription-expiry.service.ts';
 import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
+import { CustomerPaymentController } from '@presentation/controllers/customer-payment.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
 import { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
 import { RestaurantTransactionController } from '@presentation/controllers/restaurant-transaction.controller.ts';
@@ -195,6 +200,14 @@ container
 	.to(ExportPlatformLedgerUseCase);
 
 container
+	.bind<IGetCustomerPaymentHistoryUseCase>(TYPES.UseCases.GetCustomerPaymentHistoryUseCase)
+	.to(GetCustomerPaymentHistoryUseCase);
+
+container
+	.bind<IRetryCustomerPaymentUseCase>(TYPES.UseCases.RetryCustomerPaymentUseCase)
+	.to(RetryCustomerPaymentUseCase);
+
+container
 	.bind<ICreateOrderPaymentUseCase>(TYPES.UseCases.CreateOrderPaymentUseCase)
 	.to(CreateOrderPaymentUseCase);
 
@@ -236,6 +249,11 @@ container
 container
 	.bind<OrderPaymentController>(TYPES.Controllers.OrderPaymentController)
 	.to(OrderPaymentController)
+	.inSingletonScope();
+
+container
+	.bind<CustomerPaymentController>(TYPES.Controllers.CustomerPaymentController)
+	.to(CustomerPaymentController)
 	.inSingletonScope();
 
 container

@@ -3,6 +3,7 @@ import {
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
 	PaymentAlreadyRefundedError,
+	PaymentNotRetryableError,
 	PaymentOrderNotFoundError,
 	RefundAmountExceedsBalanceError,
 	RefundAmountInvalidError,
@@ -107,16 +108,18 @@ export class PaymentTransaction {
 
 	isOwnedBy(customerId: string): boolean {
 		if (!this.props.customerId) {
-			return true;
+			return false;
 		}
 		return this.props.customerId === customerId;
 	}
 
 	assertOwnership(customerId?: string): void {
-		if (this.props.customerId) {
-			if (!customerId || !this.isOwnedBy(customerId)) {
+		if (customerId) {
+			if (!this.isOwnedBy(customerId)) {
 				throw new CustomerUnauthorizedError();
 			}
+		} else if (this.props.customerId) {
+			throw new CustomerUnauthorizedError();
 		}
 	}
 
@@ -183,6 +186,15 @@ export class PaymentTransaction {
 		}
 		this.props.status = PAYMENT_STATUS.FAILED;
 		this.props.failureReason = reason;
+		this.props.updatedAt = new Date();
+	}
+
+	resetToCreated(): void {
+		if (this.props.status !== PAYMENT_STATUS.FAILED) {
+			throw new PaymentNotRetryableError();
+		}
+		this.props.status = PAYMENT_STATUS.CREATED;
+		this.props.failureReason = null;
 		this.props.updatedAt = new Date();
 	}
 

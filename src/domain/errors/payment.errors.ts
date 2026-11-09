@@ -70,6 +70,23 @@ export class InvalidPaymentStateTransitionError extends DomainError {
 	}
 }
 
+export class AlreadyPaidError extends DomainError {
+	constructor(message: string = MESSAGES.ALREADY_PAID) {
+		super(message, 'ALREADY_PAID');
+	}
+}
+
+export class OrderExpiredError extends DomainError {
+	constructor(message: string = MESSAGES.ORDER_EXPIRED) {
+		super(message, 'ORDER_EXPIRED');
+	}
+}
+
+export class PaymentNotRetryableError extends DomainError {
+	constructor(message: string = MESSAGES.NOT_RETRYABLE) {
+		super(message, 'NOT_RETRYABLE');
+	}
+}
 export class PaymentAlreadyRefundedError extends DomainError {
 	constructor(message: string = MESSAGES.PAYMENT_ALREADY_REFUNDED) {
 		super(message, 'PAYMENT_ALREADY_REFUNDED');

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { config } from '@config/index.ts';
 import {
+	InvalidBankAccountError,
 	PaymentGatewayError,
 	PaymentGatewayRequestNotSentError,
 } from '@domain/errors/payment.errors.ts';
@@ -83,15 +84,26 @@ export class RazorpayGateway implements IPaymentGateway {
 
 	async createOrder(params: CreateOrderParams): Promise<PaymentOrderResult> {
 		if (!this.client) {
-			throw new Error('Razorpay client is not initialized');
+			throw new PaymentGatewayError(MESSAGES.RAZORPAY_INITIALIZATION_FAILED);
 		}
 
-		const order = await this.client.orders.create({
-			amount: params.amountInPaise,
-			currency: params.currency,
-			receipt: params.receiptId,
-			notes: params.notes,
-		});
+		let order: {
+			id: string;
+			amount: number | string;
+			currency: string;
+			status: string;
+			receipt?: string | null;
+		};
+		try {
+			order = await this.client.orders.create({
+				amount: params.amountInPaise,
+				currency: params.currency,
+				receipt: params.receiptId,
+				notes: params.notes,
+			});
+		} catch (error) {
+			throw new PaymentGatewayError(this.getGatewayErrorMessage(error));
+		}
 
 		return {
 			orderId: order.id,
@@ -151,11 +163,16 @@ export class RazorpayGateway implements IPaymentGateway {
 
 	async getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult> {
 		if (!this.client) {
-			throw new Error('Razorpay client is not initialized');
+			throw new PaymentGatewayError(MESSAGES.RAZORPAY_INITIALIZATION_FAILED);
 		}
 
-		const payment = await this.client.payments.fetch(paymentId);
-		return payment as unknown as PaymentDetailsResult;
+		let payment: unknown;
+		try {
+			payment = await this.client.payments.fetch(paymentId);
+		} catch (error) {
+			throw new PaymentGatewayError(this.getGatewayErrorMessage(error));
+		}
+		return payment as PaymentDetailsResult;
 	}
 
 	private async razorpayXRequest<T>(
@@ -167,7 +184,7 @@ export class RazorpayGateway implements IPaymentGateway {
 		const { keyId, keySecret } = config.razorpay;
 
 		if (!keyId || !keySecret) {
-			throw new Error(MESSAGES.RAZORPAY_CONFIG_MISSING);
+			throw new PaymentGatewayError(MESSAGES.RAZORPAY_CONFIG_MISSING);
 		}
 
 		try {
@@ -188,16 +205,45 @@ export class RazorpayGateway implements IPaymentGateway {
 
 			return response.data;
 		} catch (error) {
-			logger.error(
-				{
-					method,
-					path,
-					status: axios.isAxiosError(error) ? error.response?.status : undefined,
-				},
-				`RazorpayX request failed: ${method} ${path}`,
-			);
-			throw error;
+			if (axios.isAxiosError(error)) {
+				const status = error.response?.status;
+				const razorpayError = error.response?.data?.error;
+
+				logger.error(
+					{
+						method,
+						path,
+						status,
+						errorCode: razorpayError?.code,
+						reason: razorpayError?.reason,
+					},
+					`RazorpayX request failed: ${method} ${path}`,
+				);
+
+				if (
+					path === RAZORPAY_X_PATH.FUND_ACCOUNTS &&
+					method === RAZORPAY_HTTP_METHOD.POST &&
+					status === 400 &&
+					razorpayError?.reason === 'input_validation_failed'
+				) {
+					throw new InvalidBankAccountError(
+						razorpayError.description ?? MESSAGES.INVALID_BANK_ACCOUNT_DETAILS,
+					);
+				}
+			}
+
+			throw new PaymentGatewayError(this.getGatewayErrorMessage(error));
 		}
+	}
+
+	private getGatewayErrorMessage(error: unknown): string {
+		if (axios.isAxiosError(error)) {
+			return (
+				error.response?.data?.error?.description ?? error.message ?? MESSAGES.PAYMENT_GATEWAY_ERROR
+			);
+		}
+
+		return error instanceof Error ? error.message : MESSAGES.PAYMENT_GATEWAY_ERROR;
 	}
 
 	async createContact(name: string): Promise<{ contactId: string }> {
@@ -322,7 +368,13 @@ export class RazorpayGateway implements IPaymentGateway {
 			) {
 				throw new PaymentGatewayError('RazorpayX rejected the payout request');
 			}
-			throw error;
+			if (
+				error instanceof PaymentGatewayError ||
+				error instanceof PaymentGatewayRequestNotSentError
+			) {
+				throw error;
+			}
+			throw new PaymentGatewayError(this.getGatewayErrorMessage(error));
 		}
 	}
 }

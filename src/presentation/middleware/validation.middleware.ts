@@ -11,8 +11,10 @@ export function validateRequestBody(schema: ZodType) {
 export function validateRequestParams(schema: ZodType) {
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 		const parsed = await schema.parseAsync(req.params ?? {});
-		res.locals.params = parsed;
-		req.params = parsed as Record<string, string>;
+		if (res.locals) {
+			res.locals.params = parsed;
+		}
+		Object.defineProperty(req, 'params', { value: parsed, writable: true, configurable: true });
 		next();
 	};
 }
@@ -20,13 +22,10 @@ export function validateRequestParams(schema: ZodType) {
 export function validateRequestQuery(schema: ZodType) {
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 		const parsed = await schema.parseAsync(req.query ?? {});
-		res.locals.query = parsed;
-		if (req.query && typeof req.query === 'object') {
-			for (const key of Object.keys(req.query)) {
-				delete (req.query as Record<string, unknown>)[key];
-			}
-			Object.assign(req.query, parsed);
+		if (res.locals) {
+			res.locals.query = parsed;
 		}
+		Object.defineProperty(req, 'query', { value: parsed, writable: true, configurable: true });
 		next();
 	};
 }

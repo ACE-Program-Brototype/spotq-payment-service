@@ -49,5 +49,41 @@ export function restaurantAdminAuthMiddleware(
 		return;
 	}
 
+	const email = (req.headers['x-user-email'] as string) || '';
+
+	req.user = {
+		userId,
+		restaurantId,
+		email,
+		role: normalizedRole,
+	};
+
+	next();
+}
+
+export function verifyRestaurantTenantAccess(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+): void {
+	const user = req.user;
+	const targetRestaurantId = req.params?.restaurantId;
+
+	if (
+		targetRestaurantId &&
+		user?.role !== USER_ROLES.PLATFORM_ADMIN &&
+		user?.role !== USER_ROLES.ADMIN
+	) {
+		if (user?.restaurantId !== targetRestaurantId) {
+			sendErrorResponse(
+				res,
+				MESSAGES.FORBIDDEN_SUBSCRIPTION_ACCESS,
+				'FORBIDDEN_SUBSCRIPTION_ACCESS',
+				HTTP_STATUS.FORBIDDEN,
+			);
+			return;
+		}
+	}
+
 	next();
 }

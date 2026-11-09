@@ -1,5 +1,8 @@
 import { subscriptionController } from '@di/controller.resolution.ts';
-import { restaurantAdminAuthMiddleware } from '@presentation/middleware/restaurant-admin-auth.middleware.ts';
+import {
+	restaurantAdminAuthMiddleware,
+	verifyRestaurantTenantAccess,
+} from '@presentation/middleware/restaurant-admin-auth.middleware.ts';
 import {
 	validateRequestBody,
 	validateRequestHeaders,
@@ -32,6 +35,7 @@ const getBillingHistoryPipeline = [
 	restaurantAdminAuthMiddleware,
 	validateRequestParams(subscriptionBillingHistoryParamsSchema),
 	validateRequestQuery(subscriptionBillingHistoryQuerySchema),
+	verifyRestaurantTenantAccess,
 	subscriptionController.getBillingHistory,
 ] as const;
 

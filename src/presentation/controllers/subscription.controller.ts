@@ -6,7 +6,7 @@ import type { IGetSubscriptionBillingHistoryUseCase } from '@application/ports/u
 import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { DomainError, ForbiddenSubscriptionAccessError } from '@domain/errors/payment.errors.ts';
+import { DomainError } from '@domain/errors/payment.errors.ts';
 import type {
 	RenewSubscriptionBodyDTO,
 	RenewSubscriptionHeadersDTO,
@@ -22,7 +22,6 @@ import {
 	HTTP_HEADERS,
 	HTTP_STATUS,
 	MESSAGES,
-	USER_ROLES,
 } from '@shared/constants/index.ts';
 import { sendErrorResponse, sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
@@ -128,20 +127,11 @@ export class SubscriptionController {
 	};
 
 	getBillingHistory = async (req: Request, res: Response): Promise<void> => {
-		const params = (res.locals.params ?? req.params) as SubscriptionBillingHistoryParamsDTO;
-		const query = (res.locals.query ?? req.query) as SubscriptionBillingHistoryQueryDTO;
-
-		const userRestaurantId = req.headers['x-restaurant-id'] as string;
-		const userRole = (req.headers['x-user-role'] as string)?.toUpperCase().trim();
-
-		if (userRole !== USER_ROLES.PLATFORM_ADMIN && userRole !== USER_ROLES.ADMIN) {
-			if (userRestaurantId !== params.restaurantId) {
-				throw new ForbiddenSubscriptionAccessError();
-			}
-		}
+		const { restaurantId } = req.params as unknown as SubscriptionBillingHistoryParamsDTO;
+		const query = req.query as unknown as SubscriptionBillingHistoryQueryDTO;
 
 		const result = await this.getSubscriptionBillingHistoryUseCase.execute({
-			restaurantId: params.restaurantId,
+			restaurantId,
 			page: query.page,
 			limit: query.limit,
 			status: query.status,

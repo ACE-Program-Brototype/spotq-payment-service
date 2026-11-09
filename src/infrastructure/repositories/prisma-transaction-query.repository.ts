@@ -9,6 +9,7 @@ import type {
 	TransactionFilterParams,
 	TransactionSummary,
 } from '@domain/types/transaction-query.types.ts';
+import { SubscriptionBillingHistoryPersistenceMapper } from '@infrastructure/mappers/subscription-billing-history.persistence-mapper.ts';
 import type { PaymentStatus, Prisma } from '@prisma/client';
 import { DEFAULT_PAYMENT_METHOD } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
@@ -313,32 +314,7 @@ export class PrismaTransactionQueryRepository
 		]);
 
 		return {
-			records: records.map((record) => {
-				const plan = record.plan ?? record.subscription?.plan ?? null;
-				const invoice = record.invoices[0] ?? null;
-
-				return {
-					id: record.id,
-					amountPaise: record.amountPaise,
-					currency: record.currency,
-					status: record.status,
-					razorpayPaymentId: record.razorpayPaymentId,
-					createdAt: record.createdAt,
-					plan: plan
-						? {
-								code: plan.code,
-								name: plan.name,
-								billingCycle: plan.billingCycle,
-							}
-						: null,
-					invoice: invoice
-						? {
-								invoiceNumber: invoice.invoiceNumber,
-								invoicePdfKey: invoice.invoicePdfKey,
-							}
-						: null,
-				};
-			}),
+			records: records.map(SubscriptionBillingHistoryPersistenceMapper.toDomain),
 			totalRecords,
 		};
 	}

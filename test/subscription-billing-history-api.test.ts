@@ -105,14 +105,6 @@ describe('Subscription Billing History API (HTTP Integration)', () => {
 		});
 	});
 
-	it('should support querying via API_V1 path prefix', async () => {
-		const apiV1Url = SUBSCRIPTION_ROUTES.API_V1_HISTORY.replace(':restaurantId', mockRestaurantId);
-		const res = await request(app).get(apiV1Url).set(validHeaders);
-
-		expect(res.status).toBe(HTTP_STATUS.OK);
-		expect(res.body.data.transactions).toBeDefined();
-	});
-
 	it('should pass pagination and status filters to use case and repository', async () => {
 		const res = await request(app)
 			.get(`${buildUrl()}?page=2&limit=5&status=SUCCESS`)

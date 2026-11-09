@@ -13,7 +13,6 @@ export const SUBSCRIPTION_ROUTES = {
 	STATUS_BY_RESTAURANT: '/subscriptions/status/:restaurantId',
 	RENEW: '/subscriptions/:subscriptionId/renew',
 	HISTORY: '/subscriptions/restaurants/:restaurantId/history',
-	API_V1_HISTORY: '/api/v1/payments/subscriptions/restaurants/:restaurantId/history',
 	WEBHOOK: '/webhook',
 } as const;
 

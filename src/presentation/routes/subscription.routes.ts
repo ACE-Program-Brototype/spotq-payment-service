@@ -40,7 +40,6 @@ subscriptionRouter.get(SUBSCRIPTION_ROUTES.PLANS, (req, res) =>
 );
 
 subscriptionRouter.get(SUBSCRIPTION_ROUTES.HISTORY, ...getBillingHistoryPipeline);
-subscriptionRouter.get(SUBSCRIPTION_ROUTES.API_V1_HISTORY, ...getBillingHistoryPipeline);
 
 subscriptionRouter.post(SUBSCRIPTION_ROUTES.ORDER, (req, res) =>
 	subscriptionController.createOrder(req, res),

@@ -3,6 +3,7 @@ import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type { PaginatedSubscriptionBillingHistoryResult } from '@domain/types/transaction-query.types.ts';
+import { USER_ROLES } from '@shared/constants/auth.constants.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
 import { ERROR_CODES, MESSAGES } from '@shared/constants/message.constants.ts';
 import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
@@ -163,7 +164,7 @@ describe('Subscription Billing History API (HTTP Integration)', () => {
 		const res = await request(app).get(buildUrl(otherRestaurantId)).set({
 			'x-restaurant-id': mockRestaurantId,
 			'x-user-id': mockUserId,
-			'x-user-role': 'PLATFORM_ADMIN',
+			'x-user-role': USER_ROLES.PLATFORM_ADMIN,
 		});
 
 		expect(res.status).toBe(HTTP_STATUS.OK);

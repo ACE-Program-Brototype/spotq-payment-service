@@ -22,6 +22,7 @@ import {
 	HTTP_HEADERS,
 	HTTP_STATUS,
 	MESSAGES,
+	USER_ROLES,
 } from '@shared/constants/index.ts';
 import { sendErrorResponse, sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
@@ -133,7 +134,7 @@ export class SubscriptionController {
 		const userRestaurantId = req.headers['x-restaurant-id'] as string;
 		const userRole = (req.headers['x-user-role'] as string)?.toUpperCase().trim();
 
-		if (userRole !== 'PLATFORM_ADMIN' && userRole !== 'SUPER_ADMIN') {
+		if (userRole !== USER_ROLES.PLATFORM_ADMIN && userRole !== USER_ROLES.SUPER_ADMIN) {
 			if (userRestaurantId !== params.restaurantId) {
 				throw new ForbiddenSubscriptionAccessError();
 			}

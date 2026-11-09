@@ -1,18 +1,18 @@
-import { ERROR_CODES, HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
+import { ERROR_CODES, HTTP_STATUS, MESSAGES, USER_ROLES } from '@shared/constants/index.ts';
 import { sendErrorResponse } from '@shared/response/api-response.ts';
 import type { NextFunction, Request, Response } from 'express';
 
-const ALLOWED_ROLES = new Set([
-	'RESTAURANT_OWNER',
-	'RESTAURANT_ADMIN',
-	'RESTAURANT',
-	'OWNER',
-	'ADMIN',
-	'PLATFORM_ADMIN',
-	'SUPER_ADMIN',
-	'STAFF',
-	'RESTAURANT_STAFF',
-	'MANAGER',
+const ALLOWED_ROLES = new Set<string>([
+	USER_ROLES.RESTAURANT_OWNER,
+	USER_ROLES.RESTAURANT_ADMIN,
+	USER_ROLES.RESTAURANT,
+	USER_ROLES.OWNER,
+	USER_ROLES.ADMIN,
+	USER_ROLES.PLATFORM_ADMIN,
+	USER_ROLES.SUPER_ADMIN,
+	USER_ROLES.STAFF,
+	USER_ROLES.RESTAURANT_STAFF,
+	USER_ROLES.MANAGER,
 ]);
 
 export function restaurantAdminAuthMiddleware(

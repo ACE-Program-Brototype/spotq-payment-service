@@ -3,14 +3,22 @@ import type {
 	ActivateSubscriptionWithOutboxParams,
 	CreateSubscriptionInput,
 	ISubscriptionRepository,
+	RenewSubscriptionWithOutboxParams,
 } from '@domain/repositories/subscription.repository.interface.ts';
 import type {
 	PaginatedSubscribersResult,
 	SubscriberDetail,
 	SubscriberFilterParams,
 } from '@domain/types/subscriber-query.types.ts';
+import { InvoiceNumber } from '@domain/value-objects/index.ts';
+import { SubscriptionPersistenceMapper } from '@infrastructure/mappers/subscription.persistence-mapper.ts';
 import type { Prisma, SubscriptionStatus } from '@prisma/client';
-import { PAYMENT_STATUS, UUID_REGEX } from '@shared/constants/index.ts';
+import {
+	INVOICE_STATUS,
+	OUTBOX_STATUS,
+	PAYMENT_STATUS,
+	UUID_REGEX,
+} from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -178,21 +186,20 @@ export class PrismaSubscriptionRepository
 					where: { id: existingInvoice.id },
 					data: {
 						subscriptionId: subRecord.id,
-						status: 'PAID',
+						status: INVOICE_STATUS.PAID,
 						paidAt: new Date(),
 					},
 				});
 			} else if (existingTx) {
-				const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 				await tx.billingInvoice.create({
 					data: {
 						restaurantId: params.subscription.restaurantId,
 						subscriptionId: subRecord.id,
 						paymentTransactionId: existingTx.id,
-						invoiceNumber,
+						invoiceNumber: InvoiceNumber.generate(),
 						amountPaise: existingTx.amountPaise,
 						currency: existingTx.currency,
-						status: 'PAID',
+						status: INVOICE_STATUS.PAID,
 						paidAt: new Date(),
 					},
 				});
@@ -221,6 +228,100 @@ export class PrismaSubscriptionRepository
 				createdAt: subRecord.createdAt,
 				updatedAt: subRecord.updatedAt,
 			});
+		});
+	}
+
+	async renewSubscriptionWithOutbox(
+		params: RenewSubscriptionWithOutboxParams,
+	): Promise<Subscription> {
+		return this.prisma.$transaction(async (tx) => {
+			const existingTx = await tx.paymentTransaction.findUnique({
+				where: { razorpayOrderId: params.payment.razorpayOrderId },
+			});
+
+			if (existingTx?.status === PAYMENT_STATUS.SUCCESS && existingTx.subscriptionId) {
+				const existingSub = await tx.subscription.findUnique({
+					where: { id: existingTx.subscriptionId },
+				});
+				if (existingSub) {
+					return SubscriptionPersistenceMapper.toDomain(existingSub);
+				}
+			}
+
+			const updateResult = await tx.paymentTransaction.updateMany({
+				where: {
+					razorpayOrderId: params.payment.razorpayOrderId,
+					status: { not: PAYMENT_STATUS.SUCCESS },
+				},
+				data: {
+					status: PAYMENT_STATUS.SUCCESS,
+					razorpayPaymentId: params.payment.razorpayPaymentId,
+					razorpaySignature: params.payment.razorpaySignature,
+					subscriptionId: params.subscription.subscriptionId,
+				},
+			});
+
+			if (updateResult.count === 0) {
+				const concurrentSub = await tx.subscription.findUnique({
+					where: { id: params.subscription.subscriptionId },
+				});
+				if (concurrentSub) {
+					return SubscriptionPersistenceMapper.toDomain(concurrentSub);
+				}
+			}
+
+			const subRecord = await tx.subscription.update({
+				where: { id: params.subscription.subscriptionId },
+				data: {
+					planId: params.subscription.planId,
+					status: params.subscription.status,
+					currentPeriodStart: params.subscription.currentPeriodStart,
+					currentPeriodEnd: params.subscription.currentPeriodEnd,
+					canceledAt: null,
+				},
+			});
+
+			const existingInvoice = await tx.billingInvoice.findFirst({
+				where: { paymentTransactionId: existingTx?.id },
+			});
+
+			if (existingInvoice) {
+				await tx.billingInvoice.update({
+					where: { id: existingInvoice.id },
+					data: {
+						subscriptionId: subRecord.id,
+						status: INVOICE_STATUS.PAID,
+						paidAt: new Date(),
+					},
+				});
+			} else if (existingTx) {
+				await tx.billingInvoice.create({
+					data: {
+						restaurantId: params.subscription.restaurantId,
+						subscriptionId: subRecord.id,
+						paymentTransactionId: existingTx.id,
+						invoiceNumber: InvoiceNumber.generate(),
+						amountPaise: existingTx.amountPaise,
+						currency: existingTx.currency,
+						status: INVOICE_STATUS.PAID,
+						paidAt: new Date(),
+					},
+				});
+			}
+
+			await tx.outboxEvent.create({
+				data: {
+					eventType: params.outbox.eventType,
+					aggregateId: params.outbox.aggregateId,
+					payload: {
+						...params.outbox.payload,
+						subscriptionId: subRecord.id,
+					},
+					status: OUTBOX_STATUS.PENDING,
+				},
+			});
+
+			return SubscriptionPersistenceMapper.toDomain(subRecord);
 		});
 	}
 

@@ -45,6 +45,29 @@ export interface ActivateSubscriptionWithOutboxParams {
 	};
 }
 
+export interface RenewSubscriptionInput {
+	subscriptionId: string;
+	restaurantId: string;
+	planId: string;
+	status: 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED';
+	currentPeriodStart: Date;
+	currentPeriodEnd: Date;
+}
+
+export interface RenewSubscriptionWithOutboxParams {
+	subscription: RenewSubscriptionInput;
+	payment: {
+		razorpayOrderId: string;
+		razorpayPaymentId: string;
+		razorpaySignature: string;
+	};
+	outbox: {
+		eventType: string;
+		aggregateId: string;
+		payload: ActivateSubscriptionOutboxPayload;
+	};
+}
+
 export interface ISubscriptionRepository
 	extends IBaseRepository<Subscription, CreateSubscriptionInput, UpdateSubscriptionInput> {
 	findActiveByRestaurantId(restaurantId: string): Promise<Subscription | null>;
@@ -52,6 +75,7 @@ export interface ISubscriptionRepository
 	activateSubscriptionWithOutbox(
 		params: ActivateSubscriptionWithOutboxParams,
 	): Promise<Subscription>;
+	renewSubscriptionWithOutbox(params: RenewSubscriptionWithOutboxParams): Promise<Subscription>;
 	findSubscribersPaginated(params: SubscriberFilterParams): Promise<PaginatedSubscribersResult>;
 	findSubscriberDetailById(subscriberId: string): Promise<SubscriberDetail | null>;
 }

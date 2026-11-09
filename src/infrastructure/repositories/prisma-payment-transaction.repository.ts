@@ -7,6 +7,7 @@ import {
 import type {
 	CaptureOrderPaymentWithOutboxParams,
 	CreatePaymentTransactionInput,
+	CreateRenewalOrderWithInvoiceParams,
 	FailOrderPaymentWithOutboxParams,
 	IPaymentTransactionRepository,
 	ProcessOrderRefundParams,
@@ -129,10 +130,31 @@ export class PrismaPaymentTransactionRepository
 		return this.mapToDomain(record);
 	}
 
+	async findPendingRenewalBySubscriptionAndPlan(
+		subscriptionId: string,
+		planId: string,
+	): Promise<PaymentTransaction | null> {
+		const reusableWindowStart = new Date(Date.now() - PENDING_ORDER_REUSE_WINDOW_MS);
+
+		const record = await this.prisma.paymentTransaction.findFirst({
+			where: {
+				subscriptionId,
+				planId,
+				status: { in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.FAILED] },
+				createdAt: { gte: reusableWindowStart },
+			},
+			orderBy: { createdAt: 'desc' },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
+	}
+
 	async create(data: CreatePaymentTransactionInput): Promise<PaymentTransaction> {
 		const record = await this.prisma.paymentTransaction.create({
 			data: {
 				restaurantId: data.restaurantId,
+				subscriptionId: data.subscriptionId || undefined,
 				planId: data.planId,
 				orderId: data.orderId,
 				customerId: data.customerId,
@@ -145,6 +167,41 @@ export class PrismaPaymentTransactionRepository
 		});
 
 		return this.mapToDomain(record);
+	}
+
+	async createRenewalWithInvoice(
+		params: CreateRenewalOrderWithInvoiceParams,
+	): Promise<PaymentTransaction> {
+		return await this.prisma.$transaction(async (tx) => {
+			const record = await tx.paymentTransaction.create({
+				data: {
+					restaurantId: params.transaction.restaurantId,
+					subscriptionId: params.transaction.subscriptionId || undefined,
+					planId: params.transaction.planId,
+					orderId: params.transaction.orderId,
+					customerId: params.transaction.customerId,
+					razorpayOrderId: params.transaction.razorpayOrderId,
+					amountPaise: params.transaction.amountPaise,
+					currency: params.transaction.currency,
+					status: params.transaction.status || PAYMENT_STATUS.CREATED,
+					metadata: (params.transaction.metadata as unknown as Prisma.InputJsonValue) || undefined,
+				},
+			});
+
+			await tx.billingInvoice.create({
+				data: {
+					restaurantId: params.transaction.restaurantId,
+					subscriptionId: params.transaction.subscriptionId || undefined,
+					paymentTransactionId: record.id,
+					invoiceNumber: params.invoice.invoiceNumber,
+					amountPaise: params.transaction.amountPaise,
+					currency: params.transaction.currency,
+					status: params.invoice.status,
+				},
+			});
+
+			return this.mapToDomain(record);
+		});
 	}
 
 	async captureOrderPaymentWithOutbox(
@@ -402,13 +459,14 @@ export class PrismaPaymentTransactionRepository
 		return this.mapToDomain(record);
 	}
 
-	async resetToCreated(transaction: PaymentTransaction): Promise<PaymentTransaction> {
+	async resetToCreated(target: PaymentTransaction | string): Promise<PaymentTransaction> {
+		const where = typeof target === 'string' ? { razorpayOrderId: target } : { id: target.id };
+
 		const record = await this.prisma.paymentTransaction.update({
-			where: { id: transaction.id },
+			where,
 			data: {
-				status: transaction.status,
-				failureReason: transaction.failureReason,
-				updatedAt: transaction.updatedAt || new Date(),
+				status: PAYMENT_STATUS.CREATED,
+				failureReason: null,
 			},
 		});
 

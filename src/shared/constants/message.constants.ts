@@ -101,6 +101,22 @@ export enum MessageEnum {
 	ALREADY_PAID = 'The associated food order has already been successfully paid',
 	ORDER_EXPIRED = 'Payment retry window has expired',
 	NOT_RETRYABLE = 'Only failed payment transactions can be retried',
+
+	// subscription renewal (SCRUM-1241)
+	SUBSCRIPTION_RENEWAL_ORDER_CREATED = 'Subscription renewal order created successfully',
+	SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
+	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL = 'Subscription is not eligible for renewal',
+	SUBSCRIPTION_RENEWED_SUCCESS = 'Subscription renewed successfully',
+	INVALID_SUBSCRIPTION_ID = 'Invalid subscription ID format',
+	INVALID_PLAN_ID = 'Invalid plan ID format',
+	FORBIDDEN_SUBSCRIPTION_ACCESS = 'You are not authorized to manage this restaurant subscription',
+	PAYMENT_GATEWAY_UNAVAILABLE = 'Payment provider is currently unavailable',
+	MISSING_IDEMPOTENCY_KEY = 'Idempotency-Key header is required',
+	INVALID_IDEMPOTENCY_KEY = 'Idempotency-Key must be 8 to 128 characters containing only letters, numbers, hyphens, underscores, colons, or dots',
+	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH = 'Idempotency-Key has already been used with different request parameters',
+	IDEMPOTENCY_REQUEST_IN_PROGRESS = 'A request with this Idempotency-Key is currently being processed',
+	IDEMPOTENCY_STORAGE_UNAVAILABLE = 'Idempotency and lock service is currently unavailable',
+	RENEWAL_ALREADY_IN_PROGRESS = 'Another renewal request for this subscription is currently in progress',
 }
 
 export const MESSAGES = {
@@ -208,6 +224,22 @@ export const MESSAGES = {
 	ALREADY_PAID: MessageEnum.ALREADY_PAID,
 	ORDER_EXPIRED: MessageEnum.ORDER_EXPIRED,
 	NOT_RETRYABLE: MessageEnum.NOT_RETRYABLE,
+
+	// subscription renewal (SCRUM-1241)
+	SUBSCRIPTION_RENEWAL_ORDER_CREATED: MessageEnum.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
+	SUBSCRIPTION_NOT_FOUND: MessageEnum.SUBSCRIPTION_NOT_FOUND,
+	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL: MessageEnum.SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL,
+	SUBSCRIPTION_RENEWED_SUCCESS: MessageEnum.SUBSCRIPTION_RENEWED_SUCCESS,
+	INVALID_SUBSCRIPTION_ID: MessageEnum.INVALID_SUBSCRIPTION_ID,
+	INVALID_PLAN_ID: MessageEnum.INVALID_PLAN_ID,
+	FORBIDDEN_SUBSCRIPTION_ACCESS: MessageEnum.FORBIDDEN_SUBSCRIPTION_ACCESS,
+	PAYMENT_GATEWAY_UNAVAILABLE: MessageEnum.PAYMENT_GATEWAY_UNAVAILABLE,
+	MISSING_IDEMPOTENCY_KEY: MessageEnum.MISSING_IDEMPOTENCY_KEY,
+	INVALID_IDEMPOTENCY_KEY: MessageEnum.INVALID_IDEMPOTENCY_KEY,
+	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH: MessageEnum.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH,
+	IDEMPOTENCY_REQUEST_IN_PROGRESS: MessageEnum.IDEMPOTENCY_REQUEST_IN_PROGRESS,
+	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
+	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
 } as const;
 
 export const messages = MESSAGES;

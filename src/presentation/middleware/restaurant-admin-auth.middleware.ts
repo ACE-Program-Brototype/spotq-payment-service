@@ -3,17 +3,25 @@ import { sendErrorResponse } from '@shared/response/api-response.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 const ALLOWED_ROLES = new Set<string>([
-	USER_ROLES.RESTAURANT_OWNER,
-	USER_ROLES.RESTAURANT_ADMIN,
-	USER_ROLES.RESTAURANT,
-	USER_ROLES.OWNER,
-	USER_ROLES.ADMIN,
 	USER_ROLES.PLATFORM_ADMIN,
-	USER_ROLES.SUPER_ADMIN,
+	USER_ROLES.ADMIN,
+	USER_ROLES.RESTAURANT_ADMIN,
 	USER_ROLES.STAFF,
-	USER_ROLES.RESTAURANT_STAFF,
-	USER_ROLES.MANAGER,
 ]);
+
+function normalizeRole(role?: string): string | undefined {
+	if (!role) {
+		return undefined;
+	}
+	const trimmed = role.toUpperCase().trim();
+	if (trimmed === 'RESTAURANT_OWNER' || trimmed === 'OWNER') {
+		return USER_ROLES.RESTAURANT_ADMIN;
+	}
+	if (trimmed === 'RESTAURANT_STAFF') {
+		return USER_ROLES.STAFF;
+	}
+	return trimmed;
+}
 
 export function restaurantAdminAuthMiddleware(
 	req: Request,
@@ -34,7 +42,7 @@ export function restaurantAdminAuthMiddleware(
 		return;
 	}
 
-	const normalizedRole = userRole?.toUpperCase().trim();
+	const normalizedRole = normalizeRole(userRole);
 
 	if (!normalizedRole || !ALLOWED_ROLES.has(normalizedRole)) {
 		sendErrorResponse(res, MESSAGES.FORBIDDEN_ACCESS, ERROR_CODES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);

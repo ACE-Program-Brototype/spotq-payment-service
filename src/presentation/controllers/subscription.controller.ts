@@ -134,7 +134,7 @@ export class SubscriptionController {
 		const userRestaurantId = req.headers['x-restaurant-id'] as string;
 		const userRole = (req.headers['x-user-role'] as string)?.toUpperCase().trim();
 
-		if (userRole !== USER_ROLES.PLATFORM_ADMIN && userRole !== USER_ROLES.SUPER_ADMIN) {
+		if (userRole !== USER_ROLES.PLATFORM_ADMIN && userRole !== USER_ROLES.ADMIN) {
 			if (userRestaurantId !== params.restaurantId) {
 				throw new ForbiddenSubscriptionAccessError();
 			}

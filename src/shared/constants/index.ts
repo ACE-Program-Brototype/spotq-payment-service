@@ -1,3 +1,4 @@
+export * from './analytics.constants.ts';
 export * from './auth.constants.ts';
 export * from './domain-error-map.constants.ts';
 export * from './health.constants.ts';

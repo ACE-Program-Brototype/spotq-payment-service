@@ -38,6 +38,7 @@ export enum MessageEnum {
 	SHUTDOWN_STARTING = 'Gracefully shutting down...',
 	SERVER_BOOTSTRAP_FAILED = 'Failed to bootstrap server',
 	SUBSCRIPTION_PLANS_FETCHED = 'Subscription plans fetched successfully',
+	PLATFORM_SUBSCRIPTION_ANALYTICS_FETCHED = 'Platform subscription analytics fetched successfully',
 	SUBSCRIPTION_ORDER_CREATED = 'Subscription order created successfully',
 	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
 	SUBSCRIPTION_STATUS_FETCHED = 'Subscription status retrieved successfully',
@@ -240,6 +241,7 @@ export const MESSAGES = {
 	IDEMPOTENCY_REQUEST_IN_PROGRESS: MessageEnum.IDEMPOTENCY_REQUEST_IN_PROGRESS,
 	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
 	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
+	PLATFORM_SUBSCRIPTION_ANALYTICS_FETCHED: MessageEnum.PLATFORM_SUBSCRIPTION_ANALYTICS_FETCHED,
 } as const;
 
 export const messages = MESSAGES;

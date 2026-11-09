@@ -44,9 +44,7 @@ export const TYPES = {
 		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
 		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
 		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
-		GetPlatformSubscriptionAnalyticsUseCase: Symbol.for(
-			'IGetPlatformSubscriptionAnalyticsUseCase',
-		),
+		GetPlatformSubscriptionAnalyticsUseCase: Symbol.for('IGetPlatformSubscriptionAnalyticsUseCase'),
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
@@ -55,8 +53,6 @@ export const TYPES = {
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
 		CustomerPaymentController: Symbol.for('CustomerPaymentController'),
 		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
-		InternalSubscriptionAnalyticsController: Symbol.for(
-			'InternalSubscriptionAnalyticsController',
-		),
+		InternalSubscriptionAnalyticsController: Symbol.for('InternalSubscriptionAnalyticsController'),
 	},
 } as const;

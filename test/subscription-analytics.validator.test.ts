@@ -74,4 +74,3 @@ describe('subscriptionAnalyticsQuerySchema', () => {
 		expect(badCycle.success).toBe(false);
 	});
 });
-

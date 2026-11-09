@@ -8,4 +8,3 @@ export interface IGetPlatformSubscriptionAnalyticsUseCase {
 		input: GetPlatformSubscriptionAnalyticsInputDTO,
 	): Promise<PlatformSubscriptionAnalyticsResponseDTO>;
 }
-

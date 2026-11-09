@@ -32,4 +32,3 @@ export interface PlatformSubscriptionAnalyticsResponseDTO {
 	};
 	generatedAt: string;
 }
-

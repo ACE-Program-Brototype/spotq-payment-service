@@ -27,4 +27,3 @@ internalSubscriptionAnalyticsRouter.get(
 	validateRequestQuery(subscriptionAnalyticsQuerySchema),
 	controller.getSummary,
 );
-

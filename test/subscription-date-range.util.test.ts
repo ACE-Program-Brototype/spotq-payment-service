@@ -133,4 +133,3 @@ describe('subscription-date-range.util', () => {
 		});
 	});
 });
-

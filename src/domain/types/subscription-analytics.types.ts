@@ -47,4 +47,3 @@ export interface ResolvedSubscriptionDateRange {
 	prevStartDate: Date;
 	buckets: TimelineBucketDefinition[];
 }
-

@@ -107,4 +107,3 @@ describe('PrismaSubscriptionAnalyticsRepository (Unit Tests)', () => {
 		});
 	});
 });
-

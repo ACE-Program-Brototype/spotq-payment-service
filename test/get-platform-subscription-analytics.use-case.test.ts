@@ -124,4 +124,3 @@ describe('GetPlatformSubscriptionAnalyticsUseCase', () => {
 		expect(result.growthPercentage).toBe(-100);
 	});
 });
-

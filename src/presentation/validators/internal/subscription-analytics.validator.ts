@@ -36,4 +36,3 @@ export const subscriptionAnalyticsQuerySchema = z
 	});
 
 export type SubscriptionAnalyticsQueryParams = z.infer<typeof subscriptionAnalyticsQuerySchema>;
-

@@ -37,4 +37,3 @@ export const MONTH_NAMES = [
 ] as const;
 
 export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-

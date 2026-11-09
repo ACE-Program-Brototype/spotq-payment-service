@@ -8,4 +8,3 @@ export interface ISubscriptionAnalyticsRepository {
 		params: SubscriptionAnalyticsRepoParams,
 	): Promise<SubscriptionAnalyticsRepoResult>;
 }
-

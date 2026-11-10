@@ -41,7 +41,7 @@ export class OrderInvoiceConsumer implements IOrderInvoiceConsumer {
 		logger.info('OrderInvoiceConsumer stopped');
 	}
 
-	async handleMessage(rawMessage: unknown): Promise<void> {
+	private async handleMessage(rawMessage: unknown): Promise<void> {
 		if (!this.isRunning) {
 			logger.warn('OrderInvoiceConsumer is stopped, ignoring incoming message');
 			return;

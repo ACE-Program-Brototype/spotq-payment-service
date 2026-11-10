@@ -143,7 +143,8 @@ container
 
 container
 	.bind<IGenerateOrderInvoiceUseCase>(TYPES.UseCases.GenerateOrderInvoiceUseCase)
-	.to(GenerateOrderInvoiceUseCase);
+	.to(GenerateOrderInvoiceUseCase)
+	.inSingletonScope();
 
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)

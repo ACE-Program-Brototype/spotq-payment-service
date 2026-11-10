@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import axios from 'axios';
 import type { OrderInvoiceDataDTO } from '../src/application/dtos/order-payment-invoice-event.dto.ts';
 import { renderOrderInvoiceHtml } from '../src/infrastructure/pdf/templates/order-invoice.template.ts';
 import { amountToIndianWords } from '../src/shared/utils/currency.util.ts';
@@ -69,18 +70,11 @@ async function main() {
 	formData.append('marginRight', '0.4');
 	formData.append('printBackground', 'true');
 
-	const response = await fetch(endpoint, {
-		method: 'POST',
-		body: formData,
+	const response = await axios.post<ArrayBuffer>(endpoint, formData, {
+		responseType: 'arraybuffer',
 	});
 
-	if (!response.ok) {
-		const errText = await response.text();
-		throw new Error(`Gotenberg returned error ${response.status}: ${errText}`);
-	}
-
-	const arrayBuffer = await response.arrayBuffer();
-	const pdfBuffer = Buffer.from(arrayBuffer);
+	const pdfBuffer = Buffer.from(response.data);
 
 	const outputPath = path.resolve(process.cwd(), 'sample-invoice.pdf');
 	await fs.writeFile(outputPath, pdfBuffer);

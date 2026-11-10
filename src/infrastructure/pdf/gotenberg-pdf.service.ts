@@ -4,6 +4,7 @@ import { config } from '@config/index.ts';
 import { PdfGenerationError } from '@infrastructure/errors/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { MESSAGES, TRAILING_SLASH_REGEX } from '@shared/constants/index.ts';
+import axios, { isAxiosError } from 'axios';
 import { injectable } from 'inversify';
 import { renderOrderInvoiceHtml } from './templates/order-invoice.template.ts';
 
@@ -34,25 +35,44 @@ export class GotenbergPdfService implements IInvoicePdfService {
 		logger.debug({ endpoint }, 'Sending HTML conversion request to Gotenberg');
 
 		try {
-			const response = await fetch(endpoint, {
-				method: 'POST',
-				body: formData,
+			const response = await axios.post<ArrayBuffer>(endpoint, formData, {
+				responseType: 'arraybuffer',
 			});
 
-			if (!response.ok) {
-				const errorText = await response.text().catch(() => '');
+			return Buffer.from(response.data);
+		} catch (error) {
+			if (error instanceof PdfGenerationError) {
+				throw error;
+			}
+
+			if (isAxiosError(error) && error.response) {
+				const status = error.response.status;
+				let errorText = '';
+				if (error.response.data) {
+					if (Buffer.isBuffer(error.response.data)) {
+						errorText = error.response.data.toString('utf-8');
+					} else if (error.response.data instanceof ArrayBuffer) {
+						errorText = Buffer.from(error.response.data).toString('utf-8');
+					} else if (typeof error.response.data === 'string') {
+						errorText = error.response.data;
+					} else {
+						try {
+							errorText = JSON.stringify(error.response.data);
+						} catch {
+							errorText = String(error.response.data);
+						}
+					}
+				}
+
 				logger.error(
-					{ status: response.status, statusText: response.statusText, errorText },
+					{ status, statusText: error.response.statusText, errorText },
 					MESSAGES.GOTENBERG_CONVERSION_FAILED,
 				);
 				throw new PdfGenerationError(
-					`${MESSAGES.GOTENBERG_GENERATION_FAILED} with status ${response.status}: ${errorText || response.statusText}`,
+					`${MESSAGES.GOTENBERG_GENERATION_FAILED} with status ${status}: ${errorText || error.response.statusText}`,
 				);
 			}
 
-			const arrayBuffer = await response.arrayBuffer();
-			return Buffer.from(arrayBuffer);
-		} catch (error) {
 			logger.error({ err: error, endpoint }, MESSAGES.GOTENBERG_CONNECTION_FAILED);
 			throw error;
 		}

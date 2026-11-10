@@ -68,20 +68,23 @@ describe('OrderInvoiceConsumer', () => {
 
 	it('should process valid order.payment.invoice event when running', async () => {
 		await consumer.start();
-		await consumer.handleMessage(validPayload);
+		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		await handler(validPayload);
 		expect(mockUseCase.execute).toHaveBeenCalledWith(validPayload.orderData);
 	});
 
 	it('should ignore events when consumer is stopped', async () => {
 		await consumer.start();
+		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
 		await consumer.stop();
-		await consumer.handleMessage(validPayload);
+		await handler(validPayload);
 		expect(mockUseCase.execute).not.toHaveBeenCalled();
 	});
 
 	it('should ignore events with different eventType', async () => {
 		await consumer.start();
-		await consumer.handleMessage({
+		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		await handler({
 			eventType: 'other.event',
 			orderData: {},
 		});
@@ -90,7 +93,8 @@ describe('OrderInvoiceConsumer', () => {
 
 	it('should ignore malformed event without crashing', async () => {
 		await consumer.start();
-		await consumer.handleMessage({
+		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		await handler({
 			eventType: 'order.payment.invoice',
 			orderData: { invalid: true },
 		});

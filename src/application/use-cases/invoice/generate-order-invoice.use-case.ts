@@ -6,7 +6,13 @@ import type { IGenerateOrderInvoiceUseCase } from '@application/ports/use-cases/
 import { TYPES } from '@di/types.ts';
 import type { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
 import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
-import { HYPHEN_REGEX, NON_ALPHANUMERIC_REGEX, ORD_PREFIX_REGEX } from '@shared/constants/index.ts';
+import {
+	DEFAULT_CURRENCY,
+	HYPHEN_REGEX,
+	INVOICE_STATUS,
+	NON_ALPHANUMERIC_REGEX,
+	ORD_PREFIX_REGEX,
+} from '@shared/constants/index.ts';
 import { buildOrderInvoiceS3Key } from '@shared/utils/invoice-s3-key.util.ts';
 import { inject, injectable } from 'inversify';
 
@@ -60,8 +66,8 @@ export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase
 				paymentTransactionId: orderData.paymentId,
 				invoiceNumber,
 				amountPaise: orderData.financials.amountPaise,
-				currency: orderData.currency || 'INR',
-				status: 'PAID',
+				currency: orderData.currency || DEFAULT_CURRENCY,
+				status: INVOICE_STATUS.PAID,
 			});
 		}
 

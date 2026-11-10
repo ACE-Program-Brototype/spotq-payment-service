@@ -57,8 +57,8 @@ import type { ITransactionQueryRepository } from '@domain/repositories/transacti
 import { logger } from '@infrastructure/index.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
-import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import { SubscriptionEventProducer } from '@infrastructure/rabbitmq/subscription-event.producer.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/index.ts';
 import { RedisService } from '@infrastructure/redis/redis.service.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';

@@ -3,7 +3,6 @@ import type { IPaymentSubscriptionExpiryService } from '@application/ports/servi
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
-import type { ISubscriptionEventProducer } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import {
 	EXPIRY_CHECK_INTERVAL_MS,
 	MESSAGES,
@@ -53,14 +52,6 @@ export async function initInfrastructure(): Promise<void> {
 export async function shutdownInfrastructure(): Promise<void> {
 	container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService).stop();
 	container.get<IPaymentSubscriptionExpiryService>(TYPES.Services.SubscriptionExpiryService).stop();
-
-	try {
-		await container
-			.get<ISubscriptionEventProducer>(TYPES.Services.SubscriptionEventProducer)
-			.close();
-	} catch (error) {
-		logger.error({ err: error }, 'Error closing SubscriptionEventProducer during shutdown');
-	}
 
 	await Promise.allSettled([
 		databaseService.disconnect(),

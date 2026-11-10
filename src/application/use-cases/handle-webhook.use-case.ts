@@ -7,6 +7,8 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
 import { WALLET_LEDGER_STATUSES } from '@domain/constants/wallet-ledger.constants';
+import type { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
+import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
@@ -19,6 +21,7 @@ import {
 	PAYMENT_EVENTS,
 	PAYMENT_STATUS,
 	RAZORPAY_WEBHOOK_EVENTS,
+	REFUND_STATUS,
 	SUBSCRIPTION_EVENTS,
 	SUBSCRIPTION_STATUS,
 } from '@shared/constants/index.ts';
@@ -208,34 +211,8 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			if (!plan) return { received: true };
 
 			const now = new Date();
-			const currentPeriodEnd = plan.calculatePeriodEnd(now);
-
-			await this.subscriptionRepository.activateSubscriptionWithOutbox({
-				subscription: {
-					restaurantId: existingTx.restaurantId,
-					planId: plan.id,
-					status: SUBSCRIPTION_STATUS.ACTIVE,
-					currentPeriodStart: now,
-					currentPeriodEnd: currentPeriodEnd,
-				},
-				payment: {
-					razorpayOrderId: existingTx.razorpayOrderId,
-					razorpayPaymentId: paymentId || existingTx.razorpayPaymentId || '',
-					razorpaySignature: '',
-				},
-				outbox: {
-					eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
-					aggregateId: existingTx.restaurantId,
-					payload: {
-						restaurantId: existingTx.restaurantId,
-						planCode: plan.code,
-						status: SUBSCRIPTION_STATUS.ACTIVE,
-						currentPeriodStart: now.toISOString(),
-						currentPeriodEnd: currentPeriodEnd.toISOString(),
-						timestamp: now.toISOString(),
-					},
-				},
-			});
+			const resolvedPaymentId = paymentId || existingTx.razorpayPaymentId || '';
+			await this.processSubscriptionCaptureWebhook(existingTx, plan, resolvedPaymentId, now);
 
 			this.outboxRelayService.processPendingEvents().catch((err) => {
 				logger.error({ err }, 'Error triggering outbox relay after webhook');
@@ -294,6 +271,135 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 			}
 		}
 
+		if (
+			eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_PROCESSED ||
+			eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_FAILED
+		) {
+			const refundEntity = params.parsedPayload.payload?.refund?.entity;
+			const paymentEntity = params.parsedPayload.payload?.payment?.entity;
+
+			const refundId = refundEntity?.id;
+			if (!refundId) {
+				logger.warn('Refund webhook received without valid refund entity id; acknowledging');
+				return { received: true };
+			}
+
+			const refundStatus =
+				eventType === RAZORPAY_WEBHOOK_EVENTS.REFUND_PROCESSED
+					? REFUND_STATUS.PROCESSED
+					: REFUND_STATUS.FAILED;
+
+			const paymentId = refundEntity.payment_id || paymentEntity?.id || null;
+			const amountPaise = refundEntity.amount;
+			const currency = refundEntity.currency;
+			const arn = refundEntity.arn ?? null;
+			const notes = refundEntity.notes;
+			const reason = typeof notes?.reason === 'string' ? notes.reason : null;
+
+			await this.paymentTransactionRepository.syncRefundFromWebhook({
+				razorpayRefundId: refundId,
+				razorpayPaymentId: paymentId,
+				status: refundStatus,
+				amountPaise,
+				currency,
+				arn,
+				reason,
+			});
+
+			logger.info(
+				{
+					refundId,
+					paymentId,
+					status: refundStatus,
+					arn,
+				},
+				'Processed refund webhook from Razorpay',
+			);
+
+			return { received: true };
+		}
+
 		return { received: true };
+	}
+
+	private async processSubscriptionCaptureWebhook(
+		existingTx: PaymentTransaction,
+		plan: SubscriptionPlan,
+		razorpayPaymentId: string,
+		now: Date,
+	): Promise<void> {
+		const targetSubscriptionId = existingTx.renewalTargetSubscriptionId;
+
+		if (existingTx.isSubscriptionRenewal() && targetSubscriptionId) {
+			const targetSub = await this.subscriptionRepository.findById(targetSubscriptionId);
+			if (!targetSub) {
+				logger.warn(
+					{ orderId: existingTx.razorpayOrderId, targetSubscriptionId },
+					'Target subscription not found for renewal webhook; skipping activation',
+				);
+				return;
+			}
+
+			const renewalPeriod = targetSub.calculateRenewalPeriod(plan, now);
+
+			await this.subscriptionRepository.renewSubscriptionWithOutbox({
+				subscription: {
+					subscriptionId: targetSub.id,
+					restaurantId: existingTx.restaurantId,
+					planId: plan.id,
+					status: SUBSCRIPTION_STATUS.ACTIVE,
+					currentPeriodStart: renewalPeriod.currentPeriodStart,
+					currentPeriodEnd: renewalPeriod.currentPeriodEnd,
+				},
+				payment: {
+					razorpayOrderId: existingTx.razorpayOrderId,
+					razorpayPaymentId,
+					razorpaySignature: '',
+				},
+				outbox: {
+					eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
+					aggregateId: existingTx.restaurantId,
+					payload: {
+						restaurantId: existingTx.restaurantId,
+						planCode: plan.tierCode,
+						status: SUBSCRIPTION_STATUS.ACTIVE,
+						currentPeriodStart: renewalPeriod.currentPeriodStart.toISOString(),
+						currentPeriodEnd: renewalPeriod.currentPeriodEnd.toISOString(),
+						timestamp: now.toISOString(),
+						subscriptionId: targetSub.id,
+					},
+				},
+			});
+			return;
+		}
+
+		const currentPeriodEnd = plan.calculatePeriodEnd(now);
+
+		await this.subscriptionRepository.activateSubscriptionWithOutbox({
+			subscription: {
+				restaurantId: existingTx.restaurantId,
+				planId: plan.id,
+				status: SUBSCRIPTION_STATUS.ACTIVE,
+				currentPeriodStart: now,
+				currentPeriodEnd,
+			},
+			payment: {
+				razorpayOrderId: existingTx.razorpayOrderId,
+				razorpayPaymentId,
+				razorpaySignature: '',
+			},
+			outbox: {
+				eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
+				aggregateId: existingTx.restaurantId,
+				payload: {
+					restaurantId: existingTx.restaurantId,
+					planCode: plan.tierCode,
+					status: SUBSCRIPTION_STATUS.ACTIVE,
+					currentPeriodStart: now.toISOString(),
+					currentPeriodEnd: currentPeriodEnd.toISOString(),
+					timestamp: now.toISOString(),
+				},
+			},
+		});
 	}
 }

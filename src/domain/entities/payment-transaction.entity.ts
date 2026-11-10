@@ -1,7 +1,12 @@
 import {
+	CannotRefundUncapturedPaymentError,
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
+	PaymentAlreadyRefundedError,
+	PaymentNotRetryableError,
 	PaymentOrderNotFoundError,
+	RefundAmountExceedsBalanceError,
+	RefundAmountInvalidError,
 } from '@domain/errors/payment.errors.ts';
 import { DEFAULT_PAYMENT_METHOD, PAYMENT_STATUS } from '@shared/constants/index.ts';
 
@@ -103,16 +108,18 @@ export class PaymentTransaction {
 
 	isOwnedBy(customerId: string): boolean {
 		if (!this.props.customerId) {
-			return true;
+			return false;
 		}
 		return this.props.customerId === customerId;
 	}
 
 	assertOwnership(customerId?: string): void {
-		if (this.props.customerId) {
-			if (!customerId || !this.isOwnedBy(customerId)) {
+		if (customerId) {
+			if (!this.isOwnedBy(customerId)) {
 				throw new CustomerUnauthorizedError();
 			}
+		} else if (this.props.customerId) {
+			throw new CustomerUnauthorizedError();
 		}
 	}
 
@@ -124,6 +131,23 @@ export class PaymentTransaction {
 		if (!this.belongsToOrder(orderId)) {
 			throw new PaymentOrderNotFoundError();
 		}
+	}
+
+	isFailed(): boolean {
+		return this.props.status === PAYMENT_STATUS.FAILED;
+	}
+
+	isSubscriptionRenewal(): boolean {
+		const metadata = this.props.metadata as Record<string, unknown> | null | undefined;
+		return metadata?.isRenewal === true || Boolean(this.props.subscriptionId);
+	}
+
+	get renewalTargetSubscriptionId(): string | null {
+		const metadata = this.props.metadata as Record<string, unknown> | null | undefined;
+		if (typeof metadata?.targetSubscriptionId === 'string') {
+			return metadata.targetSubscriptionId;
+		}
+		return this.props.subscriptionId ?? null;
 	}
 
 	capture(params: {
@@ -162,6 +186,49 @@ export class PaymentTransaction {
 		}
 		this.props.status = PAYMENT_STATUS.FAILED;
 		this.props.failureReason = reason;
+		this.props.updatedAt = new Date();
+	}
+
+	resetToCreated(): void {
+		if (this.props.status !== PAYMENT_STATUS.FAILED) {
+			throw new PaymentNotRetryableError();
+		}
+		this.props.status = PAYMENT_STATUS.CREATED;
+		this.props.failureReason = null;
+		this.props.updatedAt = new Date();
+	}
+
+	assertCanRefund(requestedAmountPaise?: number): void {
+		if (this.props.status === PAYMENT_STATUS.REFUNDED) {
+			throw new PaymentAlreadyRefundedError();
+		}
+		if (
+			this.props.status !== PAYMENT_STATUS.CAPTURED &&
+			this.props.status !== PAYMENT_STATUS.SUCCESS
+		) {
+			throw new CannotRefundUncapturedPaymentError();
+		}
+		if (!this.props.razorpayPaymentId) {
+			throw new CannotRefundUncapturedPaymentError();
+		}
+		if (requestedAmountPaise !== undefined) {
+			if (requestedAmountPaise > this.props.amountPaise) {
+				throw new RefundAmountExceedsBalanceError();
+			}
+			if (requestedAmountPaise < this.props.amountPaise) {
+				throw new RefundAmountInvalidError();
+			}
+		}
+	}
+
+	markRefunded(): void {
+		if (
+			this.props.status !== PAYMENT_STATUS.CAPTURED &&
+			this.props.status !== PAYMENT_STATUS.SUCCESS
+		) {
+			throw new InvalidPaymentStateTransitionError();
+		}
+		this.props.status = PAYMENT_STATUS.REFUNDED;
 		this.props.updatedAt = new Date();
 	}
 

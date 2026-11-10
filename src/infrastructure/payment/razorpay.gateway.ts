@@ -8,15 +8,18 @@ import {
 import type {
 	CreateOrderParams,
 	CreatePayoutParams,
+	CreateRefundParams,
 	FundAccountDetails,
 	IPaymentGateway,
 	PaymentDetailsResult,
 	PaymentOrderResult,
+	PaymentRefundResult,
 	PayoutResult,
 	VerifyPaymentSignatureParams,
 } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import {
+	DEFAULT_REFUND_SPEED,
 	MESSAGES,
 	RAZORPAY_HTTP_METHOD,
 	RAZORPAY_X_BASE_URL,
@@ -376,5 +379,26 @@ export class RazorpayGateway implements IPaymentGateway {
 			}
 			throw new PaymentGatewayError(this.getGatewayErrorMessage(error));
 		}
+	}
+
+	async createRefund(params: CreateRefundParams): Promise<PaymentRefundResult> {
+		if (!this.client) {
+			throw new Error(MESSAGES.RAZORPAY_CLIENT_NOT_INITIALIZED);
+		}
+
+		const refund = await this.client.payments.refund(params.paymentId, {
+			amount: params.amountInPaise,
+			speed: params.speed ?? DEFAULT_REFUND_SPEED,
+			notes: params.notes,
+		});
+
+		return {
+			refundId: refund.id,
+			paymentId: refund.payment_id,
+			amount: Number(refund.amount),
+			currency: refund.currency,
+			status: refund.status,
+			arn: (refund as unknown as { arn?: string }).arn,
+		};
 	}
 }

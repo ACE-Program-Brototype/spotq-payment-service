@@ -5,11 +5,15 @@ import type {
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
+import type { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import { RestaurantWallet } from '@domain/entities/restaurant-wallet.entity';
+import type { Subscription } from '@domain/entities/subscription.entity.ts';
+import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import {
 	InvalidPaymentSignatureError,
 	PaymentOrderNotFoundError,
 	PlanNotFoundError,
+	SubscriptionNotFoundError,
 	UnauthorizedRestaurantError,
 } from '@domain/errors/payment.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
@@ -109,8 +113,6 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		}
 
 		const now = new Date();
-		const currentPeriodEnd = plan.calculatePeriodEnd(now);
-
 		const wallet = await this.restaurantWalletRepository.findByRestaurantId(
 			existingTx.restaurantId,
 		);
@@ -120,32 +122,13 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 			await this.restaurantWalletRepository.create(wallet);
 		}
 
-		const subscription = await this.subscriptionRepository.activateSubscriptionWithOutbox({
-			subscription: {
-				restaurantId: existingTx.restaurantId,
-				planId: plan.id,
-				status: SUBSCRIPTION_STATUS.ACTIVE,
-				currentPeriodStart: now,
-				currentPeriodEnd: currentPeriodEnd,
-			},
-			payment: {
-				razorpayOrderId: existingTx.razorpayOrderId,
-				razorpayPaymentId: input.razorpayPaymentId,
-				razorpaySignature: input.razorpaySignature,
-			},
-			outbox: {
-				eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
-				aggregateId: existingTx.restaurantId,
-				payload: {
-					restaurantId: existingTx.restaurantId,
-					planCode: plan.code,
-					status: SUBSCRIPTION_STATUS.ACTIVE,
-					currentPeriodStart: now.toISOString(),
-					currentPeriodEnd: currentPeriodEnd.toISOString(),
-					timestamp: now.toISOString(),
-				},
-			},
-		});
+		const subscription = await this.completeSubscriptionOrRenewal(
+			existingTx,
+			plan,
+			input.razorpayPaymentId,
+			input.razorpaySignature,
+			now,
+		);
 
 		logger.info(
 			{
@@ -163,10 +146,87 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		return {
 			subscriptionId: subscription.id,
 			restaurantId: existingTx.restaurantId,
-			planCode: plan.code,
+			planCode: plan.tierCode,
 			status: subscription.status,
 			currentPeriodStart: subscription.currentPeriodStart.toISOString(),
 			currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
 		};
+	}
+
+	private async completeSubscriptionOrRenewal(
+		existingTx: PaymentTransaction,
+		plan: SubscriptionPlan,
+		razorpayPaymentId: string,
+		razorpaySignature: string,
+		now: Date,
+	): Promise<Subscription> {
+		const targetSubscriptionId = existingTx.renewalTargetSubscriptionId;
+
+		if (existingTx.isSubscriptionRenewal() && targetSubscriptionId) {
+			const targetSub = await this.subscriptionRepository.findById(targetSubscriptionId);
+			if (!targetSub) {
+				throw new SubscriptionNotFoundError();
+			}
+
+			const renewalPeriod = targetSub.calculateRenewalPeriod(plan, now);
+
+			return this.subscriptionRepository.renewSubscriptionWithOutbox({
+				subscription: {
+					subscriptionId: targetSub.id,
+					restaurantId: existingTx.restaurantId,
+					planId: plan.id,
+					status: SUBSCRIPTION_STATUS.ACTIVE,
+					currentPeriodStart: renewalPeriod.currentPeriodStart,
+					currentPeriodEnd: renewalPeriod.currentPeriodEnd,
+				},
+				payment: {
+					razorpayOrderId: existingTx.razorpayOrderId,
+					razorpayPaymentId,
+					razorpaySignature,
+				},
+				outbox: {
+					eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
+					aggregateId: existingTx.restaurantId,
+					payload: {
+						restaurantId: existingTx.restaurantId,
+						planCode: plan.tierCode,
+						status: SUBSCRIPTION_STATUS.ACTIVE,
+						currentPeriodStart: renewalPeriod.currentPeriodStart.toISOString(),
+						currentPeriodEnd: renewalPeriod.currentPeriodEnd.toISOString(),
+						timestamp: now.toISOString(),
+						subscriptionId: targetSub.id,
+					},
+				},
+			});
+		}
+
+		const currentPeriodEnd = plan.calculatePeriodEnd(now);
+
+		return this.subscriptionRepository.activateSubscriptionWithOutbox({
+			subscription: {
+				restaurantId: existingTx.restaurantId,
+				planId: plan.id,
+				status: SUBSCRIPTION_STATUS.ACTIVE,
+				currentPeriodStart: now,
+				currentPeriodEnd,
+			},
+			payment: {
+				razorpayOrderId: existingTx.razorpayOrderId,
+				razorpayPaymentId,
+				razorpaySignature,
+			},
+			outbox: {
+				eventType: SUBSCRIPTION_EVENTS.ACTIVATED,
+				aggregateId: existingTx.restaurantId,
+				payload: {
+					restaurantId: existingTx.restaurantId,
+					planCode: plan.tierCode,
+					status: SUBSCRIPTION_STATUS.ACTIVE,
+					currentPeriodStart: now.toISOString(),
+					currentPeriodEnd: currentPeriodEnd.toISOString(),
+					timestamp: now.toISOString(),
+				},
+			},
+		});
 	}
 }

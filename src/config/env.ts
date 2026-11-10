@@ -18,6 +18,11 @@ export const config = {
 	database: {
 		url: env.DATABASE_URL,
 		directUrl: env.DATABASE_URL,
+		pool: {
+			max: env.DB_POOL_MAX,
+			idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
+			connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,
+		},
 	},
 
 	redis: {
@@ -41,5 +46,10 @@ export const config = {
 		audience: env.S2S_AUDIENCE,
 		orderPublicKey: env.ORDER_S2S_PUBLIC_KEY,
 		privateKey: env.S2S_PRIVATE_KEY,
+		tokenTtlMs: Number(process.env.S2S_TOKEN_TTL_MS) || 10 * 60 * 1000,
+	},
+
+	services: {
+		restaurantServiceUrl: env.RESTAURANT_SERVICE_URL,
 	},
 } as const;

@@ -1,8 +1,13 @@
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import {
+	CannotRefundUncapturedPaymentError,
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
+	PaymentAlreadyRefundedError,
+	PaymentNotRetryableError,
 	PaymentOrderNotFoundError,
+	RefundAmountExceedsBalanceError,
+	RefundAmountInvalidError,
 } from '@domain/errors/payment.errors.ts';
 
 describe('PaymentTransaction Entity', () => {
@@ -19,9 +24,9 @@ describe('PaymentTransaction Entity', () => {
 		});
 
 	describe('isOwnedBy', () => {
-		it('should return true when transaction has no customerId (unassigned / guest)', () => {
+		it('should return false when transaction has no customerId', () => {
 			const tx = createTx(null);
-			expect(tx.isOwnedBy('any-customer')).toBe(true);
+			expect(tx.isOwnedBy('any-customer')).toBe(false);
 		});
 
 		it('should return true when customerId matches', () => {
@@ -50,6 +55,11 @@ describe('PaymentTransaction Entity', () => {
 		it('should not throw when transaction has no customerId and caller is undefined', () => {
 			const tx = createTx(null);
 			expect(() => tx.assertOwnership(undefined)).not.toThrow();
+		});
+
+		it('should throw CustomerUnauthorizedError when transaction has no customerId and caller specifies customerId', () => {
+			const tx = createTx(null);
+			expect(() => tx.assertOwnership('cust-100')).toThrow(CustomerUnauthorizedError);
 		});
 
 		it('should throw CustomerUnauthorizedError when caller does not match customerId', () => {
@@ -199,6 +209,147 @@ describe('PaymentTransaction Entity', () => {
 			tx.markFailed('Failure arrived late');
 			expect(tx.status).toBe('CAPTURED');
 			expect(tx.failureReason).toBeNull();
+		});
+	});
+
+	describe('resetToCreated', () => {
+		it('should reset FAILED transaction status to CREATED and clear failureReason', () => {
+			const tx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'FAILED',
+				failureReason: 'Card declined',
+			});
+
+			tx.resetToCreated();
+
+			expect(tx.status).toBe('CREATED');
+			expect(tx.failureReason).toBeNull();
+			expect(tx.updatedAt).toBeInstanceOf(Date);
+		});
+
+		it('should throw PaymentNotRetryableError when transaction status is not FAILED', () => {
+			const capturedTx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'CAPTURED',
+			});
+
+			expect(() => capturedTx.resetToCreated()).toThrow(PaymentNotRetryableError);
+		});
+	});
+
+	describe('assertCanRefund', () => {
+		const createCapturedTx = (amountPaise = 5000, razorpayPaymentId: string | null = 'pay_123') =>
+			new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				razorpayPaymentId,
+				amountPaise,
+				currency: 'INR',
+				status: 'CAPTURED',
+			});
+
+		it('should succeed when transaction is CAPTURED with valid razorpayPaymentId and amount matches', () => {
+			const tx = createCapturedTx(5000);
+			expect(() => tx.assertCanRefund(5000)).not.toThrow();
+			expect(() => tx.assertCanRefund()).not.toThrow();
+		});
+
+		it('should throw PaymentAlreadyRefundedError when transaction is already REFUNDED', () => {
+			const tx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				razorpayPaymentId: 'pay_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'REFUNDED',
+			});
+			expect(() => tx.assertCanRefund()).toThrow(PaymentAlreadyRefundedError);
+		});
+
+		it('should throw CannotRefundUncapturedPaymentError when status is CREATED or FAILED', () => {
+			const createdTx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'CREATED',
+			});
+			expect(() => createdTx.assertCanRefund()).toThrow(CannotRefundUncapturedPaymentError);
+
+			const failedTx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'FAILED',
+			});
+			expect(() => failedTx.assertCanRefund()).toThrow(CannotRefundUncapturedPaymentError);
+		});
+
+		it('should throw CannotRefundUncapturedPaymentError when razorpayPaymentId is missing', () => {
+			const tx = createCapturedTx(5000, null);
+			expect(() => tx.assertCanRefund()).toThrow(CannotRefundUncapturedPaymentError);
+		});
+
+		it('should throw RefundAmountExceedsBalanceError when requested amount exceeds transaction amount', () => {
+			const tx = createCapturedTx(5000);
+			expect(() => tx.assertCanRefund(6000)).toThrow(RefundAmountExceedsBalanceError);
+		});
+
+		it('should throw RefundAmountInvalidError when requested amount does not match full amount', () => {
+			const tx = createCapturedTx(5000);
+			expect(() => tx.assertCanRefund(4000)).toThrow(RefundAmountInvalidError);
+		});
+	});
+
+	describe('markRefunded', () => {
+		it('should transition status to REFUNDED when currently CAPTURED', () => {
+			const tx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				razorpayPaymentId: 'pay_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'CAPTURED',
+			});
+
+			tx.markRefunded();
+			expect(tx.status).toBe('REFUNDED');
+			expect(tx.updatedAt).toBeInstanceOf(Date);
+		});
+
+		it('should throw InvalidPaymentStateTransitionError when trying to refund a CREATED or FAILED transaction', () => {
+			const tx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'CREATED',
+			});
+
+			expect(() => tx.markRefunded()).toThrow(InvalidPaymentStateTransitionError);
 		});
 	});
 });

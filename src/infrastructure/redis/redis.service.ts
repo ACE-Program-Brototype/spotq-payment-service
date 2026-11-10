@@ -1,8 +1,10 @@
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import type { IHealthCheckable } from '@domain/index.ts';
+import { injectable } from 'inversify';
 import type { RedisClientType } from 'redis';
 import { redisClient } from './redis.client.ts';
 
+@injectable()
 export class RedisService implements ICacheService, IHealthCheckable {
 	private readonly client: RedisClientType;
 

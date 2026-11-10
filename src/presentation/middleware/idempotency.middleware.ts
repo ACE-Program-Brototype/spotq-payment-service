@@ -36,7 +36,9 @@ export function idempotencyMiddleware(
 	const lockTtl = options.lockTtlSeconds ?? REFUND_LOCK_TTL_SECONDS;
 
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-		const rawKey = getHeaderValue(req.headers[HTTP_HEADERS.IDEMPOTENCY_KEY]);
+		const rawKey = getHeaderValue(
+			req.headers[HTTP_HEADERS.X_IDEMPOTENCY_KEY] ?? req.headers[HTTP_HEADERS.IDEMPOTENCY_KEY],
+		);
 		const idempotencyKey = rawKey?.trim();
 
 		if (!idempotencyKey) {
@@ -85,7 +87,6 @@ export function idempotencyMiddleware(
 			}
 		}
 
-		// 2. Try acquiring distributed lock to prevent concurrent executions
 		// Only one in-flight request for this idempotency key may proceed.
 		const acquired = await cache.acquireLock(lockKey, lockTtl);
 		if (!acquired) {
@@ -106,11 +107,7 @@ export function idempotencyMiddleware(
 		res.json = (body: unknown): Response => {
 			if (res.statusCode >= HTTP_STATUS.OK && res.statusCode < HTTP_STATUS.BAD_REQUEST) {
 				void cache
-					.set(
-						cacheKey,
-						JSON.stringify({ fingerprint, statusCode: res.statusCode, body }),
-						ttl,
-					)
+					.set(cacheKey, JSON.stringify({ fingerprint, statusCode: res.statusCode, body }), ttl)
 					.then(() => originalJson(body))
 					.catch(() => originalJson(body));
 				return res;

@@ -1,8 +1,15 @@
+import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
+import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
+import type { IIdempotencyService } from '@application/ports/services/idempotency.service.port.ts';
 import type { ILogger } from '@application/ports/services/logger.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
+import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
+import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
+import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
+import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases/get-order-payment-status.use-case.port.ts';
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
@@ -10,6 +17,8 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port.ts';
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
+import type { IProcessOrderRefundUseCase } from '@application/ports/use-cases/process-order-refund.use-case.port.ts';
+import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IGetRestaurantTransactionsUseCase } from '@application/ports/use-cases/transactions/get-restaurant-transactions.use-case.port.ts';
 import type { IGetTransactionDetailUseCase } from '@application/ports/use-cases/transactions/get-transaction-detail.use-case.port.ts';
 import type { IVerifyOrderPaymentUseCase } from '@application/ports/use-cases/verify-order-payment.use-case.port.ts';
@@ -17,10 +26,16 @@ import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-
 import {
 	CreateOrderPaymentUseCase,
 	CreateSubscriptionOrderUseCase,
+	GetAdminSubscriberDetailsUseCase,
+	GetAdminSubscribersUseCase,
+	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
+	ProcessOrderRefundUseCase,
+	RenewSubscriptionUseCase,
+	RetryCustomerPaymentUseCase,
 	VerifyOrderPaymentUseCase,
 	VerifyPaymentUseCase,
 } from '@application/use-cases/index.ts';
@@ -44,6 +59,8 @@ import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import { RedisIdempotencyService } from '@infrastructure/redis/index.ts';
+import { RedisService } from '@infrastructure/redis/redis.service.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';
 import { PrismaFinanceQueryRepository } from '@infrastructure/repositories/prisma-finance-query.repository.ts';
 import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outbox.repository.ts';
@@ -52,7 +69,10 @@ import { PrismaPlatformLedgerTransactionRepository } from '@infrastructure/repos
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PrismaTransactionQueryRepository } from '@infrastructure/repositories/prisma-transaction-query.repository.ts';
+import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
 import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subscription-expiry.service.ts';
+import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
+import { CustomerPaymentController } from '@presentation/controllers/customer-payment.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
 import { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
 import { RestaurantTransactionController } from '@presentation/controllers/restaurant-transaction.controller.ts';
@@ -114,6 +134,16 @@ container
 	.inSingletonScope();
 
 container
+	.bind<IRestaurantServiceClient>(TYPES.Clients.RestaurantServiceClient)
+	.to(RestaurantServiceClient)
+	.inSingletonScope();
+
+container
+	.bind<IIdempotencyService>(TYPES.Services.IdempotencyService)
+	.to(RedisIdempotencyService)
+	.inSingletonScope();
+
+container
 	.bind<IOutboxRelayService>(TYPES.Services.OutboxRelayService)
 	.to(OutboxRelayService)
 	.inSingletonScope();
@@ -133,10 +163,16 @@ container
 	.to(RabbitMQService)
 	.inSingletonScope();
 
+container.bind<ICacheService>(TYPES.Services.CacheService).to(RedisService).inSingletonScope();
+
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)
 	.to(CreateSubscriptionOrderUseCase)
 	.inSingletonScope();
+
+container
+	.bind<IRenewSubscriptionUseCase>(TYPES.UseCases.RenewSubscriptionUseCase)
+	.to(RenewSubscriptionUseCase);
 
 container
 	.bind<IGetSubscriptionPlansUseCase>(TYPES.UseCases.GetSubscriptionPlansUseCase)
@@ -182,6 +218,14 @@ container
 	.inSingletonScope();
 
 container
+	.bind<IGetCustomerPaymentHistoryUseCase>(TYPES.UseCases.GetCustomerPaymentHistoryUseCase)
+	.to(GetCustomerPaymentHistoryUseCase);
+
+container
+	.bind<IRetryCustomerPaymentUseCase>(TYPES.UseCases.RetryCustomerPaymentUseCase)
+	.to(RetryCustomerPaymentUseCase);
+
+container
 	.bind<ICreateOrderPaymentUseCase>(TYPES.UseCases.CreateOrderPaymentUseCase)
 	.to(CreateOrderPaymentUseCase)
 	.inSingletonScope();
@@ -195,6 +239,19 @@ container
 	.bind<IGetOrderPaymentStatusUseCase>(TYPES.UseCases.GetOrderPaymentStatusUseCase)
 	.to(GetOrderPaymentStatusUseCase)
 	.inSingletonScope();
+
+container
+	.bind<IProcessOrderRefundUseCase>(TYPES.UseCases.ProcessOrderRefundUseCase)
+	.to(ProcessOrderRefundUseCase)
+	.inSingletonScope();
+
+container
+	.bind<IGetAdminSubscribersUseCase>(TYPES.UseCases.GetAdminSubscribersUseCase)
+	.to(GetAdminSubscribersUseCase);
+
+container
+	.bind<IGetAdminSubscriberDetailsUseCase>(TYPES.UseCases.GetAdminSubscriberDetailsUseCase)
+	.to(GetAdminSubscriberDetailsUseCase);
 
 container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)
@@ -215,3 +272,15 @@ container
 	.bind<OrderPaymentController>(TYPES.Controllers.OrderPaymentController)
 	.to(OrderPaymentController)
 	.inSingletonScope();
+
+container
+	.bind<CustomerPaymentController>(TYPES.Controllers.CustomerPaymentController)
+	.to(CustomerPaymentController)
+	.inSingletonScope();
+
+container
+	.bind<AdminSubscriberController>(TYPES.Controllers.AdminSubscriberController)
+	.to(AdminSubscriberController)
+	.inSingletonScope();
+
+export const cacheService = container.get<ICacheService>(TYPES.Services.CacheService);

@@ -13,7 +13,12 @@ export const TYPES = {
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
 	},
+	Clients: {
+		RestaurantServiceClient: Symbol.for('IRestaurantServiceClient'),
+	},
 	Services: {
+		CacheService: Symbol.for('ICacheService'),
+		IdempotencyService: Symbol.for('IIdempotencyService'),
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),
 		SubscriptionExpiryService: Symbol.for('IPaymentSubscriptionExpiryService'),
@@ -22,6 +27,7 @@ export const TYPES = {
 	UseCases: {
 		CreateOrderPaymentUseCase: Symbol.for('ICreateOrderPaymentUseCase'),
 		CreateSubscriptionOrderUseCase: Symbol.for('ICreateSubscriptionOrderUseCase'),
+		RenewSubscriptionUseCase: Symbol.for('IRenewSubscriptionUseCase'),
 		GetOrderPaymentStatusUseCase: Symbol.for('IGetOrderPaymentStatusUseCase'),
 		GetSubscriptionPlansUseCase: Symbol.for('IGetSubscriptionPlansUseCase'),
 		GetSubscriptionStatusUseCase: Symbol.for('IGetSubscriptionStatusUseCase'),
@@ -38,6 +44,11 @@ export const TYPES = {
 			LinkBankAccountUseCase: Symbol.for('ILinkBankAccountUseCase'),
 			WithdrawFromRestaurantWalletUseCase: Symbol.for('IWithdrawFromRestaurantWalletUseCase'),
 		},
+		GetCustomerPaymentHistoryUseCase: Symbol.for('IGetCustomerPaymentHistoryUseCase'),
+		RetryCustomerPaymentUseCase: Symbol.for('IRetryCustomerPaymentUseCase'),
+		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
+		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
+		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
 	},
 	Controllers: {
 		OrderPaymentController: Symbol.for('OrderPaymentController'),
@@ -45,6 +56,8 @@ export const TYPES = {
 		RestaurantTransactionController: Symbol.for('RestaurantTransactionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
 		RestaurantWalletController: Symbol.for('RestaurantWalletController'),
+		CustomerPaymentController: Symbol.for('CustomerPaymentController'),
+		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
 	},
 	Logger: Symbol.for('ILogger'),
 } as const;

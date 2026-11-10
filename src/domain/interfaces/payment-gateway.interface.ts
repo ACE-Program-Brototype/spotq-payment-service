@@ -1,3 +1,5 @@
+import type { RazorpayRefundSpeed } from '@shared/constants';
+
 export interface CreateOrderParams {
 	amountInPaise: number;
 	currency: string;
@@ -58,6 +60,22 @@ export interface PayoutResult {
 	status: string;
 }
 
+export interface CreateRefundParams {
+	paymentId: string;
+	amountInPaise: number;
+	speed?: RazorpayRefundSpeed;
+	notes?: Record<string, string>;
+}
+
+export interface PaymentRefundResult {
+	refundId: string;
+	paymentId: string;
+	amount: number;
+	currency: string;
+	status: string;
+	arn?: string;
+}
+
 export interface IPaymentGateway {
 	initialize(): Promise<void>;
 	isHealthy(): boolean;
@@ -76,4 +94,5 @@ export interface IPaymentGateway {
 	createContact(name: string): Promise<{ contactId: string }>;
 	deactivateFundAccount(fundAccountId: string): Promise<void>;
 	createPayout(params: CreatePayoutParams): Promise<PayoutResult>;
+	createRefund(params: CreateRefundParams): Promise<PaymentRefundResult>;
 }

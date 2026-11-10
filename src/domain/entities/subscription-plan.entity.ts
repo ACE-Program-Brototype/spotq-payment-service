@@ -30,6 +30,10 @@ export class SubscriptionPlan {
 		return this.props.code;
 	}
 
+	get tierCode(): string {
+		return this.props.code.replace(/_(?:MONTHLY|YEARLY|ANNUAL)$/i, '');
+	}
+
 	get name(): string {
 		return this.props.name;
 	}

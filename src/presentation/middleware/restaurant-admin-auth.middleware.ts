@@ -1,5 +1,10 @@
-import { ALLOWED_RESTAURANT_OWNER_ROLE, HTTP_STATUS, MESSAGES } from '@shared/constants';
-import { ApiResponse } from '@shared/index';
+import {
+	ALLOWED_RESTAURANT_OWNER_ROLE,
+	ERROR_CODES,
+	HTTP_STATUS,
+	MESSAGES,
+} from '@shared/constants';
+import { ApiResponse, sendErrorResponse } from '@shared/index';
 import type { NextFunction, Request, Response } from 'express';
 
 /**
@@ -24,13 +29,15 @@ export function restaurantAdminAuthMiddleware(
 	const headerUserId = getHeaderValue(req.headers['x-user-id']);
 	const headerRestaurantId = getHeaderValue(req.headers['x-restaurant-id']);
 	const userId = headerUserId;
+	const restaurantId = headerRestaurantId;
 
-	if (!userId) {
-		res
-			.status(HTTP_STATUS.UNAUTHORIZED)
-			.json(
-				ApiResponse.error(MESSAGES.GATEWAY_UNAUTHORIZED, 'UNAUTHORIZED', HTTP_STATUS.UNAUTHORIZED),
-			);
+	if (!restaurantId || !userId) {
+		sendErrorResponse(
+			res,
+			MESSAGES.UNAUTHORIZED_ACCESS,
+			ERROR_CODES.UNAUTHORIZED,
+			HTTP_STATUS.UNAUTHORIZED,
+		);
 		return;
 	}
 
@@ -40,17 +47,16 @@ export function restaurantAdminAuthMiddleware(
 	if (!normalizedRole || ALLOWED_RESTAURANT_OWNER_ROLE !== normalizedRole) {
 		res
 			.status(HTTP_STATUS.FORBIDDEN)
-			.json(ApiResponse.error(MESSAGES.OWNER_FORBIDDEN, 'FORBIDDEN', HTTP_STATUS.FORBIDDEN));
+			.json(ApiResponse.error('FORBIDDEN', MESSAGES.OWNER_FORBIDDEN, HTTP_STATUS.FORBIDDEN));
 		return;
 	}
 
 	const email = getHeaderValue(req.headers['x-user-email']);
-	const restaurantId = headerRestaurantId;
 
 	if (userId && restaurantId && userId.trim() !== restaurantId.trim()) {
 		res
 			.status(HTTP_STATUS.FORBIDDEN)
-			.json(ApiResponse.error(MESSAGES.FORBIDDEN_ACCESS, 'FORBIDDEN', HTTP_STATUS.FORBIDDEN));
+			.json(ApiResponse.error('FORBIDDEN', MESSAGES.FORBIDDEN_ACCESS, HTTP_STATUS.FORBIDDEN));
 		return;
 	}
 

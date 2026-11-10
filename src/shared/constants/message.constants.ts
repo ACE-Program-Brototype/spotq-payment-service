@@ -30,6 +30,7 @@ export enum MessageEnum {
 	RAZORPAY_INITIALIZATION_FAILED = 'Razorpay Initialization Failed',
 	RAZORPAY_CONFIG_MISSING = 'Razorpay configuration missing: RAZORPAY_TEST_API_KEY or RAZORPAY_TEST_SECRET_KEY is not defined',
 	RAZORPAY_CREDS_EMPTY = 'Razorpay credentials cannot be empty',
+	RAZORPAY_CLIENT_NOT_INITIALIZED = 'Razorpay client is not initialized',
 	SHUTDOWN_SIGINT = 'Received SIGINT. Gracefully shutting down...',
 	SHUTDOWN_SIGTERM = 'Received SIGTERM. Gracefully shutting down...',
 	SHUTDOWN_IN_PROGRESS = 'Received shutdown signal but shutdown is already in progress...',
@@ -55,7 +56,7 @@ export enum MessageEnum {
 	ORDER_PAYMENT_STATUS_FETCHED = 'Payment status retrieved successfully',
 	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
-	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is required',
+	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is require',
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
@@ -90,6 +91,18 @@ export enum MessageEnum {
 	BAD_REQUEST = 'Bad request: missing or invalid request parameters',
 	RESOURCE_NOT_FOUND = 'The requested resource could not be found',
 	CONFLICT = 'A conflict occurred with the current state of the resource',
+	REFUND_PROCESSED = 'Refund processed successfully and reversal initiated',
+	PAYMENT_ALREADY_REFUNDED = 'Payment transaction has already been refunded',
+	CANNOT_REFUND_UNCAPTURED_PAYMENT = 'Cannot refund payment that is not captured',
+	REFUND_AMOUNT_EXCEEDS_BALANCE = 'Requested refund amount exceeds refundable balance',
+	REFUND_AMOUNT_INVALID = 'Refund amount does not match transaction amount',
+	REFUND_GATEWAY_ERROR = 'Payment gateway refund request failed',
+
+	// platform subscribers
+	SUBSCRIBERS_RETRIEVED = 'Subscribers retrieved successfully',
+	SUBSCRIBER_DETAILS_RETRIEVED = 'Subscriber details retrieved successfully',
+	SUBSCRIBER_NOT_FOUND = 'Subscriber not found',
+	INVALID_SUBSCRIBER_ID = 'Invalid subscriber ID format',
 
 	// transactions
 	TRANSACTIONS_RETRIEVED = 'Transactions retrieved successfully',
@@ -103,6 +116,28 @@ export enum MessageEnum {
 
 	// Gateway
 	PAYMENT_GATEWAY_ERROR = 'Payment gateway error',
+	// customer payment history & retry (SCRUM-35)
+	PAYMENT_HISTORY_RETRIEVED = 'Payment history retrieved successfully',
+	PAYMENT_RETRY_INITIATED = 'Payment retry initiated successfully',
+	ALREADY_PAID = 'The associated food order has already been successfully paid',
+	ORDER_EXPIRED = 'Payment retry window has expired',
+	NOT_RETRYABLE = 'Only failed payment transactions can be retried',
+
+	// subscription renewal (SCRUM-1241)
+	SUBSCRIPTION_RENEWAL_ORDER_CREATED = 'Subscription renewal order created successfully',
+	SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
+	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL = 'Subscription is not eligible for renewal',
+	SUBSCRIPTION_RENEWED_SUCCESS = 'Subscription renewed successfully',
+	INVALID_SUBSCRIPTION_ID = 'Invalid subscription ID format',
+	INVALID_PLAN_ID = 'Invalid plan ID format',
+	FORBIDDEN_SUBSCRIPTION_ACCESS = 'You are not authorized to manage this restaurant subscription',
+	PAYMENT_GATEWAY_UNAVAILABLE = 'Payment provider is currently unavailable',
+	MISSING_IDEMPOTENCY_KEY = 'Idempotency-Key header is required',
+	INVALID_IDEMPOTENCY_KEY = 'Idempotency-Key must be 8 to 128 characters containing only letters, numbers, hyphens, underscores, colons, or dots',
+	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH = 'Idempotency-Key has already been used with different request parameters',
+	IDEMPOTENCY_REQUEST_IN_PROGRESS = 'A request with this Idempotency-Key is currently being processed',
+	IDEMPOTENCY_STORAGE_UNAVAILABLE = 'Idempotency and lock service is currently unavailable',
+	RENEWAL_ALREADY_IN_PROGRESS = 'Another renewal request for this subscription is currently in progress',
 }
 
 export const MESSAGES = {
@@ -137,6 +172,7 @@ export const MESSAGES = {
 	RAZORPAY_INITIALIZATION_FAILED: MessageEnum.RAZORPAY_INITIALIZATION_FAILED,
 	RAZORPAY_CONFIG_MISSING: MessageEnum.RAZORPAY_CONFIG_MISSING,
 	RAZORPAY_CREDS_EMPTY: MessageEnum.RAZORPAY_CREDS_EMPTY,
+	RAZORPAY_CLIENT_NOT_INITIALIZED: MessageEnum.RAZORPAY_CLIENT_NOT_INITIALIZED,
 	SHUTDOWN_SIGINT: MessageEnum.SHUTDOWN_SIGINT,
 	SHUTDOWN_SIGTERM: MessageEnum.SHUTDOWN_SIGTERM,
 	SHUTDOWN_IN_PROGRESS: MessageEnum.SHUTDOWN_IN_PROGRESS,
@@ -164,7 +200,6 @@ export const MESSAGES = {
 	ORDER_PAYMENT_STATUS_FETCHED: MessageEnum.ORDER_PAYMENT_STATUS_FETCHED,
 	ORDER_PAYMENT_NOT_FOUND: MessageEnum.ORDER_PAYMENT_NOT_FOUND,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
-	IDEMPOTENCY_KEY_REQUIRED: MessageEnum.IDEMPOTENCY_KEY_REQUIRED,
 
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
@@ -201,6 +236,19 @@ export const MESSAGES = {
 	BAD_REQUEST: MessageEnum.BAD_REQUEST,
 	RESOURCE_NOT_FOUND: MessageEnum.RESOURCE_NOT_FOUND,
 	CONFLICT: MessageEnum.CONFLICT,
+	REFUND_PROCESSED: MessageEnum.REFUND_PROCESSED,
+	PAYMENT_ALREADY_REFUNDED: MessageEnum.PAYMENT_ALREADY_REFUNDED,
+	CANNOT_REFUND_UNCAPTURED_PAYMENT: MessageEnum.CANNOT_REFUND_UNCAPTURED_PAYMENT,
+	REFUND_AMOUNT_EXCEEDS_BALANCE: MessageEnum.REFUND_AMOUNT_EXCEEDS_BALANCE,
+	REFUND_AMOUNT_INVALID: MessageEnum.REFUND_AMOUNT_INVALID,
+	REFUND_GATEWAY_ERROR: MessageEnum.REFUND_GATEWAY_ERROR,
+	IDEMPOTENCY_KEY_REQUIRED: MessageEnum.IDEMPOTENCY_KEY_REQUIRED,
+
+	// platform subscribers
+	SUBSCRIBERS_RETRIEVED: MessageEnum.SUBSCRIBERS_RETRIEVED,
+	SUBSCRIBER_DETAILS_RETRIEVED: MessageEnum.SUBSCRIBER_DETAILS_RETRIEVED,
+	SUBSCRIBER_NOT_FOUND: MessageEnum.SUBSCRIBER_NOT_FOUND,
+	INVALID_SUBSCRIBER_ID: MessageEnum.INVALID_SUBSCRIBER_ID,
 
 	// transactions
 	TRANSACTIONS_RETRIEVED: MessageEnum.TRANSACTIONS_RETRIEVED,
@@ -214,6 +262,29 @@ export const MESSAGES = {
 
 	// gateway
 	PAYMENT_GATEWAY_ERROR: MessageEnum.PAYMENT_GATEWAY_ERROR,
+
+	// customer payment history & retry
+	PAYMENT_HISTORY_RETRIEVED: MessageEnum.PAYMENT_HISTORY_RETRIEVED,
+	PAYMENT_RETRY_INITIATED: MessageEnum.PAYMENT_RETRY_INITIATED,
+	ALREADY_PAID: MessageEnum.ALREADY_PAID,
+	ORDER_EXPIRED: MessageEnum.ORDER_EXPIRED,
+	NOT_RETRYABLE: MessageEnum.NOT_RETRYABLE,
+
+	// subscription renewal (SCRUM-1241)
+	SUBSCRIPTION_RENEWAL_ORDER_CREATED: MessageEnum.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
+	SUBSCRIPTION_NOT_FOUND: MessageEnum.SUBSCRIPTION_NOT_FOUND,
+	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL: MessageEnum.SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL,
+	SUBSCRIPTION_RENEWED_SUCCESS: MessageEnum.SUBSCRIPTION_RENEWED_SUCCESS,
+	INVALID_SUBSCRIPTION_ID: MessageEnum.INVALID_SUBSCRIPTION_ID,
+	INVALID_PLAN_ID: MessageEnum.INVALID_PLAN_ID,
+	FORBIDDEN_SUBSCRIPTION_ACCESS: MessageEnum.FORBIDDEN_SUBSCRIPTION_ACCESS,
+	PAYMENT_GATEWAY_UNAVAILABLE: MessageEnum.PAYMENT_GATEWAY_UNAVAILABLE,
+	MISSING_IDEMPOTENCY_KEY: MessageEnum.MISSING_IDEMPOTENCY_KEY,
+	INVALID_IDEMPOTENCY_KEY: MessageEnum.INVALID_IDEMPOTENCY_KEY,
+	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH: MessageEnum.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH,
+	IDEMPOTENCY_REQUEST_IN_PROGRESS: MessageEnum.IDEMPOTENCY_REQUEST_IN_PROGRESS,
+	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
+	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
 } as const;
 
 export const messages = MESSAGES;
@@ -228,6 +299,9 @@ export const ERROR_CODES = {
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
 	CONFLICT: 'CONFLICT',
+	ALREADY_PAID: 'ALREADY_PAID',
+	ORDER_EXPIRED: 'ORDER_EXPIRED',
+	NOT_RETRYABLE: 'NOT_RETRYABLE',
 	UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
 	BAD_GATEWAY: 'BAD_GATEWAY',
 } as const;

@@ -106,22 +106,22 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 				.set('x-user-id', mockUserId)
 				.set('x-user-role', 'RESTAURANT_ADMIN');
 
-			expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
+			expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
 			expect(res.body.success).toBe(false);
-			expect(res.body.error).toBe('Forbidden: Restaurant owner access required');
-			expect(res.body.message).toBe('FORBIDDEN');
+			expect(res.body.error).toBe(ERROR_CODES.UNAUTHORIZED);
+			expect(res.body.message).toBe('Authentication token missing or invalid.');
 		});
 
 		it('should return 401 Unauthorized when x-user-id is missing', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
-				.set('x-user-role', 'RESTAURANT_ADMIN');
+				.set('x-user-role', 'RESTAURANT_OWNER');
 
 			expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
 			expect(res.body.success).toBe(false);
-			expect(res.body.error).toBe(MESSAGES.GATEWAY_UNAUTHORIZED);
-			expect(res.body.message).toBe('UNAUTHORIZED');
+			expect(res.body.error).toBe(ERROR_CODES.UNAUTHORIZED);
+			expect(res.body.message).toBe('Authentication token missing or invalid.');
 		});
 
 		it('should return 403 Forbidden when x-user-role is not RESTAURANT_OWNER', async () => {
@@ -133,8 +133,8 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 
 			expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
 			expect(res.body.success).toBe(false);
-			expect(res.body.error).toBe(MESSAGES.OWNER_FORBIDDEN);
-			expect(res.body.message).toBe('FORBIDDEN');
+			expect(res.body.error).toBe(ERROR_CODES.FORBIDDEN);
+			expect(res.body.message).toBe(MESSAGES.OWNER_FORBIDDEN);
 		});
 
 		it('should reject access when x-user-role is RESTAURANT_STAFF', async () => {

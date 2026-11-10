@@ -16,7 +16,6 @@ import { PAYMENT_EVENTS, RABBITMQ_QUEUES, SUBSCRIPTION_EVENTS } from '@shared/co
 import { inject, injectable, optional, unmanaged } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
-export const BASE_RETRY_BACKOFF_MS = 2000;
 
 /**
  * Service responsible for polling pending transactional outbox events
@@ -81,7 +80,10 @@ export class OutboxRelayService implements IOutboxRelayService {
 
 			for (const event of pendingEvents) {
 				try {
-					if (event.eventType === SUBSCRIPTION_EVENTS.ACTIVATED) {
+					if (
+						event.eventType === SUBSCRIPTION_EVENTS.ACTIVATED ||
+						event.eventType === SUBSCRIPTION_EVENTS.RENEWED
+					) {
 						const payload = event.payload as unknown as SubscriptionActivatedEventPayload;
 						await this.eventProducer.publishSubscriptionActivated({
 							...payload,

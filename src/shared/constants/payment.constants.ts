@@ -101,6 +101,11 @@ export const REFUND_LOCK_TTL_SECONDS = 15;
 
 export const RABBITMQ_QUEUES = {
 	ORDER_EVENTS: 'order-events',
+	PAYMENT_EVENTS: 'payment-events',
+} as const;
+
+export const INVOICE_EVENTS = {
+	ORDER_PAYMENT_INVOICE: 'order.payment.invoice',
 } as const;
 
 export type RabbitMQQueue = (typeof RABBITMQ_QUEUES)[keyof typeof RABBITMQ_QUEUES];

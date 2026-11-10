@@ -52,4 +52,15 @@ export const config = {
 	services: {
 		restaurantServiceUrl: env.RESTAURANT_SERVICE_URL,
 	},
+
+	gotenberg: {
+		url: env.GOTENBERG_URL,
+	},
+
+	s3: {
+		accessKeyId: env.AWS_ACCESS_KEY_ID,
+		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+		region: env.AWS_REGION,
+		bucket: env.AWS_S3_BUCKET,
+	},
 } as const;

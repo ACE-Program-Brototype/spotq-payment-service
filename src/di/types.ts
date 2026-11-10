@@ -23,6 +23,12 @@ export const TYPES = {
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),
 		SubscriptionExpiryService: Symbol.for('IPaymentSubscriptionExpiryService'),
 		RabbitMQService: Symbol.for('RabbitMQService'),
+		InvoicePdfService: Symbol.for('IInvoicePdfService'),
+		StorageService: Symbol.for('IStorageService'),
+		Logger: Symbol.for('ILogger'),
+	},
+	Consumers: {
+		OrderInvoiceConsumer: Symbol.for('OrderInvoiceConsumer'),
 	},
 	UseCases: {
 		CreateOrderPaymentUseCase: Symbol.for('ICreateOrderPaymentUseCase'),
@@ -34,6 +40,7 @@ export const TYPES = {
 		HandleWebhookUseCase: Symbol.for('IHandleWebhookUseCase'),
 		VerifyOrderPaymentUseCase: Symbol.for('IVerifyOrderPaymentUseCase'),
 		VerifyPaymentUseCase: Symbol.for('IVerifyPaymentUseCase'),
+		GenerateOrderInvoiceUseCase: Symbol.for('IGenerateOrderInvoiceUseCase'),
 		GetRestaurantTransactionsUseCase: Symbol.for('IGetRestaurantTransactionsUseCase'),
 		GetTransactionDetailUseCase: Symbol.for('IGetTransactionDetailUseCase'),
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),

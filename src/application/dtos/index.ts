@@ -6,6 +6,7 @@ export * from './customer-payment/index.ts';
 export * from './get-order-payment-status.dto.ts';
 export * from './get-subscription-status.dto.ts';
 export * from './handle-webhook.dto.ts';
+export * from './order-payment-invoice-event.dto.ts';
 export * from './process-order-refund.dto.ts';
 export * from './restaurant-wallet/get-restaurant-wallet-overview.dto.ts';
 export * from './restaurant-wallet/link-restaurant-wallet-bank-account.dto.ts';

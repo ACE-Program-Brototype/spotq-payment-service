@@ -37,3 +37,11 @@ export const HTTP_STATUS = {
 } as const;
 
 export type HttpStatus = (typeof HTTP_STATUS)[keyof typeof HTTP_STATUS];
+
+export const HTTP_HEADERS = {
+	IDEMPOTENCY_KEY: 'idempotency-key',
+	X_IDEMPOTENCY_KEY: 'x-idempotency-key',
+	IDEMPOTENCY_REPLAYED: 'Idempotency-Replayed',
+} as const;
+
+export type HttpHeader = (typeof HTTP_HEADERS)[keyof typeof HTTP_HEADERS];

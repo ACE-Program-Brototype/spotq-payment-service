@@ -1,3 +1,4 @@
+import { DB_POOL_DEFAULTS } from '@infrastructure/database/database.constants.ts';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -10,12 +11,19 @@ const envSchema = z.object({
 	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']),
 
 	DATABASE_URL: z.string().url(),
+	DB_POOL_MAX: z.coerce.number().positive().default(DB_POOL_DEFAULTS.MAX_CONNECTIONS),
+	DB_IDLE_TIMEOUT_MS: z.coerce.number().positive().default(DB_POOL_DEFAULTS.IDLE_TIMEOUT_MS),
+	DB_CONNECTION_TIMEOUT_MS: z.coerce
+		.number()
+		.positive()
+		.default(DB_POOL_DEFAULTS.CONNECTION_TIMEOUT_MS),
 
 	REDIS_URL: z.string().url(),
 
 	RAZORPAY_TEST_API_KEY: z.string().min(1),
 	RAZORPAY_TEST_SECRET_KEY: z.string().min(1),
 	RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+	RAZORPAYX_ACCOUNT_NUMBER: z.string().optional(),
 
 	QUEUE_PREFIX: z.string().min(1).default('bull'),
 
@@ -32,6 +40,8 @@ const envSchema = z.object({
 	AWS_SECRET_ACCESS_KEY: z.string().trim().min(1),
 	AWS_REGION: z.string().trim().min(1).default('ap-south-1'),
 	AWS_S3_BUCKET: z.string().trim().min(1).default('spotq-restaurant-files'),
+
+	RESTAURANT_SERVICE_URL: z.string().url().default('http://restaurant-service:3001'),
 });
 
 export const validateEnv = () => {

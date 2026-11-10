@@ -18,6 +18,7 @@
 		"prisma:migrate": "prisma migrate dev",
 		"prisma:studio": "prisma studio",
 		"seed:plans": "tsx prisma/seed.ts",
+		"seed:failed-tx": "infisical run --env=dev -- tsx scripts/seed-failed-transaction.ts",
 		"subscription:reset": "infisical run --env=dev -- tsx scripts/reset-subscription.ts",
 		"invoice:test-pdf": "tsx scripts/test-invoice-pdf.ts",
 		"invoice:publish": "tsx scripts/publish-test-invoice.ts",

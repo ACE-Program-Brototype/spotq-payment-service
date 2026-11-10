@@ -1,8 +1,11 @@
+import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import type { IHealthCheckable } from '@domain/index.ts';
+import { injectable } from 'inversify';
 import type { RedisClientType } from 'redis';
 import { redisClient } from './redis.client.ts';
 
-export class RedisService implements IHealthCheckable {
+@injectable()
+export class RedisService implements ICacheService, IHealthCheckable {
 	private readonly client: RedisClientType;
 
 	constructor(client: RedisClientType = redisClient) {
@@ -35,16 +38,37 @@ export class RedisService implements IHealthCheckable {
 		return this.isHealthy();
 	}
 
+	async get(key: string): Promise<string | null> {
+		try {
+			if (!this.client.isOpen) return null;
+			return await this.client.get(key);
+		} catch {
+			return null;
+		}
+	}
+
+	async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
+		try {
+			if (!this.client.isOpen) return;
+			if (ttlSeconds) {
+				await this.client.set(key, value, { EX: ttlSeconds });
+			} else {
+				await this.client.set(key, value);
+			}
+		} catch {
+			// Ignore cache write failures.
+		}
+	}
+
 	async acquireLock(key: string, ttlSeconds = 10): Promise<boolean> {
 		try {
-			if (!this.client.isOpen) return true;
 			const result = await this.client.set(key, 'locked', {
 				NX: true,
 				EX: ttlSeconds,
 			});
 			return result === 'OK';
 		} catch {
-			return true;
+			return false;
 		}
 	}
 

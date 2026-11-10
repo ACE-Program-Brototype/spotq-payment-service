@@ -1,10 +1,10 @@
 export interface ILogger {
-	info(message: string): void;
-	info(obj: object, message?: string): void;
-	warn(message: string): void;
-	warn(obj: object, message?: string): void;
-	error(message: string): void;
-	error(obj: object, message?: string): void;
-	debug(message: string): void;
-	debug(obj: object, message?: string): void;
+	info(mergObj: object, message?: string, ...args: unknown[]): void;
+	info(message: string, ...args: unknown[]): void;
+	error(mergObj: object, message?: string, ...args: unknown[]): void;
+	error(message: string, ...args: unknown[]): void;
+	warn(mergObj: object, message?: string, ...args: unknown[]): void;
+	warn(message: string, ...args: unknown[]): void;
+	debug(mergObj: object, message?: string, ...args: unknown[]): void;
+	debug(message: string, ...args: unknown[]): void;
 }

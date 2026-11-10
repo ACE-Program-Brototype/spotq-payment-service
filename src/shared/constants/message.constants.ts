@@ -30,6 +30,7 @@ export enum MessageEnum {
 	RAZORPAY_INITIALIZATION_FAILED = 'Razorpay Initialization Failed',
 	RAZORPAY_CONFIG_MISSING = 'Razorpay configuration missing: RAZORPAY_TEST_API_KEY or RAZORPAY_TEST_SECRET_KEY is not defined',
 	RAZORPAY_CREDS_EMPTY = 'Razorpay credentials cannot be empty',
+	RAZORPAY_CLIENT_NOT_INITIALIZED = 'Razorpay client is not initialized',
 	SHUTDOWN_SIGINT = 'Received SIGINT. Gracefully shutting down...',
 	SHUTDOWN_SIGTERM = 'Received SIGTERM. Gracefully shutting down...',
 	SHUTDOWN_IN_PROGRESS = 'Received shutdown signal but shutdown is already in progress...',
@@ -41,6 +42,8 @@ export enum MessageEnum {
 	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
 	SUBSCRIPTION_STATUS_FETCHED = 'Subscription status retrieved successfully',
 	PLAN_NOT_FOUND = 'Subscription plan not found',
+	RESTAURANT_WALLET_NOT_FOUND = 'Restaurant wallet not found',
+	RESTAURANT_ID_NOT_FOUND = 'Restaurant ID not found',
 	ACTIVE_SUBSCRIPTION_EXISTS = 'Restaurant already has an active subscription',
 	PAYMENT_ORDER_NOT_FOUND = 'Payment order not found',
 	INVALID_PAYMENT_SIGNATURE = 'Invalid payment signature provided',
@@ -53,6 +56,7 @@ export enum MessageEnum {
 	ORDER_PAYMENT_STATUS_FETCHED = 'Payment status retrieved successfully',
 	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
+	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is require',
 
 	GOTENBERG_CONVERSION_FAILED = 'Gotenberg conversion failed',
 	GOTENBERG_CONNECTION_FAILED = 'Failed to connect to Gotenberg PDF service',
@@ -62,20 +66,84 @@ export enum MessageEnum {
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
+	OWNER_FORBIDDEN = 'Forbidden: Restaurant owner access required',
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED = 'Failed to retrieve platform finance summary',
 	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
+
+	// restaurant wallet
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet received successfully',
+	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS = 'Bank account linked successfully',
+	WITHDRAWAL_INITIATED_SUCCESS = 'Withdrawal initiated successfully',
+	BANK_NAME_REQUIRED = 'Bank name is required',
+	INVALID_BANK_ACCOUNT_NUMBER = 'Account number must contain 9 to 18 digits',
+	INVALID_IFSC_CODE = 'IFSC code is invalid',
+	INVALID_BANK_ACCOUNT_DETAILS = 'Invalid bank account details',
+	WITHDRAWAL_AMOUNT_REQUIRED = 'Withdrawal amount must be a positive whole number of paise',
+	INVALID_WITHDRAWAL_MODE = 'Withdrawal mode must be one of: IMPS, NEFT, RTGS, UPI',
+	WALLET_WITHDRAWAL_LOCKED = 'Wallet is locked and cannot be withdrawn from',
+	WALLET_WITHDRAWAL_BANK_REQUIRED = 'Link a bank account before requesting a withdrawal',
+	WALLET_INSUFFICIENT_BALANCE = 'Insufficient wallet balance for this withdrawal',
+	WALLET_T1_BALANCE_UNAVAILABLE = "Today's earnings will be available to withdraw tomorrow",
+	WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED = 'Wallet withdrawals are only supported in INR',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
 	CANNOT_CAPTURE_FAILED_PAYMENT = 'Cannot capture a payment that has already failed',
-	UNAUTHORIZED_ACCESS = 'Authentication credentials are missing or invalid',
-	FORBIDDEN_ACCESS = 'Access denied: insufficient permissions to perform this action',
+	UNAUTHORIZED_ACCESS = 'Authentication token missing or invalid.',
+	FORBIDDEN_ACCESS = 'Access denied. Insufficient permissions.',
 	BAD_REQUEST = 'Bad request: missing or invalid request parameters',
 	RESOURCE_NOT_FOUND = 'The requested resource could not be found',
 	CONFLICT = 'A conflict occurred with the current state of the resource',
+	REFUND_PROCESSED = 'Refund processed successfully and reversal initiated',
+	PAYMENT_ALREADY_REFUNDED = 'Payment transaction has already been refunded',
+	CANNOT_REFUND_UNCAPTURED_PAYMENT = 'Cannot refund payment that is not captured',
+	REFUND_AMOUNT_EXCEEDS_BALANCE = 'Requested refund amount exceeds refundable balance',
+	REFUND_AMOUNT_INVALID = 'Refund amount does not match transaction amount',
+	REFUND_GATEWAY_ERROR = 'Payment gateway refund request failed',
+
+	// platform subscribers
+	SUBSCRIBERS_RETRIEVED = 'Subscribers retrieved successfully',
+	SUBSCRIBER_DETAILS_RETRIEVED = 'Subscriber details retrieved successfully',
+	SUBSCRIBER_NOT_FOUND = 'Subscriber not found',
+	INVALID_SUBSCRIBER_ID = 'Invalid subscriber ID format',
+
+	// transactions
+	TRANSACTIONS_RETRIEVED = 'Transactions retrieved successfully',
+	TRANSACTION_DETAILS_RETRIEVED = 'Transaction details retrieved successfully',
+	TRANSACTION_NOT_FOUND = 'Transaction record not found.',
+	INVALID_TRANSACTION_ID = 'Invalid transaction ID format.',
+	INVALID_DATE_RANGE = 'Invalid date range: startDate cannot be after endDate',
+	INVALID_AMOUNT_RANGE = 'Invalid amount range: minAmount cannot be greater than maxAmount',
+	INVALID_DATE_FORMAT = 'Date must be a valid calendar date in YYYY-MM-DD format',
+	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
+
+	// Gateway
+	PAYMENT_GATEWAY_ERROR = 'Payment gateway error',
+	// customer payment history & retry (SCRUM-35)
+	PAYMENT_HISTORY_RETRIEVED = 'Payment history retrieved successfully',
+	PAYMENT_RETRY_INITIATED = 'Payment retry initiated successfully',
+	ALREADY_PAID = 'The associated food order has already been successfully paid',
+	ORDER_EXPIRED = 'Payment retry window has expired',
+	NOT_RETRYABLE = 'Only failed payment transactions can be retried',
+
+	// subscription renewal (SCRUM-1241)
+	SUBSCRIPTION_RENEWAL_ORDER_CREATED = 'Subscription renewal order created successfully',
+	SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
+	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL = 'Subscription is not eligible for renewal',
+	SUBSCRIPTION_RENEWED_SUCCESS = 'Subscription renewed successfully',
+	INVALID_SUBSCRIPTION_ID = 'Invalid subscription ID format',
+	INVALID_PLAN_ID = 'Invalid plan ID format',
+	FORBIDDEN_SUBSCRIPTION_ACCESS = 'You are not authorized to manage this restaurant subscription',
+	PAYMENT_GATEWAY_UNAVAILABLE = 'Payment provider is currently unavailable',
+	MISSING_IDEMPOTENCY_KEY = 'Idempotency-Key header is required',
+	INVALID_IDEMPOTENCY_KEY = 'Idempotency-Key must be 8 to 128 characters containing only letters, numbers, hyphens, underscores, colons, or dots',
+	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH = 'Idempotency-Key has already been used with different request parameters',
+	IDEMPOTENCY_REQUEST_IN_PROGRESS = 'A request with this Idempotency-Key is currently being processed',
+	IDEMPOTENCY_STORAGE_UNAVAILABLE = 'Idempotency and lock service is currently unavailable',
+	RENEWAL_ALREADY_IN_PROGRESS = 'Another renewal request for this subscription is currently in progress',
 }
 
 export const MESSAGES = {
@@ -110,6 +178,7 @@ export const MESSAGES = {
 	RAZORPAY_INITIALIZATION_FAILED: MessageEnum.RAZORPAY_INITIALIZATION_FAILED,
 	RAZORPAY_CONFIG_MISSING: MessageEnum.RAZORPAY_CONFIG_MISSING,
 	RAZORPAY_CREDS_EMPTY: MessageEnum.RAZORPAY_CREDS_EMPTY,
+	RAZORPAY_CLIENT_NOT_INITIALIZED: MessageEnum.RAZORPAY_CLIENT_NOT_INITIALIZED,
 	SHUTDOWN_SIGINT: MessageEnum.SHUTDOWN_SIGINT,
 	SHUTDOWN_SIGTERM: MessageEnum.SHUTDOWN_SIGTERM,
 	SHUTDOWN_IN_PROGRESS: MessageEnum.SHUTDOWN_IN_PROGRESS,
@@ -122,6 +191,8 @@ export const MESSAGES = {
 	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
 
 	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
+	RESTAURANT_WALLET_NOT_FOUND: MessageEnum.RESTAURANT_WALLET_NOT_FOUND,
+	RESTAURANT_ID_NOT_FOUND: MessageEnum.RESTAURANT_ID_NOT_FOUND,
 
 	ACTIVE_SUBSCRIPTION_EXISTS: MessageEnum.ACTIVE_SUBSCRIPTION_EXISTS,
 	PAYMENT_ORDER_NOT_FOUND: MessageEnum.PAYMENT_ORDER_NOT_FOUND,
@@ -142,11 +213,30 @@ export const MESSAGES = {
 	S3_INIT_FAILED: MessageEnum.S3_INIT_FAILED,
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
+	OWNER_FORBIDDEN: MessageEnum.OWNER_FORBIDDEN,
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED: MessageEnum.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED,
 	PLATFORM_MASTER_LEDGER_FETCHED: MessageEnum.PLATFORM_MASTER_LEDGER_FETCHED,
+
+	// restaurant wallet
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS: MessageEnum.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
+	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS:
+		MessageEnum.LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS,
+	WITHDRAWAL_INITIATED_SUCCESS: MessageEnum.WITHDRAWAL_INITIATED_SUCCESS,
+	BANK_NAME_REQUIRED: MessageEnum.BANK_NAME_REQUIRED,
+	INVALID_BANK_ACCOUNT_NUMBER: MessageEnum.INVALID_BANK_ACCOUNT_NUMBER,
+	INVALID_IFSC_CODE: MessageEnum.INVALID_IFSC_CODE,
+	INVALID_BANK_ACCOUNT_DETAILS: MessageEnum.INVALID_BANK_ACCOUNT_DETAILS,
+	WITHDRAWAL_AMOUNT_REQUIRED: MessageEnum.WITHDRAWAL_AMOUNT_REQUIRED,
+	INVALID_WITHDRAWAL_MODE: MessageEnum.INVALID_WITHDRAWAL_MODE,
+	WALLET_WITHDRAWAL_LOCKED: MessageEnum.WALLET_WITHDRAWAL_LOCKED,
+	WALLET_WITHDRAWAL_BANK_REQUIRED: MessageEnum.WALLET_WITHDRAWAL_BANK_REQUIRED,
+	WALLET_INSUFFICIENT_BALANCE: MessageEnum.WALLET_INSUFFICIENT_BALANCE,
+	WALLET_T1_BALANCE_UNAVAILABLE: MessageEnum.WALLET_T1_BALANCE_UNAVAILABLE,
+	WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED: MessageEnum.WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED,
+
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,
 	ORDER_PAYMENT_ALREADY_CAPTURED: MessageEnum.ORDER_PAYMENT_ALREADY_CAPTURED,
@@ -156,6 +246,55 @@ export const MESSAGES = {
 	BAD_REQUEST: MessageEnum.BAD_REQUEST,
 	RESOURCE_NOT_FOUND: MessageEnum.RESOURCE_NOT_FOUND,
 	CONFLICT: MessageEnum.CONFLICT,
+	REFUND_PROCESSED: MessageEnum.REFUND_PROCESSED,
+	PAYMENT_ALREADY_REFUNDED: MessageEnum.PAYMENT_ALREADY_REFUNDED,
+	CANNOT_REFUND_UNCAPTURED_PAYMENT: MessageEnum.CANNOT_REFUND_UNCAPTURED_PAYMENT,
+	REFUND_AMOUNT_EXCEEDS_BALANCE: MessageEnum.REFUND_AMOUNT_EXCEEDS_BALANCE,
+	REFUND_AMOUNT_INVALID: MessageEnum.REFUND_AMOUNT_INVALID,
+	REFUND_GATEWAY_ERROR: MessageEnum.REFUND_GATEWAY_ERROR,
+	IDEMPOTENCY_KEY_REQUIRED: MessageEnum.IDEMPOTENCY_KEY_REQUIRED,
+
+	// platform subscribers
+	SUBSCRIBERS_RETRIEVED: MessageEnum.SUBSCRIBERS_RETRIEVED,
+	SUBSCRIBER_DETAILS_RETRIEVED: MessageEnum.SUBSCRIBER_DETAILS_RETRIEVED,
+	SUBSCRIBER_NOT_FOUND: MessageEnum.SUBSCRIBER_NOT_FOUND,
+	INVALID_SUBSCRIBER_ID: MessageEnum.INVALID_SUBSCRIBER_ID,
+
+	// transactions
+	TRANSACTIONS_RETRIEVED: MessageEnum.TRANSACTIONS_RETRIEVED,
+	TRANSACTION_DETAILS_RETRIEVED: MessageEnum.TRANSACTION_DETAILS_RETRIEVED,
+	TRANSACTION_NOT_FOUND: MessageEnum.TRANSACTION_NOT_FOUND,
+	INVALID_TRANSACTION_ID: MessageEnum.INVALID_TRANSACTION_ID,
+	INVALID_DATE_RANGE: MessageEnum.INVALID_DATE_RANGE,
+	INVALID_AMOUNT_RANGE: MessageEnum.INVALID_AMOUNT_RANGE,
+	INVALID_DATE_FORMAT: MessageEnum.INVALID_DATE_FORMAT,
+	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
+
+	// gateway
+	PAYMENT_GATEWAY_ERROR: MessageEnum.PAYMENT_GATEWAY_ERROR,
+
+	// customer payment history & retry
+	PAYMENT_HISTORY_RETRIEVED: MessageEnum.PAYMENT_HISTORY_RETRIEVED,
+	PAYMENT_RETRY_INITIATED: MessageEnum.PAYMENT_RETRY_INITIATED,
+	ALREADY_PAID: MessageEnum.ALREADY_PAID,
+	ORDER_EXPIRED: MessageEnum.ORDER_EXPIRED,
+	NOT_RETRYABLE: MessageEnum.NOT_RETRYABLE,
+
+	// subscription renewal (SCRUM-1241)
+	SUBSCRIPTION_RENEWAL_ORDER_CREATED: MessageEnum.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
+	SUBSCRIPTION_NOT_FOUND: MessageEnum.SUBSCRIPTION_NOT_FOUND,
+	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL: MessageEnum.SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL,
+	SUBSCRIPTION_RENEWED_SUCCESS: MessageEnum.SUBSCRIPTION_RENEWED_SUCCESS,
+	INVALID_SUBSCRIPTION_ID: MessageEnum.INVALID_SUBSCRIPTION_ID,
+	INVALID_PLAN_ID: MessageEnum.INVALID_PLAN_ID,
+	FORBIDDEN_SUBSCRIPTION_ACCESS: MessageEnum.FORBIDDEN_SUBSCRIPTION_ACCESS,
+	PAYMENT_GATEWAY_UNAVAILABLE: MessageEnum.PAYMENT_GATEWAY_UNAVAILABLE,
+	MISSING_IDEMPOTENCY_KEY: MessageEnum.MISSING_IDEMPOTENCY_KEY,
+	INVALID_IDEMPOTENCY_KEY: MessageEnum.INVALID_IDEMPOTENCY_KEY,
+	IDEMPOTENCY_KEY_PAYLOAD_MISMATCH: MessageEnum.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH,
+	IDEMPOTENCY_REQUEST_IN_PROGRESS: MessageEnum.IDEMPOTENCY_REQUEST_IN_PROGRESS,
+	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
+	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
 } as const;
 
 export const messages = MESSAGES;
@@ -170,4 +309,9 @@ export const ERROR_CODES = {
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
 	CONFLICT: 'CONFLICT',
+	ALREADY_PAID: 'ALREADY_PAID',
+	ORDER_EXPIRED: 'ORDER_EXPIRED',
+	NOT_RETRYABLE: 'NOT_RETRYABLE',
+	UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
+	BAD_GATEWAY: 'BAD_GATEWAY',
 } as const;

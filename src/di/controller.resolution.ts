@@ -16,7 +16,7 @@ export const platformFinanceController = container.get<PlatformFinanceController
 export const restaurantWalletController = container.get<RestaurantWalletController>(
 	TYPES.Controllers.RestaurantWalletController,
 );
-``;
+
 export const adminSubscriberController = container.get<AdminSubscriberController>(
 	TYPES.Controllers.AdminSubscriberController,
 );

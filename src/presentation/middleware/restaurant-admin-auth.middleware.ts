@@ -53,7 +53,7 @@ export function restaurantAdminAuthMiddleware(
 
 	const email = getHeaderValue(req.headers['x-user-email']);
 
-	if (userId && restaurantId && userId.trim() !== restaurantId.trim()) {
+	if (userId.trim() !== restaurantId.trim()) {
 		res
 			.status(HTTP_STATUS.FORBIDDEN)
 			.json(ApiResponse.error('FORBIDDEN', MESSAGES.FORBIDDEN_ACCESS, HTTP_STATUS.FORBIDDEN));

@@ -1,6 +1,7 @@
 import type { IRestaurantServiceClient } from '@application/ports/external/restaurant-service.client.port.ts';
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import type { IIdempotencyService } from '@application/ports/services/idempotency.service.port.ts';
+import type { ILogger } from '@application/ports/services/logger.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
 import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscriber-details.use-case.port.ts';
@@ -56,6 +57,7 @@ import type { ISubscriptionRepository } from '@domain/repositories/subscription.
 import type { ISubscriptionAnalyticsRepository } from '@domain/repositories/subscription-analytics.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
+import { logger } from '@infrastructure/index.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
@@ -81,9 +83,13 @@ import { PlatformFinanceController } from '@presentation/controllers/platform-fi
 import { RestaurantTransactionController } from '@presentation/controllers/restaurant-transaction.controller.ts';
 import { SubscriptionController } from '@presentation/controllers/subscription.controller.ts';
 import { Container } from 'inversify';
+import { restaurantWalletModule } from './modules/restaurant-wallet.module.ts';
 import { TYPES } from './types.ts';
 
 export const container = new Container();
+container.load(restaurantWalletModule);
+
+container.bind<ILogger>(TYPES.Logger).toConstantValue(logger);
 
 container
 	.bind<ISubscriptionRepository>(TYPES.Repositories.SubscriptionRepository)
@@ -171,7 +177,8 @@ container.bind<ICacheService>(TYPES.Services.CacheService).to(RedisService).inSi
 
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)
-	.to(CreateSubscriptionOrderUseCase);
+	.to(CreateSubscriptionOrderUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IRenewSubscriptionUseCase>(TYPES.UseCases.RenewSubscriptionUseCase)
@@ -179,15 +186,23 @@ container
 
 container
 	.bind<IGetSubscriptionPlansUseCase>(TYPES.UseCases.GetSubscriptionPlansUseCase)
-	.to(GetSubscriptionPlansUseCase);
+	.to(GetSubscriptionPlansUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IGetSubscriptionStatusUseCase>(TYPES.UseCases.GetSubscriptionStatusUseCase)
-	.to(GetSubscriptionStatusUseCase);
+	.to(GetSubscriptionStatusUseCase)
+	.inSingletonScope();
 
-container.bind<IHandleWebhookUseCase>(TYPES.UseCases.HandleWebhookUseCase).to(HandleWebhookUseCase);
+container
+	.bind<IHandleWebhookUseCase>(TYPES.UseCases.HandleWebhookUseCase)
+	.to(HandleWebhookUseCase)
+	.inSingletonScope();
 
-container.bind<IVerifyPaymentUseCase>(TYPES.UseCases.VerifyPaymentUseCase).to(VerifyPaymentUseCase);
+container
+	.bind<IVerifyPaymentUseCase>(TYPES.UseCases.VerifyPaymentUseCase)
+	.to(VerifyPaymentUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IGetRestaurantTransactionsUseCase>(TYPES.UseCases.GetRestaurantTransactionsUseCase)
@@ -199,15 +214,18 @@ container
 
 container
 	.bind<IGetPlatformFinanceSummaryUseCase>(TYPES.UseCases.GetPlatformFinanceSummaryUseCase)
-	.to(GetPlatformFinanceSummaryUseCase);
+	.to(GetPlatformFinanceSummaryUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IGetPlatformMasterLedgerUseCase>(TYPES.UseCases.GetPlatformMasterLedgerUseCase)
-	.to(GetPlatformMasterLedgerUseCase);
+	.to(GetPlatformMasterLedgerUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IExportPlatformLedgerUseCase>(TYPES.UseCases.ExportPlatformLedgerUseCase)
-	.to(ExportPlatformLedgerUseCase);
+	.to(ExportPlatformLedgerUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IGetCustomerPaymentHistoryUseCase>(TYPES.UseCases.GetCustomerPaymentHistoryUseCase)
@@ -219,15 +237,18 @@ container
 
 container
 	.bind<ICreateOrderPaymentUseCase>(TYPES.UseCases.CreateOrderPaymentUseCase)
-	.to(CreateOrderPaymentUseCase);
+	.to(CreateOrderPaymentUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IVerifyOrderPaymentUseCase>(TYPES.UseCases.VerifyOrderPaymentUseCase)
-	.to(VerifyOrderPaymentUseCase);
+	.to(VerifyOrderPaymentUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IGetOrderPaymentStatusUseCase>(TYPES.UseCases.GetOrderPaymentStatusUseCase)
-	.to(GetOrderPaymentStatusUseCase);
+	.to(GetOrderPaymentStatusUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IProcessOrderRefundUseCase>(TYPES.UseCases.ProcessOrderRefundUseCase)
@@ -260,7 +281,8 @@ container
 
 container
 	.bind<PlatformFinanceController>(TYPES.Controllers.PlatformFinanceController)
-	.to(PlatformFinanceController);
+	.to(PlatformFinanceController)
+	.inSingletonScope();
 
 container
 	.bind<OrderPaymentController>(TYPES.Controllers.OrderPaymentController)

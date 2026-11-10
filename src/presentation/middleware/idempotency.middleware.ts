@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import { getHeaderValue } from '@presentation/middleware/customer-auth.middleware.ts';
 import {
@@ -51,25 +52,48 @@ export function idempotencyMiddleware(
 		const cacheKey = `${keyPrefix}${idempotencyKey}`;
 		const lockKey = `${lockPrefix}${idempotencyKey}`;
 
+		const canonicalize = (value: unknown): string => {
+			if (Array.isArray(value)) return `[${value.map(canonicalize).join(',')}]`;
+			if (value && typeof value === 'object') {
+				return `{${Object.entries(value)
+					.sort(([left], [right]) => left.localeCompare(right))
+					.map(([key, item]) => `${JSON.stringify(key)}:${canonicalize(item)}`)
+					.join(',')}}`;
+			}
+			return JSON.stringify(value) ?? 'undefined';
+		};
+
+		// A key reused for a different operation must conflict instead of replaying the wrong response.
+		const fingerprint = createHash('sha256')
+			.update(`${req.method}:${req.originalUrl}:${canonicalize(req.body)}`)
+			.digest('hex');
+
 		// 1. Check if response is already cached (Tape-recorder replay)
+		// Replay a completed response before attempting to acquire the request lock.
 		const cached = await cache.get(cacheKey);
 		if (cached) {
 			try {
-				const parsed = JSON.parse(cached);
-				res.status(HTTP_STATUS.OK).json(parsed);
+				const parsed = JSON.parse(cached) as {
+					fingerprint: string;
+					statusCode: number;
+					body: unknown;
+				};
+				if (parsed.fingerprint !== fingerprint) throw new ConflictError(MESSAGES.CONFLICT);
+				res.status(parsed.statusCode).json(parsed.body);
 				return;
-			} catch {
+			} catch (error) {
+				if (error instanceof ConflictError) throw error;
 				// Continue processing if parsing fails
 			}
 		}
 
-		// 2. Try acquiring distributed lock to prevent concurrent executions
+		// Only one in-flight request for this idempotency key may proceed.
 		const acquired = await cache.acquireLock(lockKey, lockTtl);
 		if (!acquired) {
 			throw new ConflictError(MESSAGES.CONFLICT);
 		}
 
-		// 3. Hook into response to cache successful (2xx) responses and release the lock
+		// Cache successful responses with their fingerprint and status before sending them.
 		const originalJson = res.json.bind(res);
 		let lockReleased = false;
 
@@ -82,7 +106,11 @@ export function idempotencyMiddleware(
 
 		res.json = (body: unknown): Response => {
 			if (res.statusCode >= HTTP_STATUS.OK && res.statusCode < HTTP_STATUS.BAD_REQUEST) {
-				cache.set(cacheKey, JSON.stringify(body), ttl).catch(() => {});
+				void cache
+					.set(cacheKey, JSON.stringify({ fingerprint, statusCode: res.statusCode, body }), ttl)
+					.then(() => originalJson(body))
+					.catch(() => originalJson(body));
+				return res;
 			}
 			return originalJson(body);
 		};
@@ -90,6 +118,6 @@ export function idempotencyMiddleware(
 		res.on('finish', releaseLockSafely);
 		res.on('close', releaseLockSafely);
 
-		next();
+		return next();
 	};
 }

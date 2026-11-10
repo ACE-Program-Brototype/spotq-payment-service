@@ -34,6 +34,13 @@ export const PLATFORM_FINANCE_ROUTES = {
 	LEDGER_CSV: '/ledger/export.csv',
 } as const;
 
+export const RESTAURANT_WALLET_ROUTES = {
+	ROOT: '/wallets',
+	WALLET: '/',
+	LINK_BANK: '/bank-account',
+	WITHDRAW: '/withdraw',
+} as const;
+
 export const INTERNAL_ROUTES = {
 	BASE: '/api/internal/v1',
 	CREATE_GATEWAY_ORDER: '/payments/orders',

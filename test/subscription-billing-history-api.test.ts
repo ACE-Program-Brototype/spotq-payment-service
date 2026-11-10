@@ -3,7 +3,7 @@ import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type { PaginatedSubscriptionBillingHistoryResult } from '@domain/types/transaction-query.types.ts';
-import { USER_ROLES } from '@shared/constants/auth.constants.ts';
+import { ALLOWED_RESTAURANT_OWNER_ROLE } from '@shared/constants/auth.constants.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
 import { ERROR_CODES, MESSAGES } from '@shared/constants/message.constants.ts';
 import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
@@ -19,12 +19,12 @@ const storageService = container.get<IStorageService>(TYPES.Services.StorageServ
 describe('Subscription Billing History API (HTTP Integration)', () => {
 	const mockRestaurantId = '4bf628a5-d812-4fc8-99e6-7b2438883584';
 	const otherRestaurantId = '99999999-9999-4999-8999-999999999999';
-	const mockUserId = '11111111-2222-3333-4444-555555555555';
+	const mockUserId = mockRestaurantId;
 
 	const validHeaders = {
 		'x-restaurant-id': mockRestaurantId,
 		'x-user-id': mockUserId,
-		'x-user-role': 'RESTAURANT_ADMIN',
+		'x-user-role': ALLOWED_RESTAURANT_OWNER_ROLE,
 	};
 
 	const mockHistoryData: PaginatedSubscriptionBillingHistoryResult = {
@@ -143,7 +143,7 @@ describe('Subscription Billing History API (HTTP Integration)', () => {
 		const res = await request(app).get(buildUrl(otherRestaurantId)).set({
 			'x-restaurant-id': mockRestaurantId, // Authenticated for restaurant A
 			'x-user-id': mockUserId,
-			'x-user-role': 'RESTAURANT_ADMIN',
+			'x-user-role': ALLOWED_RESTAURANT_OWNER_ROLE,
 		});
 
 		expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
@@ -156,7 +156,7 @@ describe('Subscription Billing History API (HTTP Integration)', () => {
 		const res = await request(app).get(buildUrl(otherRestaurantId)).set({
 			'x-restaurant-id': mockRestaurantId,
 			'x-user-id': mockUserId,
-			'x-user-role': USER_ROLES.PLATFORM_ADMIN,
+			'x-user-role': 'PLATFORM_ADMIN',
 		});
 
 		expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);

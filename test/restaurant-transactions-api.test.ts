@@ -17,13 +17,13 @@ const transactionQueryRepository = container.get<ITransactionQueryRepository>(
 
 describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 	const mockRestaurantId = '4bf628a5-d812-4fc8-99e6-7b2438883584';
-	const mockUserId = '11111111-2222-3333-4444-555555555555';
+	const mockUserId = mockRestaurantId;
 	const mockTxId = '8e329a17-6421-4f3a-bfda-90e94bb10022';
 
 	const validHeaders = {
 		'x-restaurant-id': mockRestaurantId,
 		'x-user-id': mockUserId,
-		'x-user-role': 'RESTAURANT_ADMIN',
+		'x-user-role': 'RESTAURANT_OWNER',
 	};
 
 	const mockPaginatedData: PaginatedTransactionsResult = {
@@ -100,7 +100,7 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 	});
 
 	describe('Multi-Tenant Gateway Authentication', () => {
-		it('should return 401 Unauthorized when x-restaurant-id is missing', async () => {
+		it('should reject RESTAURANT_ADMIN role', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-user-id', mockUserId)
@@ -109,21 +109,22 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
 			expect(res.body.success).toBe(false);
 			expect(res.body.error).toBe(ERROR_CODES.UNAUTHORIZED);
-			expect(res.body.message).toBe(MESSAGES.UNAUTHORIZED_ACCESS);
+			expect(res.body.message).toBe('Authentication token missing or invalid.');
 		});
 
 		it('should return 401 Unauthorized when x-user-id is missing', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
-				.set('x-user-role', 'RESTAURANT_ADMIN');
+				.set('x-user-role', 'RESTAURANT_OWNER');
 
 			expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
 			expect(res.body.success).toBe(false);
 			expect(res.body.error).toBe(ERROR_CODES.UNAUTHORIZED);
+			expect(res.body.message).toBe('Authentication token missing or invalid.');
 		});
 
-		it('should return 403 Forbidden when x-user-role is not RESTAURANT_ADMIN or STAFF', async () => {
+		it('should return 403 Forbidden when x-user-role is not RESTAURANT_OWNER', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
@@ -133,26 +134,26 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
 			expect(res.body.success).toBe(false);
 			expect(res.body.error).toBe(ERROR_CODES.FORBIDDEN);
-			expect(res.body.message).toBe(MESSAGES.FORBIDDEN_ACCESS);
+			expect(res.body.message).toBe(MESSAGES.OWNER_FORBIDDEN);
 		});
 
-		it('should allow access when x-user-role is STAFF', async () => {
+		it('should reject access when x-user-role is RESTAURANT_STAFF', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
 				.set('x-user-id', mockUserId)
-				.set('x-user-role', 'STAFF');
+				.set('x-user-role', 'RESTAURANT_STAFF');
 
-			expect(res.status).toBe(HTTP_STATUS.OK);
-			expect(res.body.success).toBe(true);
+			expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
+			expect(res.body.success).toBe(false);
 		});
 
-		it('should allow access when x-user-role is RESTAURANT_ADMIN or lowercase restaurant_admin', async () => {
+		it('should allow access when x-user-role is RESTAURANT_OWNER or lowercase restaurant_owner', async () => {
 			const res1 = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
 				.set('x-user-id', mockUserId)
-				.set('x-user-role', 'RESTAURANT_ADMIN');
+				.set('x-user-role', 'RESTAURANT_OWNER');
 
 			expect(res1.status).toBe(HTTP_STATUS.OK);
 			expect(res1.body.success).toBe(true);
@@ -161,7 +162,7 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
 				.set('x-user-id', mockUserId)
-				.set('x-user-role', 'restaurant_admin');
+				.set('x-user-role', 'restaurant_owner');
 
 			expect(res2.status).toBe(HTTP_STATUS.OK);
 			expect(res2.body.success).toBe(true);

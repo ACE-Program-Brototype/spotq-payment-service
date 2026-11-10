@@ -225,6 +225,9 @@ importers:
       '@spotq-org/s2s-core':
         specifier: ^1.0.0
         version: 1.0.0(express@5.2.1(supports-color@8.1.1))
+      axios:
+        specifier: ^1.21.0
+        version: 1.21.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       bullmq:
         specifier: ^6.0.6
         version: 6.0.6(ioredis@6.0.0(supports-color@8.1.1))(pg@8.22.0)(redis@6.2.0(@opentelemetry/api@1.9.1))
@@ -2104,8 +2107,8 @@ packages:
     resolution: {integrity: sha512-NZKeq9AfyQvEeNlN0zSYAaWrmBffJh3IELMZfRpJVWgrpEbtEpnjvzqBPf+mxoI287JohRDoa+/nsfqqiZmF6g==}
     engines: {node: '>= 6.0.0'}
 
-  axios@1.19.0:
-    resolution: {integrity: sha512-ht/iuYZXEjFxLH/Hkezgd7m6JKlHHXEUSneaDz8uZe1Gj5QZtCnpyDsckvAiEnT89OEbCLmnte4R4sn7P0EKFw==}
+  axios@1.21.0:
+    resolution: {integrity: sha512-YCzXMB53Q9PZBsh7yN7wtapit4WepwcHS2fP8QhGsBxSz5YtgYobV7GGlWlAJi+RxfU77GQTQi2DSLUma42EYA==}
 
   babel-jest@30.4.1:
     resolution: {integrity: sha512-fATAbM8piYxkiXQp3RBXmZHxZVNJZAVXXfyeyCN2Tida3+qJ8ea9UxhiJ2y4fLO90ZImKt6k9FlcH2+rLkJGhw==}
@@ -5684,7 +5687,7 @@ snapshots:
 
   aws-ssl-profiles@1.1.2: {}
 
-  axios@1.19.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1):
+  axios@1.21.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       follow-redirects: 1.16.0(debug@4.4.3(supports-color@8.1.1))
       form-data: 4.0.6
@@ -7310,7 +7313,7 @@ snapshots:
 
   razorpay@2.9.8(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
-      axios: 1.19.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
+      axios: 1.21.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
     transitivePeerDependencies:
       - debug
       - supports-color

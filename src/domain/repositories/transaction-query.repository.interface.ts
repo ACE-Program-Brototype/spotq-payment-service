@@ -1,4 +1,6 @@
 import type {
+	CustomerTransactionFilterParams,
+	PaginatedCustomerTransactionsResult,
 	PaginatedSubscriptionBillingHistoryResult,
 	PaginatedTransactionsResult,
 	SubscriptionBillingHistoryFilterParams,
@@ -14,4 +16,7 @@ export interface ITransactionQueryRepository {
 	findSubscriptionBillingTransactions(
 		params: SubscriptionBillingHistoryFilterParams,
 	): Promise<PaginatedSubscriptionBillingHistoryResult>;
+	findTransactionsByCustomer(
+		params: CustomerTransactionFilterParams,
+	): Promise<PaginatedCustomerTransactionsResult>;
 }

@@ -4,6 +4,7 @@ import {
 	CustomerUnauthorizedError,
 	InvalidPaymentStateTransitionError,
 	PaymentAlreadyRefundedError,
+	PaymentNotRetryableError,
 	PaymentOrderNotFoundError,
 	RefundAmountExceedsBalanceError,
 	RefundAmountInvalidError,
@@ -23,9 +24,9 @@ describe('PaymentTransaction Entity', () => {
 		});
 
 	describe('isOwnedBy', () => {
-		it('should return true when transaction has no customerId (unassigned / guest)', () => {
+		it('should return false when transaction has no customerId', () => {
 			const tx = createTx(null);
-			expect(tx.isOwnedBy('any-customer')).toBe(true);
+			expect(tx.isOwnedBy('any-customer')).toBe(false);
 		});
 
 		it('should return true when customerId matches', () => {
@@ -54,6 +55,11 @@ describe('PaymentTransaction Entity', () => {
 		it('should not throw when transaction has no customerId and caller is undefined', () => {
 			const tx = createTx(null);
 			expect(() => tx.assertOwnership(undefined)).not.toThrow();
+		});
+
+		it('should throw CustomerUnauthorizedError when transaction has no customerId and caller specifies customerId', () => {
+			const tx = createTx(null);
+			expect(() => tx.assertOwnership('cust-100')).toThrow(CustomerUnauthorizedError);
 		});
 
 		it('should throw CustomerUnauthorizedError when caller does not match customerId', () => {
@@ -203,6 +209,41 @@ describe('PaymentTransaction Entity', () => {
 			tx.markFailed('Failure arrived late');
 			expect(tx.status).toBe('CAPTURED');
 			expect(tx.failureReason).toBeNull();
+		});
+	});
+
+	describe('resetToCreated', () => {
+		it('should reset FAILED transaction status to CREATED and clear failureReason', () => {
+			const tx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'FAILED',
+				failureReason: 'Card declined',
+			});
+
+			tx.resetToCreated();
+
+			expect(tx.status).toBe('CREATED');
+			expect(tx.failureReason).toBeNull();
+			expect(tx.updatedAt).toBeInstanceOf(Date);
+		});
+
+		it('should throw PaymentNotRetryableError when transaction status is not FAILED', () => {
+			const capturedTx = new PaymentTransaction({
+				id: 'pay-123',
+				restaurantId: 'rest-123',
+				orderId: 'ord-123',
+				razorpayOrderId: 'rzp_order_123',
+				amountPaise: 5000,
+				currency: 'INR',
+				status: 'CAPTURED',
+			});
+
+			expect(() => capturedTx.resetToCreated()).toThrow(PaymentNotRetryableError);
 		});
 	});
 

@@ -56,20 +56,19 @@ export class RedisService implements ICacheService, IHealthCheckable {
 				await this.client.set(key, value);
 			}
 		} catch {
-			// ignore caching errors
+			// Ignore cache write failures.
 		}
 	}
 
 	async acquireLock(key: string, ttlSeconds = 10): Promise<boolean> {
 		try {
-			if (!this.client.isOpen) return true;
 			const result = await this.client.set(key, 'locked', {
 				NX: true,
 				EX: ttlSeconds,
 			});
 			return result === 'OK';
 		} catch {
-			return true;
+			return false;
 		}
 	}
 

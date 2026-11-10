@@ -42,6 +42,8 @@ export enum MessageEnum {
 	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
 	SUBSCRIPTION_STATUS_FETCHED = 'Subscription status retrieved successfully',
 	PLAN_NOT_FOUND = 'Subscription plan not found',
+	RESTAURANT_WALLET_NOT_FOUND = 'Restaurant wallet not found',
+	RESTAURANT_ID_NOT_FOUND = 'Restaurant ID not found',
 	ACTIVE_SUBSCRIPTION_EXISTS = 'Restaurant already has an active subscription',
 	PAYMENT_ORDER_NOT_FOUND = 'Payment order not found',
 	INVALID_PAYMENT_SIGNATURE = 'Invalid payment signature provided',
@@ -54,14 +56,32 @@ export enum MessageEnum {
 	ORDER_PAYMENT_STATUS_FETCHED = 'Payment status retrieved successfully',
 	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
+	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is require',
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
+	OWNER_FORBIDDEN = 'Forbidden: Restaurant owner access required',
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED = 'Platform finance summary retrieved successfully',
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED = 'Failed to retrieve platform finance summary',
 	PLATFORM_MASTER_LEDGER_FETCHED = 'Platform ledger entries retrieved successfully',
+
+	// restaurant wallet
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS = 'Restaurant wallet received successfully',
+	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS = 'Bank account linked successfully',
+	WITHDRAWAL_INITIATED_SUCCESS = 'Withdrawal initiated successfully',
+	BANK_NAME_REQUIRED = 'Bank name is required',
+	INVALID_BANK_ACCOUNT_NUMBER = 'Account number must contain 9 to 18 digits',
+	INVALID_IFSC_CODE = 'IFSC code is invalid',
+	INVALID_BANK_ACCOUNT_DETAILS = 'Invalid bank account details',
+	WITHDRAWAL_AMOUNT_REQUIRED = 'Withdrawal amount must be a positive whole number of paise',
+	INVALID_WITHDRAWAL_MODE = 'Withdrawal mode must be one of: IMPS, NEFT, RTGS, UPI',
+	WALLET_WITHDRAWAL_LOCKED = 'Wallet is locked and cannot be withdrawn from',
+	WALLET_WITHDRAWAL_BANK_REQUIRED = 'Link a bank account before requesting a withdrawal',
+	WALLET_INSUFFICIENT_BALANCE = 'Insufficient wallet balance for this withdrawal',
+	WALLET_T1_BALANCE_UNAVAILABLE = "Today's earnings will be available to withdraw tomorrow",
+	WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED = 'Wallet withdrawals are only supported in INR',
 	STAFF_FORBIDDEN = 'Forbidden: Staff role required',
 	CUSTOMER_FORBIDDEN = 'Forbidden: Customer role required',
 	ORDER_PAYMENT_ALREADY_CAPTURED = 'Order payment has already been captured',
@@ -77,7 +97,6 @@ export enum MessageEnum {
 	REFUND_AMOUNT_EXCEEDS_BALANCE = 'Requested refund amount exceeds refundable balance',
 	REFUND_AMOUNT_INVALID = 'Refund amount does not match transaction amount',
 	REFUND_GATEWAY_ERROR = 'Payment gateway refund request failed',
-	IDEMPOTENCY_KEY_REQUIRED = 'Idempotency-Key header is required',
 
 	// platform subscribers
 	SUBSCRIBERS_RETRIEVED = 'Subscribers retrieved successfully',
@@ -95,6 +114,16 @@ export enum MessageEnum {
 	INVALID_DATE_FORMAT = 'Date must be a valid calendar date in YYYY-MM-DD format',
 	TRANSACTIONS_QUERY_FAILED = 'An error occurred while loading transactions.',
 
+	// Gateway
+	PAYMENT_GATEWAY_ERROR = 'Payment gateway error',
+	// customer payment history & retry (SCRUM-35)
+	PAYMENT_HISTORY_RETRIEVED = 'Payment history retrieved successfully',
+	PAYMENT_RETRY_INITIATED = 'Payment retry initiated successfully',
+	ALREADY_PAID = 'The associated food order has already been successfully paid',
+	ORDER_EXPIRED = 'Payment retry window has expired',
+	NOT_RETRYABLE = 'Only failed payment transactions can be retried',
+
+	// subscription renewal (SCRUM-1241)
 	SUBSCRIPTION_RENEWAL_ORDER_CREATED = 'Subscription renewal order created successfully',
 	SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
 	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL = 'Subscription is not eligible for renewal',
@@ -163,6 +192,8 @@ export const MESSAGES = {
 	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
 
 	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
+	RESTAURANT_WALLET_NOT_FOUND: MessageEnum.RESTAURANT_WALLET_NOT_FOUND,
+	RESTAURANT_ID_NOT_FOUND: MessageEnum.RESTAURANT_ID_NOT_FOUND,
 
 	ACTIVE_SUBSCRIPTION_EXISTS: MessageEnum.ACTIVE_SUBSCRIPTION_EXISTS,
 	PAYMENT_ORDER_NOT_FOUND: MessageEnum.PAYMENT_ORDER_NOT_FOUND,
@@ -179,11 +210,30 @@ export const MESSAGES = {
 
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
+	OWNER_FORBIDDEN: MessageEnum.OWNER_FORBIDDEN,
 
 	// platform finance
 	PLATFORM_FINANCE_SUMMARY_FETCHED: MessageEnum.PLATFORM_FINANCE_SUMMARY_FETCHED,
 	PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED: MessageEnum.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED,
 	PLATFORM_MASTER_LEDGER_FETCHED: MessageEnum.PLATFORM_MASTER_LEDGER_FETCHED,
+
+	// restaurant wallet
+	GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS: MessageEnum.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
+	LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS:
+		MessageEnum.LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS,
+	WITHDRAWAL_INITIATED_SUCCESS: MessageEnum.WITHDRAWAL_INITIATED_SUCCESS,
+	BANK_NAME_REQUIRED: MessageEnum.BANK_NAME_REQUIRED,
+	INVALID_BANK_ACCOUNT_NUMBER: MessageEnum.INVALID_BANK_ACCOUNT_NUMBER,
+	INVALID_IFSC_CODE: MessageEnum.INVALID_IFSC_CODE,
+	INVALID_BANK_ACCOUNT_DETAILS: MessageEnum.INVALID_BANK_ACCOUNT_DETAILS,
+	WITHDRAWAL_AMOUNT_REQUIRED: MessageEnum.WITHDRAWAL_AMOUNT_REQUIRED,
+	INVALID_WITHDRAWAL_MODE: MessageEnum.INVALID_WITHDRAWAL_MODE,
+	WALLET_WITHDRAWAL_LOCKED: MessageEnum.WALLET_WITHDRAWAL_LOCKED,
+	WALLET_WITHDRAWAL_BANK_REQUIRED: MessageEnum.WALLET_WITHDRAWAL_BANK_REQUIRED,
+	WALLET_INSUFFICIENT_BALANCE: MessageEnum.WALLET_INSUFFICIENT_BALANCE,
+	WALLET_T1_BALANCE_UNAVAILABLE: MessageEnum.WALLET_T1_BALANCE_UNAVAILABLE,
+	WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED: MessageEnum.WALLET_WITHDRAWAL_CURRENCY_UNSUPPORTED,
+
 	STAFF_FORBIDDEN: MessageEnum.STAFF_FORBIDDEN,
 	CUSTOMER_FORBIDDEN: MessageEnum.CUSTOMER_FORBIDDEN,
 	ORDER_PAYMENT_ALREADY_CAPTURED: MessageEnum.ORDER_PAYMENT_ALREADY_CAPTURED,
@@ -217,6 +267,17 @@ export const MESSAGES = {
 	INVALID_DATE_FORMAT: MessageEnum.INVALID_DATE_FORMAT,
 	TRANSACTIONS_QUERY_FAILED: MessageEnum.TRANSACTIONS_QUERY_FAILED,
 
+	// gateway
+	PAYMENT_GATEWAY_ERROR: MessageEnum.PAYMENT_GATEWAY_ERROR,
+
+	// customer payment history & retry
+	PAYMENT_HISTORY_RETRIEVED: MessageEnum.PAYMENT_HISTORY_RETRIEVED,
+	PAYMENT_RETRY_INITIATED: MessageEnum.PAYMENT_RETRY_INITIATED,
+	ALREADY_PAID: MessageEnum.ALREADY_PAID,
+	ORDER_EXPIRED: MessageEnum.ORDER_EXPIRED,
+	NOT_RETRYABLE: MessageEnum.NOT_RETRYABLE,
+
+	// subscription renewal (SCRUM-1241)
 	SUBSCRIPTION_RENEWAL_ORDER_CREATED: MessageEnum.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
 	SUBSCRIPTION_NOT_FOUND: MessageEnum.SUBSCRIPTION_NOT_FOUND,
 	SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL: MessageEnum.SUBSCRIPTION_NOT_ELIGIBLE_FOR_RENEWAL,
@@ -252,6 +313,9 @@ export const ERROR_CODES = {
 	INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 	BAD_REQUEST: 'BAD_REQUEST',
 	CONFLICT: 'CONFLICT',
+	ALREADY_PAID: 'ALREADY_PAID',
+	ORDER_EXPIRED: 'ORDER_EXPIRED',
+	NOT_RETRYABLE: 'NOT_RETRYABLE',
 	UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
 	BAD_GATEWAY: 'BAD_GATEWAY',
 } as const;

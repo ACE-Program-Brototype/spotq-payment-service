@@ -53,6 +53,7 @@ describe('GetSubscriptionBillingHistoryUseCase', () => {
 				records: [mockRecordWithInvoice, mockRecordWithoutInvoice],
 				totalRecords: 2,
 			}),
+			findTransactionsByCustomer: jest.fn(),
 		};
 
 		mockStorageService = {

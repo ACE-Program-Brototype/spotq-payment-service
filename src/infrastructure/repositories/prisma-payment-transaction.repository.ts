@@ -60,7 +60,6 @@ export class PrismaPaymentTransactionRepository
 	private mapRefundToDomain(record: PrismaPaymentRefund): PaymentRefund {
 		return PaymentRefundPersistenceMapper.toDomain(record);
 	}
-
 	async findById(id: string): Promise<PaymentTransaction | null> {
 		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { id },
@@ -92,6 +91,18 @@ export class PrismaPaymentTransactionRepository
 	async findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null> {
 		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { razorpayPaymentId },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
+	}
+
+	async findCapturedByOrderId(orderId: string): Promise<PaymentTransaction | null> {
+		const record = await this.prisma.paymentTransaction.findFirst({
+			where: {
+				orderId,
+				status: { in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.SUCCESS] },
+			},
 		});
 
 		if (!record) return null;
@@ -448,9 +459,11 @@ export class PrismaPaymentTransactionRepository
 		return this.mapToDomain(record);
 	}
 
-	async resetToCreated(razorpayOrderId: string): Promise<PaymentTransaction> {
+	async resetToCreated(target: PaymentTransaction | string): Promise<PaymentTransaction> {
+		const where = typeof target === 'string' ? { razorpayOrderId: target } : { id: target.id };
+
 		const record = await this.prisma.paymentTransaction.update({
-			where: { razorpayOrderId },
+			where,
 			data: {
 				status: PAYMENT_STATUS.CREATED,
 				failureReason: null,

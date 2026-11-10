@@ -8,6 +8,7 @@ export const TYPES = {
 		BillingInvoiceRepository: Symbol.for('IBillingInvoiceRepository'),
 		FinanceQueryRepository: Symbol.for('IFinanceQueryRepository'),
 		PlatformLedgerTransactionRepository: Symbol.for('IPlatformLedgerTransactionRepository'),
+		RestaurantWalletRepository: Symbol.for('IRestaurantWalletRepository'),
 	},
 	Gateways: {
 		PaymentGateway: Symbol.for('IPaymentGateway'),
@@ -40,6 +41,13 @@ export const TYPES = {
 		GetPlatformFinanceSummaryUseCase: Symbol.for('IGetPlatformFinanceSummaryUseCase'),
 		GetPlatformMasterLedgerUseCase: Symbol.for('IGetPlatformMasterLedgerUseCase'),
 		ExportPlatformLedgerUseCase: Symbol.for('IExportPlatformLedgerUseCase'),
+		RestaurantWallet: {
+			GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
+			LinkBankAccountUseCase: Symbol.for('ILinkBankAccountUseCase'),
+			WithdrawFromRestaurantWalletUseCase: Symbol.for('IWithdrawFromRestaurantWalletUseCase'),
+		},
+		GetCustomerPaymentHistoryUseCase: Symbol.for('IGetCustomerPaymentHistoryUseCase'),
+		RetryCustomerPaymentUseCase: Symbol.for('IRetryCustomerPaymentUseCase'),
 		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
 		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),
 		GetAdminSubscriberDetailsUseCase: Symbol.for('IGetAdminSubscriberDetailsUseCase'),
@@ -49,6 +57,9 @@ export const TYPES = {
 		SubscriptionController: Symbol.for('SubscriptionController'),
 		RestaurantTransactionController: Symbol.for('RestaurantTransactionController'),
 		PlatformFinanceController: Symbol.for('PlatformFinanceController'),
+		RestaurantWalletController: Symbol.for('RestaurantWalletController'),
+		CustomerPaymentController: Symbol.for('CustomerPaymentController'),
 		AdminSubscriberController: Symbol.for('AdminSubscriberController'),
 	},
+	Logger: Symbol.for('ILogger'),
 } as const;

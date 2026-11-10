@@ -18,6 +18,7 @@ export const TYPES = {
 		RabbitMQService: Symbol.for('RabbitMQService'),
 		InvoicePdfService: Symbol.for('IInvoicePdfService'),
 		StorageService: Symbol.for('IStorageService'),
+		Logger: Symbol.for('ILogger'),
 	},
 	Consumers: {
 		OrderInvoiceConsumer: Symbol.for('OrderInvoiceConsumer'),

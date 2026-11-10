@@ -1,7 +1,9 @@
 import type { OrderInvoiceDataDTO } from '@application/dtos/order-payment-invoice-event.dto.ts';
 import type { IInvoicePdfService } from '@application/ports/services/invoice-pdf.service.port.ts';
 import { config } from '@config/index.ts';
+import { PdfGenerationError } from '@infrastructure/errors/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import { MESSAGES, TRAILING_SLASH_REGEX } from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { renderOrderInvoiceHtml } from './templates/order-invoice.template.ts';
 
@@ -10,7 +12,7 @@ export class GotenbergPdfService implements IInvoicePdfService {
 	private readonly gotenbergUrl: string;
 
 	constructor() {
-		this.gotenbergUrl = config.gotenberg.url.replace(/\/+$/, '');
+		this.gotenbergUrl = config.gotenberg.url.replace(TRAILING_SLASH_REGEX, '');
 	}
 
 	async generateInvoicePdf(orderData: OrderInvoiceDataDTO): Promise<Buffer> {
@@ -41,17 +43,17 @@ export class GotenbergPdfService implements IInvoicePdfService {
 				const errorText = await response.text().catch(() => '');
 				logger.error(
 					{ status: response.status, statusText: response.statusText, errorText },
-					'Gotenberg conversion failed',
+					MESSAGES.GOTENBERG_CONVERSION_FAILED,
 				);
-				throw new Error(
-					`Gotenberg PDF generation failed with status ${response.status}: ${errorText || response.statusText}`,
+				throw new PdfGenerationError(
+					`${MESSAGES.GOTENBERG_GENERATION_FAILED} with status ${response.status}: ${errorText || response.statusText}`,
 				);
 			}
 
 			const arrayBuffer = await response.arrayBuffer();
 			return Buffer.from(arrayBuffer);
 		} catch (error) {
-			logger.error({ err: error, endpoint }, 'Failed to connect to Gotenberg PDF service');
+			logger.error({ err: error, endpoint }, MESSAGES.GOTENBERG_CONNECTION_FAILED);
 			throw error;
 		}
 	}

@@ -51,6 +51,5 @@ export const config = {
 		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
 		region: env.AWS_REGION,
 		bucket: env.AWS_S3_BUCKET,
-		endpoint: env.AWS_S3_ENDPOINT,
 	},
 } as const;

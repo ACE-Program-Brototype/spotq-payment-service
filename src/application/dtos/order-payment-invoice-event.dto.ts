@@ -7,19 +7,19 @@ export interface OrderPaymentInvoiceItemAddonDTO {
 export interface OrderPaymentInvoiceItemDTO {
 	menuItemId: string;
 	itemName: string;
-	variantId?: string | null | undefined;
-	variantName?: string | null | undefined;
+	variantId?: string | null;
+	variantName?: string | null;
 	quantity: number;
 	unitPrice: number;
 	totalPrice: number;
-	specialInstructions?: string | null | undefined;
+	specialInstructions?: string | null;
 	addons: OrderPaymentInvoiceItemAddonDTO[];
 }
 
 export interface OrderPaymentInvoiceFinancialsDTO {
 	subtotal: number;
 	taxAmount: number;
-	taxPercent?: number | undefined;
+	taxPercent?: number;
 	platformFee: number;
 	discountAmount: number;
 	grandTotal: number;
@@ -36,13 +36,13 @@ export interface OrderInvoiceDataDTO {
 	customerName: string | null;
 	customerPhone: string | null;
 	orderingMode: string;
-	tableNumber?: number | null | undefined;
-	queueEntryId?: string | null | undefined;
+	tableNumber?: number | null;
+	queueEntryId?: string | null;
 	paymentMode: string;
 	paymentStatus: string;
 	orderStatus: string;
 	currency: string;
-	specialInstructions?: string | null | undefined;
+	specialInstructions?: string | null;
 	financials: OrderPaymentInvoiceFinancialsDTO;
 	items: OrderPaymentInvoiceItemDTO[];
 	createdAt: string;

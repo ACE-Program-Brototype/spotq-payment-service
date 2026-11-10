@@ -1,4 +1,5 @@
 import type { IInvoicePdfService } from '@application/ports/services/invoice-pdf.service.port.ts';
+import type { ILogger } from '@application/ports/services/logger.service.port.ts';
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IStorageService } from '@application/ports/services/storage.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
@@ -37,6 +38,7 @@ import type { IPaymentTransactionRepository } from '@domain/repositories/payment
 import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/platform-ledger-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
+import { logger } from '@infrastructure/logger/index.ts';
 import { OrderInvoiceConsumer } from '@infrastructure/messaging/order-invoice.consumer.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
@@ -131,6 +133,8 @@ container
 	.bind<IStorageService>(TYPES.Services.StorageService)
 	.to(S3StorageService)
 	.inSingletonScope();
+
+container.bind<ILogger>(TYPES.Services.Logger).toConstantValue(logger);
 
 container
 	.bind<OrderInvoiceConsumer>(TYPES.Consumers.OrderInvoiceConsumer)

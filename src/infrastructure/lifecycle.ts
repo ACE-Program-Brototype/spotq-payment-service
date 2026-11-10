@@ -1,5 +1,7 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
+import { HeadBucketCommand } from '@aws-sdk/client-s3';
+import { config } from '@config/index.ts';
 import { orderInvoiceConsumer } from '@di/consumer.resolution.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
@@ -15,6 +17,7 @@ import { logger } from './logger/index.ts';
 import { bullmqService } from './queue/index.ts';
 import type { RabbitMQService } from './rabbitmq/index.ts';
 import { redisService } from './redis/index.ts';
+import { s3Client } from './storage/index.ts';
 
 export async function initInfrastructure(): Promise<void> {
 	await databaseService.connect();
@@ -41,6 +44,14 @@ export async function initInfrastructure(): Promise<void> {
 		await paymentGateway.initialize();
 	} catch (error) {
 		logger.error({ err: error }, MESSAGES.RAZORPAY_INIT_FAILED);
+		throw error;
+	}
+
+	try {
+		await s3Client.send(new HeadBucketCommand({ Bucket: config.s3.bucket }));
+		logger.info({ bucket: config.s3.bucket }, MESSAGES.S3_BUCKET_ACCESSIBLE);
+	} catch (error) {
+		logger.error({ err: error, bucket: config.s3.bucket }, MESSAGES.S3_INIT_FAILED);
 		throw error;
 	}
 

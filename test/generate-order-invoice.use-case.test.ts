@@ -46,6 +46,7 @@ describe('GenerateOrderInvoiceUseCase', () => {
 	let mockInvoiceRepo: any;
 	let mockPdfService: any;
 	let mockStorageService: any;
+	let mockLogger: any;
 	let useCase: GenerateOrderInvoiceUseCase;
 
 	beforeEach(() => {
@@ -64,7 +65,19 @@ describe('GenerateOrderInvoiceUseCase', () => {
 			fileExists: jest.fn().mockResolvedValue(false),
 		};
 
-		useCase = new GenerateOrderInvoiceUseCase(mockInvoiceRepo, mockPdfService, mockStorageService);
+		mockLogger = {
+			info: jest.fn(),
+			warn: jest.fn(),
+			error: jest.fn(),
+			debug: jest.fn(),
+		};
+
+		useCase = new GenerateOrderInvoiceUseCase(
+			mockInvoiceRepo,
+			mockPdfService,
+			mockStorageService,
+			mockLogger,
+		);
 	});
 
 	it('should return existing invoice early if invoicePdfKey is already populated (idempotency)', async () => {
@@ -121,7 +134,7 @@ describe('GenerateOrderInvoiceUseCase', () => {
 		expect(mockInvoiceRepo.create).toHaveBeenCalled();
 		expect(mockPdfService.generateInvoicePdf).toHaveBeenCalledWith(mockOrderData);
 		expect(mockStorageService.uploadFile).toHaveBeenCalledWith(
-			expect.stringContaining(`invoices/${mockOrderData.orderId}/2026/11/`),
+			expect.stringContaining(`spotq-order-invoices/${mockOrderData.orderId}/2026/11/`),
 			expect.any(Buffer),
 			'application/pdf',
 		);

@@ -54,6 +54,12 @@ export enum MessageEnum {
 	ORDER_PAYMENT_NOT_FOUND = 'Payment order not found for this food order',
 	VALIDATION_ERROR = 'Invalid request parameters',
 
+	GOTENBERG_CONVERSION_FAILED = 'Gotenberg conversion failed',
+	GOTENBERG_CONNECTION_FAILED = 'Failed to connect to Gotenberg PDF service',
+	GOTENBERG_GENERATION_FAILED = 'Gotenberg PDF generation failed',
+	S3_BUCKET_ACCESSIBLE = 'S3 storage bucket verified and accessible',
+	S3_INIT_FAILED = 'Failed to connect to AWS S3 storage bucket',
+
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
 
@@ -129,6 +135,11 @@ export const MESSAGES = {
 	ORDER_PAYMENT_STATUS_FETCHED: MessageEnum.ORDER_PAYMENT_STATUS_FETCHED,
 	ORDER_PAYMENT_NOT_FOUND: MessageEnum.ORDER_PAYMENT_NOT_FOUND,
 	VALIDATION_ERROR: MessageEnum.VALIDATION_ERROR,
+	GOTENBERG_CONVERSION_FAILED: MessageEnum.GOTENBERG_CONVERSION_FAILED,
+	GOTENBERG_CONNECTION_FAILED: MessageEnum.GOTENBERG_CONNECTION_FAILED,
+	GOTENBERG_GENERATION_FAILED: MessageEnum.GOTENBERG_GENERATION_FAILED,
+	S3_BUCKET_ACCESSIBLE: MessageEnum.S3_BUCKET_ACCESSIBLE,
+	S3_INIT_FAILED: MessageEnum.S3_INIT_FAILED,
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
 

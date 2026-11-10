@@ -31,8 +31,7 @@ const envSchema = z.object({
 	AWS_ACCESS_KEY_ID: z.string().trim().min(1),
 	AWS_SECRET_ACCESS_KEY: z.string().trim().min(1),
 	AWS_REGION: z.string().trim().min(1).default('ap-south-1'),
-	AWS_S3_BUCKET: z.string().trim().min(1).default('spotq-order-invoices'),
-	AWS_S3_ENDPOINT: z.string().url().optional(),
+	AWS_S3_BUCKET: z.string().trim().min(1).default('spotq-restaurant-files'),
 });
 
 export const validateEnv = () => {

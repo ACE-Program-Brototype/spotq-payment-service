@@ -1,29 +1,18 @@
 import type { IStorageService } from '@application/ports/services/storage.service.port.ts';
-import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { HeadObjectCommand, PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
 import { config } from '@config/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { injectable } from 'inversify';
+import { s3Client as defaultS3Client } from './s3.client.ts';
 
 @injectable()
 export class S3StorageService implements IStorageService {
 	private readonly s3Client: S3Client;
 	private readonly bucket: string;
 
-	constructor() {
+	constructor(client: S3Client = defaultS3Client) {
 		this.bucket = config.s3.bucket;
-		this.s3Client = new S3Client({
-			region: config.s3.region,
-			credentials: {
-				accessKeyId: config.s3.accessKeyId,
-				secretAccessKey: config.s3.secretAccessKey,
-			},
-			...(config.s3.endpoint
-				? {
-						endpoint: config.s3.endpoint,
-						forcePathStyle: true,
-					}
-				: {}),
-		});
+		this.s3Client = client;
 	}
 
 	async uploadFile(key: string, buffer: Buffer, contentType: string): Promise<void> {

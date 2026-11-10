@@ -1,11 +1,13 @@
 import type { OrderInvoiceDataDTO } from '@application/dtos/order-payment-invoice-event.dto.ts';
 import type { IInvoicePdfService } from '@application/ports/services/invoice-pdf.service.port.ts';
+import type { ILogger } from '@application/ports/services/logger.service.port.ts';
 import type { IStorageService } from '@application/ports/services/storage.service.port.ts';
 import type { IGenerateOrderInvoiceUseCase } from '@application/ports/use-cases/generate-order-invoice.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import type { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
 import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
-import { logger } from '@infrastructure/logger/index.ts';
+import { HYPHEN_REGEX, NON_ALPHANUMERIC_REGEX, ORD_PREFIX_REGEX } from '@shared/constants/index.ts';
+import { buildOrderInvoiceS3Key } from '@shared/utils/invoice-s3-key.util.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -17,10 +19,12 @@ export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase
 		private readonly invoicePdfService: IInvoicePdfService,
 		@inject(TYPES.Services.StorageService)
 		private readonly storageService: IStorageService,
+		@inject(TYPES.Services.Logger)
+		private readonly logger: ILogger,
 	) {}
 
 	async execute(orderData: OrderInvoiceDataDTO): Promise<BillingInvoice> {
-		logger.info(
+		this.logger.info(
 			{
 				orderId: orderData.orderId,
 				orderNumber: orderData.orderNumber,
@@ -37,7 +41,7 @@ export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase
 
 		// If invoice already exists and PDF is already generated, return early (idempotent)
 		if (invoice?.invoicePdfKey) {
-			logger.info(
+			this.logger.info(
 				{
 					invoiceId: invoice.id,
 					invoiceNumber: invoice.invoiceNumber,
@@ -65,10 +69,11 @@ export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase
 		const pdfBuffer = await this.invoicePdfService.generateInvoicePdf(orderData);
 
 		// 2. Construct S3 storage key partitioned by orderId
-		const date = new Date(orderData.confirmedAt || orderData.createdAt);
-		const year = date.getUTCFullYear();
-		const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-		const s3Key = `invoices/${orderData.orderId}/${year}/${month}/${invoice.invoiceNumber}.pdf`;
+		const s3Key = buildOrderInvoiceS3Key(
+			orderData.orderId,
+			invoice.invoiceNumber,
+			orderData.confirmedAt || orderData.createdAt,
+		);
 
 		// 3. Upload buffer to S3 / MinIO
 		await this.storageService.uploadFile(s3Key, pdfBuffer, 'application/pdf');
@@ -76,7 +81,7 @@ export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase
 		// 4. Update BillingInvoice in database with S3 key and timestamp
 		const updated = await this.billingInvoiceRepository.updatePdfKey(invoice.id, s3Key, new Date());
 
-		logger.info(
+		this.logger.info(
 			{ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, s3Key },
 			'Successfully generated and saved order invoice PDF to S3',
 		);
@@ -85,9 +90,11 @@ export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase
 	}
 
 	private generateInvoiceNumber(orderData: OrderInvoiceDataDTO): string {
-		const cleanOrderNo = orderData.orderNumber.replace(/^ORD-/, '').replace(/[^A-Za-z0-9]/g, '');
+		const cleanOrderNo = orderData.orderNumber
+			.replace(ORD_PREFIX_REGEX, '')
+			.replace(NON_ALPHANUMERIC_REGEX, '');
 		const date = new Date(orderData.confirmedAt || orderData.createdAt);
-		const yyyymmdd = date.toISOString().slice(0, 10).replace(/-/g, '');
+		const yyyymmdd = date.toISOString().slice(0, 10).replace(HYPHEN_REGEX, '');
 		return `INV-${yyyymmdd}-${cleanOrderNo}`;
 	}
 }

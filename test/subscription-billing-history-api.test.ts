@@ -139,16 +139,16 @@ describe('Subscription Billing History API (HTTP Integration)', () => {
 		expect(res.body.error).toBe(ERROR_CODES.FORBIDDEN);
 	});
 
-	it('should return 200 OK when user role is RESTAURANT_ADMIN and userId differs from restaurantId', async () => {
+	it('should return 403 FORBIDDEN when user role is RESTAURANT_ADMIN (only RESTAURANT_OWNER allowed)', async () => {
 		const res = await request(app).get(buildUrl()).set({
 			'x-restaurant-id': mockRestaurantId,
-			'x-user-id': '01e2f3a4-1234-4a2e-8e55-321456987301',
+			'x-user-id': mockUserId,
 			'x-user-role': USER_ROLES.RESTAURANT_ADMIN,
 		});
 
-		expect(res.status).toBe(HTTP_STATUS.OK);
-		expect(res.body.success).toBe(true);
-		expect(res.body.data.transactions).toHaveLength(1);
+		expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
+		expect(res.body.success).toBe(false);
+		expect(res.body.error).toBe(ERROR_CODES.FORBIDDEN);
 	});
 
 	it('should return 403 FORBIDDEN when caller attempts cross-tenant access to another restaurant', async () => {

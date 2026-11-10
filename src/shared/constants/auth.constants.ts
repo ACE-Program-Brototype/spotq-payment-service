@@ -15,9 +15,4 @@ export const USER_ROLES = {
 	CUSTOMER: 'CUSTOMER',
 } as const;
 
-export const ALLOWED_RESTAURANT_ROLES = new Set<string>([
-	ALLOWED_RESTAURANT_OWNER_ROLE,
-	USER_ROLES.RESTAURANT_ADMIN,
-]);
-
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];

@@ -1,5 +1,5 @@
 import {
-	ALLOWED_RESTAURANT_OWNER_ROLE,
+	ALLOWED_RESTAURANT_ROLES,
 	ERROR_CODES,
 	HTTP_STATUS,
 	MESSAGES,
@@ -19,7 +19,7 @@ function getHeaderValue(header: string | string[] | undefined): string | undefin
 
 /**
  * Authentication and authorization middleware verifying that requests originating
- * from the API gateway carry a valid restaurant owner identity.
+ * from the API gateway carry a valid restaurant owner or admin identity.
  */
 export function restaurantAdminAuthMiddleware(
 	req: Request,
@@ -44,7 +44,7 @@ export function restaurantAdminAuthMiddleware(
 	const role = getHeaderValue(req.headers['x-user-role']);
 	const normalizedRole = role?.toUpperCase().trim();
 
-	if (!normalizedRole || ALLOWED_RESTAURANT_OWNER_ROLE !== normalizedRole) {
+	if (!normalizedRole || !ALLOWED_RESTAURANT_ROLES.has(normalizedRole)) {
 		res
 			.status(HTTP_STATUS.FORBIDDEN)
 			.json(ApiResponse.error('FORBIDDEN', MESSAGES.OWNER_FORBIDDEN, HTTP_STATUS.FORBIDDEN));
@@ -53,18 +53,11 @@ export function restaurantAdminAuthMiddleware(
 
 	const email = getHeaderValue(req.headers['x-user-email']);
 
-	if (userId.trim() !== restaurantId.trim()) {
-		res
-			.status(HTTP_STATUS.FORBIDDEN)
-			.json(ApiResponse.error('FORBIDDEN', MESSAGES.FORBIDDEN_ACCESS, HTTP_STATUS.FORBIDDEN));
-		return;
-	}
-
 	req.user = {
 		userId,
 		restaurantId,
 		email,
-		role: role || 'RESTAURANT_OWNER',
+		role: normalizedRole,
 	};
 
 	req.userId = userId;

@@ -2,7 +2,7 @@ import {
 	subscriptionBillingHistoryParamsSchema,
 	subscriptionBillingHistoryQuerySchema,
 } from '@presentation/validators/subscriptions/subscription-billing-history.validator.ts';
-import { MESSAGES } from '@shared/constants/message.constants.ts';
+import { MESSAGES, PAYMENT_STATUS } from '@shared/constants/index.ts';
 
 describe('SubscriptionBillingHistoryValidators', () => {
 	describe('subscriptionBillingHistoryParamsSchema', () => {
@@ -44,7 +44,7 @@ describe('SubscriptionBillingHistoryValidators', () => {
 		});
 
 		it('should accept valid status filters', () => {
-			for (const status of ['SUCCESS', 'FAILED', 'CREATED']) {
+			for (const status of [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.FAILED]) {
 				const result = subscriptionBillingHistoryQuerySchema.safeParse({
 					status,
 					page: '2',
@@ -60,12 +60,14 @@ describe('SubscriptionBillingHistoryValidators', () => {
 		});
 
 		it('should reject unsupported status filter values', () => {
-			const result = subscriptionBillingHistoryQuerySchema.safeParse({
-				status: 'CAPTURED',
-			});
-			expect(result.success).toBe(false);
-			if (!result.success) {
-				expect(result.error.issues[0]?.message).toBe(MESSAGES.INVALID_STATUS_FILTER);
+			for (const status of ['CAPTURED', 'CREATED']) {
+				const result = subscriptionBillingHistoryQuerySchema.safeParse({
+					status,
+				});
+				expect(result.success).toBe(false);
+				if (!result.success) {
+					expect(result.error.issues[0]?.message).toBe(MESSAGES.INVALID_STATUS_FILTER);
+				}
 			}
 		});
 

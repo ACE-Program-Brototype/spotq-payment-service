@@ -299,11 +299,6 @@ export class PrismaTransactionQueryRepository
 				take,
 				include: {
 					plan: true,
-					subscription: {
-						include: {
-							plan: true,
-						},
-					},
 					invoices: {
 						orderBy: { createdAt: 'desc' },
 						take: 1,

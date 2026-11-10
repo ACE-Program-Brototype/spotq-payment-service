@@ -45,45 +45,15 @@ describe('SubscriptionBillingHistoryPersistenceMapper', () => {
 		});
 	});
 
-	it('should fallback to subscription.plan when direct plan is null', () => {
-		const source = {
-			id: 'tx-2',
-			amountPaise: 149900,
-			currency: 'INR',
-			status: 'SUCCESS',
-			razorpayPaymentId: 'pay_456',
-			createdAt: fixedDate,
-			plan: null,
-			subscription: {
-				plan: {
-					code: 'QUEUE_PRO',
-					name: 'SpotQ Pro',
-					billingCycle: 'MONTHLY',
-				},
-			},
-			invoices: [],
-		};
-
-		const result = SubscriptionBillingHistoryPersistenceMapper.toDomain(source);
-
-		expect(result.plan).toEqual({
-			code: 'QUEUE_PRO',
-			name: 'SpotQ Pro',
-			billingCycle: 'MONTHLY',
-		});
-		expect(result.invoice).toBeNull();
-	});
-
 	it('should handle null plan and missing invoices gracefully', () => {
 		const source = {
-			id: 'tx-3',
+			id: 'tx-2',
 			amountPaise: 5000,
 			currency: 'INR',
 			status: 'CREATED',
 			razorpayPaymentId: null,
 			createdAt: fixedDate,
 			plan: null,
-			subscription: null,
 			invoices: undefined,
 		};
 

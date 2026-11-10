@@ -123,7 +123,7 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			expect(res.body.error).toBe(ERROR_CODES.UNAUTHORIZED);
 		});
 
-		it('should return 403 Forbidden when x-user-role is not RESTAURANT_ADMIN or RESTAURANT_STAFF', async () => {
+		it('should return 403 Forbidden when x-user-role is not RESTAURANT_ADMIN or STAFF', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
@@ -136,23 +136,23 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			expect(res.body.message).toBe(MESSAGES.FORBIDDEN_ACCESS);
 		});
 
-		it('should allow access when x-user-role is RESTAURANT_STAFF', async () => {
+		it('should allow access when x-user-role is STAFF', async () => {
 			const res = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
 				.set('x-user-id', mockUserId)
-				.set('x-user-role', 'RESTAURANT_STAFF');
+				.set('x-user-role', 'STAFF');
 
 			expect(res.status).toBe(HTTP_STATUS.OK);
 			expect(res.body.success).toBe(true);
 		});
 
-		it('should allow access when x-user-role is RESTAURANT_OWNER or lowercase restaurant_owner', async () => {
+		it('should allow access when x-user-role is RESTAURANT_ADMIN or lowercase restaurant_admin', async () => {
 			const res1 = await request(app)
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
 				.set('x-user-id', mockUserId)
-				.set('x-user-role', 'RESTAURANT_OWNER');
+				.set('x-user-role', 'RESTAURANT_ADMIN');
 
 			expect(res1.status).toBe(HTTP_STATUS.OK);
 			expect(res1.body.success).toBe(true);
@@ -161,7 +161,7 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 				.get(TRANSACTION_ROUTES.BASE)
 				.set('x-restaurant-id', mockRestaurantId)
 				.set('x-user-id', mockUserId)
-				.set('x-user-role', 'restaurant_owner');
+				.set('x-user-role', 'restaurant_admin');
 
 			expect(res2.status).toBe(HTTP_STATUS.OK);
 			expect(res2.body.success).toBe(true);

@@ -1,3 +1,4 @@
+import type { PaymentStatus } from '@shared/constants/subscription.constants.ts';
 import type {
 	SortDirection,
 	TransactionPaymentMethod,
@@ -105,7 +106,7 @@ export interface SubscriptionBillingHistoryFilterParams {
 	restaurantId: string;
 	page: number;
 	limit: number;
-	status?: 'SUCCESS' | 'FAILED' | 'CREATED';
+	status?: PaymentStatus;
 }
 
 export interface SubscriptionBillingTransactionRecord {

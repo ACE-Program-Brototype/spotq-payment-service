@@ -2,26 +2,7 @@ import { ERROR_CODES, HTTP_STATUS, MESSAGES, USER_ROLES } from '@shared/constant
 import { sendErrorResponse } from '@shared/response/api-response.ts';
 import type { NextFunction, Request, Response } from 'express';
 
-const ALLOWED_ROLES = new Set<string>([
-	USER_ROLES.PLATFORM_ADMIN,
-	USER_ROLES.ADMIN,
-	USER_ROLES.RESTAURANT_ADMIN,
-	USER_ROLES.STAFF,
-]);
-
-function normalizeRole(role?: string): string | undefined {
-	if (!role) {
-		return undefined;
-	}
-	const trimmed = role.toUpperCase().trim();
-	if (trimmed === 'RESTAURANT_OWNER' || trimmed === 'OWNER') {
-		return USER_ROLES.RESTAURANT_ADMIN;
-	}
-	if (trimmed === 'RESTAURANT_STAFF') {
-		return USER_ROLES.STAFF;
-	}
-	return trimmed;
-}
+const ALLOWED_ROLES = new Set<string>([USER_ROLES.RESTAURANT_ADMIN, USER_ROLES.STAFF]);
 
 export function restaurantAdminAuthMiddleware(
 	req: Request,
@@ -42,9 +23,9 @@ export function restaurantAdminAuthMiddleware(
 		return;
 	}
 
-	const normalizedRole = normalizeRole(userRole);
+	const role = userRole?.toUpperCase().trim();
 
-	if (!normalizedRole || !ALLOWED_ROLES.has(normalizedRole)) {
+	if (!role || !ALLOWED_ROLES.has(role)) {
 		sendErrorResponse(res, MESSAGES.FORBIDDEN_ACCESS, ERROR_CODES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
 		return;
 	}
@@ -55,7 +36,7 @@ export function restaurantAdminAuthMiddleware(
 		userId,
 		restaurantId,
 		email,
-		role: normalizedRole,
+		role,
 	};
 
 	next();
@@ -69,20 +50,14 @@ export function verifyRestaurantTenantAccess(
 	const user = req.user;
 	const targetRestaurantId = req.params?.restaurantId;
 
-	if (
-		targetRestaurantId &&
-		user?.role !== USER_ROLES.PLATFORM_ADMIN &&
-		user?.role !== USER_ROLES.ADMIN
-	) {
-		if (user?.restaurantId !== targetRestaurantId) {
-			sendErrorResponse(
-				res,
-				MESSAGES.FORBIDDEN_SUBSCRIPTION_ACCESS,
-				'FORBIDDEN_SUBSCRIPTION_ACCESS',
-				HTTP_STATUS.FORBIDDEN,
-			);
-			return;
-		}
+	if (targetRestaurantId && user?.restaurantId !== targetRestaurantId) {
+		sendErrorResponse(
+			res,
+			MESSAGES.FORBIDDEN_SUBSCRIPTION_ACCESS,
+			'FORBIDDEN_SUBSCRIPTION_ACCESS',
+			HTTP_STATUS.FORBIDDEN,
+		);
+		return;
 	}
 
 	next();

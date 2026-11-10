@@ -152,19 +152,16 @@ describe('Subscription Billing History API (HTTP Integration)', () => {
 		expect(res.body.message).toBe(MESSAGES.FORBIDDEN_SUBSCRIPTION_ACCESS);
 	});
 
-	it('should allow PLATFORM_ADMIN to view another restaurant history', async () => {
+	it('should return 403 FORBIDDEN when PLATFORM_ADMIN attempts to access restaurant dashboard history', async () => {
 		const res = await request(app).get(buildUrl(otherRestaurantId)).set({
 			'x-restaurant-id': mockRestaurantId,
 			'x-user-id': mockUserId,
 			'x-user-role': USER_ROLES.PLATFORM_ADMIN,
 		});
 
-		expect(res.status).toBe(HTTP_STATUS.OK);
-		expect(findSubscriptionBillingTransactionsSpy).toHaveBeenCalledWith(
-			expect.objectContaining({
-				restaurantId: otherRestaurantId,
-			}),
-		);
+		expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
+		expect(res.body.success).toBe(false);
+		expect(res.body.error).toBe(ERROR_CODES.FORBIDDEN);
 	});
 
 	it('should return 422 UNPROCESSABLE_ENTITY when restaurantId is not a valid UUID', async () => {

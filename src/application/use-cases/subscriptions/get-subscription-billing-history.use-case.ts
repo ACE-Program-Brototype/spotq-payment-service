@@ -26,12 +26,8 @@ export class GetSubscriptionBillingHistoryUseCase implements IGetSubscriptionBil
 	async execute(
 		dto: GetSubscriptionBillingHistoryQueryDTO,
 	): Promise<SubscriptionBillingHistoryResponseDTO> {
-		const page =
-			dto.page && dto.page > 0 ? dto.page : SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_PAGE;
-		const limit =
-			dto.limit && dto.limit > 0
-				? Math.min(dto.limit, SUBSCRIPTION_BILLING_HISTORY_PAGINATION.MAX_LIMIT)
-				: SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_LIMIT;
+		const page = dto.page ?? SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_PAGE;
+		const limit = dto.limit ?? SUBSCRIPTION_BILLING_HISTORY_PAGINATION.DEFAULT_LIMIT;
 
 		const { records, totalRecords } =
 			await this.transactionQueryRepository.findSubscriptionBillingTransactions({

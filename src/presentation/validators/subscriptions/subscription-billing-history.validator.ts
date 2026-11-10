@@ -1,4 +1,8 @@
-import { MESSAGES, SUBSCRIPTION_BILLING_HISTORY_PAGINATION } from '@shared/constants/index.ts';
+import {
+	MESSAGES,
+	PAYMENT_STATUS,
+	SUBSCRIPTION_BILLING_HISTORY_PAGINATION,
+} from '@shared/constants/index.ts';
 import { z } from 'zod';
 
 const emptyStringToUndefined = (val: unknown): unknown =>
@@ -34,7 +38,7 @@ export const subscriptionBillingHistoryQuerySchema = z
 		status: z.preprocess(
 			emptyStringToUndefined,
 			z
-				.enum(['SUCCESS', 'FAILED', 'CREATED'], {
+				.enum([PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.FAILED], {
 					message: MESSAGES.INVALID_STATUS_FILTER,
 				})
 				.optional(),

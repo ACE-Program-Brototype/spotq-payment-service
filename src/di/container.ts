@@ -169,7 +169,8 @@ container
 
 container
 	.bind<IGetSubscriptionBillingHistoryUseCase>(TYPES.UseCases.GetSubscriptionBillingHistoryUseCase)
-	.to(GetSubscriptionBillingHistoryUseCase);
+	.to(GetSubscriptionBillingHistoryUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IRenewSubscriptionUseCase>(TYPES.UseCases.RenewSubscriptionUseCase)

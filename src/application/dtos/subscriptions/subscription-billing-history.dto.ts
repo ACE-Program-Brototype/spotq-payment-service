@@ -1,8 +1,10 @@
+import type { PaymentStatus } from '@shared/constants/subscription.constants.ts';
+
 export interface GetSubscriptionBillingHistoryQueryDTO {
 	restaurantId: string;
 	page?: number;
 	limit?: number;
-	status?: 'SUCCESS' | 'FAILED' | 'CREATED';
+	status?: PaymentStatus;
 }
 
 export interface SubscriptionBillingTransactionItemDTO {

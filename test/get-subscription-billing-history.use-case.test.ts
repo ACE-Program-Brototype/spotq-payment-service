@@ -142,17 +142,15 @@ describe('GetSubscriptionBillingHistoryUseCase', () => {
 		});
 	});
 
-	it('should clamp limit to max 50 and page to min 1', async () => {
+	it('should default pagination when page or limit are omitted', async () => {
 		await useCase.execute({
 			restaurantId: mockRestaurantId,
-			page: -5,
-			limit: 100,
 		});
 
 		expect(mockRepo.findSubscriptionBillingTransactions).toHaveBeenCalledWith({
 			restaurantId: mockRestaurantId,
 			page: 1,
-			limit: 50,
+			limit: 10,
 			status: undefined,
 		});
 	});

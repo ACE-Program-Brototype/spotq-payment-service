@@ -106,4 +106,38 @@ describe('PrismaSubscriptionAnalyticsRepository (Unit Tests)', () => {
 			mrrPaise: 0n,
 		});
 	});
+
+	it('should process multiple timeline buckets in batches without exceeding connection pool concurrency', async () => {
+		mockQueryRaw.mockResolvedValueOnce([
+			{ active_subscribed_restaurants: 5, current_mrr_paise: 1000n },
+		]);
+		mockQueryRaw.mockResolvedValueOnce([{ plan_code: 'FREE', restaurant_count: 5 }]);
+		mockQueryRaw.mockResolvedValueOnce([
+			{ current_revenue_paise: 2000n, previous_revenue_paise: 1000n },
+		]);
+
+		for (let i = 0; i < 4; i++) {
+			mockQueryRaw.mockResolvedValueOnce([{ bucket_revenue_paise: BigInt(i * 100) }]);
+			mockQueryRaw.mockResolvedValueOnce([{ new_subscriptions_count: i }]);
+			mockQueryRaw.mockResolvedValueOnce([{ bucket_mrr_paise: BigInt(i * 50) }]);
+		}
+
+		const result = await repository.getPlatformSubscriptionAnalytics({
+			periodStartDate: new Date('2026-11-01T00:00:00Z'),
+			nextPeriodStart: new Date('2026-12-01T00:00:00Z'),
+			prevStartDate: new Date('2026-10-01T00:00:00Z'),
+			billingCycle: 'ALL',
+			buckets: [
+				{ bucketLabel: 'B0', bucketStart: new Date(), bucketEnd: new Date() },
+				{ bucketLabel: 'B1', bucketStart: new Date(), bucketEnd: new Date() },
+				{ bucketLabel: 'B2', bucketStart: new Date(), bucketEnd: new Date() },
+				{ bucketLabel: 'B3', bucketStart: new Date(), bucketEnd: new Date() },
+			],
+		});
+
+		expect(result.timelineBuckets).toHaveLength(4);
+		expect(result.timelineBuckets[0].bucketLabel).toBe('B0');
+		expect(result.timelineBuckets[3].bucketLabel).toBe('B3');
+		expect(mockQueryRaw).toHaveBeenCalledTimes(15);
+	});
 });

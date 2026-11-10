@@ -58,6 +58,18 @@ describe('subscriptionAnalyticsQuerySchema', () => {
 		}
 	});
 
+	it('should reject period=DAY when month and year are specified but day is omitted', () => {
+		const result = subscriptionAnalyticsQuerySchema.safeParse({
+			period: 'DAY',
+			month: 2,
+			year: 2026,
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			expect(result.error.issues[0].message).toContain('Day is required');
+		}
+	});
+
 	it('should reject unknown extra properties due to strict mode', () => {
 		const result = subscriptionAnalyticsQuerySchema.safeParse({
 			period: 'MONTH',

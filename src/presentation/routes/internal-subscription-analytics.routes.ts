@@ -1,5 +1,6 @@
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
+import type { InternalSubscriptionAnalyticsController } from '@presentation/controllers/internal/internal-subscription-analytics.controller.ts';
 import {
 	internalS2SAuthMiddleware,
 	requireCallerService,
@@ -9,7 +10,6 @@ import { subscriptionAnalyticsQuerySchema } from '@presentation/validators/inter
 import { S2S_CALLER_SERVICES } from '@shared/constants/auth.constants.ts';
 import { INTERNAL_ROUTES } from '@shared/constants/routes.constants.ts';
 import { Router } from 'express';
-import type { InternalSubscriptionAnalyticsController } from '../controllers/internal/internal-subscription-analytics.controller.ts';
 
 export const internalSubscriptionAnalyticsRouter = Router();
 

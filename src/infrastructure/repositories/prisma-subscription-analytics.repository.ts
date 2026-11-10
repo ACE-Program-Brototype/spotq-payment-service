@@ -103,72 +103,83 @@ export class PrismaSubscriptionAnalyticsRepository
 						AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
 				`,
 
-				// 4. Timeline Buckets
-				Promise.all(
-					params.buckets.map(async (bucket): Promise<TimelineBucketResult> => {
-						const [revRows, newSubRows, mrrRows] = await Promise.all([
-							this.prisma.$queryRaw<BucketRevenueRow[]>`
-								SELECT COALESCE(SUM(pt."amount_paise"), 0)::bigint AS bucket_revenue_paise
-								FROM "payment_transactions" pt
-								JOIN "subscription_plans" p ON pt."plan_id" = p."id"
-								WHERE pt."subscription_id" IS NOT NULL
-									AND pt."status" IN ('SUCCESS', 'CAPTURED')
-									AND pt."created_at" >= ${bucket.bucketStart}
-									AND pt."created_at" < ${bucket.bucketEnd}
-									AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
-							`,
-							this.prisma.$queryRaw<BucketNewSubRow[]>`
-								SELECT COUNT(*)::int AS new_subscriptions_count
-								FROM "subscriptions" s
-								JOIN "subscription_plans" p ON s."plan_id" = p."id"
-								WHERE s."created_at" >= ${bucket.bucketStart}
-									AND s."created_at" < ${bucket.bucketEnd}
-									AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
-							`,
-							this.prisma.$queryRaw<BucketMrrRow[]>`
-								WITH active_payments_at_boundary AS (
-									SELECT DISTINCT ON (pt."restaurant_id")
-										pt."restaurant_id",
-										p."billing_cycle",
-										p."price_paise"
-									FROM "payment_transactions" pt
-									JOIN "subscription_plans" p ON pt."plan_id" = p."id"
-									LEFT JOIN "subscriptions" s ON pt."subscription_id" = s."id"
-									WHERE pt."subscription_id" IS NOT NULL
-										AND pt."status" IN ('SUCCESS', 'CAPTURED')
-										AND pt."created_at" < ${bucket.bucketEnd}
-										AND (
-											pt."created_at" + (
-												CASE 
-													WHEN p."billing_cycle" = 'YEARLY' THEN INTERVAL '1 year'
-													ELSE INTERVAL '1 month'
-												END
-											)
-										) >= ${bucket.bucketEnd}
-										AND (s."canceled_at" IS NULL OR s."canceled_at" >= ${bucket.bucketEnd})
-										AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
-									ORDER BY pt."restaurant_id", pt."created_at" DESC
-								)
-								SELECT
-									COALESCE(SUM(
-										CASE
-											WHEN billing_cycle = 'MONTHLY' THEN price_paise
-											WHEN billing_cycle = 'YEARLY' THEN ROUND(price_paise / 12.0)
-											ELSE 0
-										END
-									), 0)::bigint AS bucket_mrr_paise
-								FROM active_payments_at_boundary
-							`,
-						]);
+				// 4. Timeline Buckets (batched to prevent connection pool starvation)
+				(async (): Promise<TimelineBucketResult[]> => {
+					const results: TimelineBucketResult[] = [];
+					const BUCKET_BATCH_SIZE = 3;
 
-						return {
-							bucketLabel: bucket.bucketLabel,
-							grossRevenuePaise: revRows[0]?.bucket_revenue_paise ?? 0n,
-							mrrPaise: mrrRows[0]?.bucket_mrr_paise ?? 0n,
-							newSubscriptionsCount: newSubRows[0]?.new_subscriptions_count ?? 0,
-						};
-					}),
-				),
+					for (let i = 0; i < params.buckets.length; i += BUCKET_BATCH_SIZE) {
+						const chunk = params.buckets.slice(i, i + BUCKET_BATCH_SIZE);
+						const chunkResults = await Promise.all(
+							chunk.map(async (bucket): Promise<TimelineBucketResult> => {
+								const [revRows, newSubRows, mrrRows] = await Promise.all([
+									this.prisma.$queryRaw<BucketRevenueRow[]>`
+										SELECT COALESCE(SUM(pt."amount_paise"), 0)::bigint AS bucket_revenue_paise
+										FROM "payment_transactions" pt
+										JOIN "subscription_plans" p ON pt."plan_id" = p."id"
+										WHERE pt."subscription_id" IS NOT NULL
+											AND pt."status" IN ('SUCCESS', 'CAPTURED')
+											AND pt."created_at" >= ${bucket.bucketStart}
+											AND pt."created_at" < ${bucket.bucketEnd}
+											AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+									`,
+									this.prisma.$queryRaw<BucketNewSubRow[]>`
+										SELECT COUNT(*)::int AS new_subscriptions_count
+										FROM "subscriptions" s
+										JOIN "subscription_plans" p ON s."plan_id" = p."id"
+										WHERE s."created_at" >= ${bucket.bucketStart}
+											AND s."created_at" < ${bucket.bucketEnd}
+											AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+									`,
+									this.prisma.$queryRaw<BucketMrrRow[]>`
+										WITH active_payments_at_boundary AS (
+											SELECT DISTINCT ON (pt."restaurant_id")
+												pt."restaurant_id",
+												p."billing_cycle",
+												p."price_paise"
+											FROM "payment_transactions" pt
+											JOIN "subscription_plans" p ON pt."plan_id" = p."id"
+											LEFT JOIN "subscriptions" s ON pt."subscription_id" = s."id"
+											WHERE pt."subscription_id" IS NOT NULL
+												AND pt."status" IN ('SUCCESS', 'CAPTURED')
+												AND pt."created_at" < ${bucket.bucketEnd}
+												AND (
+													pt."created_at" + (
+														CASE 
+															WHEN p."billing_cycle" = 'YEARLY' THEN INTERVAL '1 year'
+															ELSE INTERVAL '1 month'
+														END
+													)
+												) >= ${bucket.bucketEnd}
+												AND (s."canceled_at" IS NULL OR s."canceled_at" >= ${bucket.bucketEnd})
+												AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+											ORDER BY pt."restaurant_id", pt."created_at" DESC
+										)
+										SELECT
+											COALESCE(SUM(
+												CASE
+													WHEN billing_cycle = 'MONTHLY' THEN price_paise
+													WHEN billing_cycle = 'YEARLY' THEN ROUND(price_paise / 12.0)
+													ELSE 0
+												END
+											), 0)::bigint AS bucket_mrr_paise
+										FROM active_payments_at_boundary
+									`,
+								]);
+
+								return {
+									bucketLabel: bucket.bucketLabel,
+									grossRevenuePaise: revRows[0]?.bucket_revenue_paise ?? 0n,
+									mrrPaise: mrrRows[0]?.bucket_mrr_paise ?? 0n,
+									newSubscriptionsCount: newSubRows[0]?.new_subscriptions_count ?? 0,
+								};
+							}),
+						);
+						results.push(...chunkResults);
+					}
+
+					return results;
+				})(),
 			]);
 
 		const activeSub = activeSubResult[0];

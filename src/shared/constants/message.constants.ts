@@ -139,6 +139,11 @@ export enum MessageEnum {
 	IDEMPOTENCY_REQUEST_IN_PROGRESS = 'A request with this Idempotency-Key is currently being processed',
 	IDEMPOTENCY_STORAGE_UNAVAILABLE = 'Idempotency and lock service is currently unavailable',
 	RENEWAL_ALREADY_IN_PROGRESS = 'Another renewal request for this subscription is currently in progress',
+
+	// subscription analytics (SCRUM-1276)
+	INVALID_CALENDAR_DATE = 'Invalid calendar date: day does not exist in the specified month/year',
+	DAY_REQUIRED_FOR_PERIOD = 'Day is required when querying daily analytics for a specific month and year',
+	S2S_CALLER_FORBIDDEN = 'Caller service is not authorized to access this resource',
 }
 
 export const MESSAGES = {
@@ -287,6 +292,9 @@ export const MESSAGES = {
 	IDEMPOTENCY_STORAGE_UNAVAILABLE: MessageEnum.IDEMPOTENCY_STORAGE_UNAVAILABLE,
 	RENEWAL_ALREADY_IN_PROGRESS: MessageEnum.RENEWAL_ALREADY_IN_PROGRESS,
 	PLATFORM_SUBSCRIPTION_ANALYTICS_FETCHED: MessageEnum.PLATFORM_SUBSCRIPTION_ANALYTICS_FETCHED,
+	INVALID_CALENDAR_DATE: MessageEnum.INVALID_CALENDAR_DATE,
+	DAY_REQUIRED_FOR_PERIOD: MessageEnum.DAY_REQUIRED_FOR_PERIOD,
+	S2S_CALLER_FORBIDDEN: MessageEnum.S2S_CALLER_FORBIDDEN,
 } as const;
 
 export const messages = MESSAGES;

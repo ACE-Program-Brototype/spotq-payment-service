@@ -6,10 +6,12 @@ import type { IOutboxRelayService } from '@application/ports/services/outbox-rel
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
+import { WALLET_LEDGER_STATUSES } from '@domain/constants/wallet-ledger.constants';
 import type { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
@@ -40,13 +42,14 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 		private readonly planRepository: ISubscriptionPlanRepository,
 		@inject(TYPES.Repositories.SubscriptionRepository)
 		private readonly subscriptionRepository: ISubscriptionRepository,
+		@inject(TYPES.Repositories.RestaurantWalletRepository)
+		private readonly restaurantWalletRepository: IRestaurantWalletRepository,
 		@inject(TYPES.Services.OutboxRelayService)
 		private readonly outboxRelayService: IOutboxRelayService,
 	) {}
 
 	async execute(params: HandleWebhookInput): Promise<HandleWebhookOutput> {
-		const webhookSecret = config.razorpay.webhookSecret || config.razorpay.keySecret;
-
+		const webhookSecret = config.razorpay.webhookSecret;
 		if (webhookSecret) {
 			if (!params.signature) {
 				logger.warn('Missing webhook signature rejected');
@@ -67,8 +70,56 @@ export class HandleWebhookUseCase implements IHandleWebhookUseCase {
 
 		const eventType = params.parsedPayload.event;
 		const paymentEntity = params.parsedPayload.payload?.payment?.entity;
+		const payoutEntity = params.parsedPayload.payload?.payout?.entity;
 
 		logger.info({ eventType, paymentId: paymentEntity?.id }, 'Processing Razorpay webhook event');
+
+		if (eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_PROCESSED && payoutEntity) {
+			if (payoutEntity.reference_id) {
+				await this.restaurantWalletRepository.markWithdrawalProcessed(
+					payoutEntity.reference_id,
+					payoutEntity.utr,
+				);
+				logger.info(
+					{ payoutId: payoutEntity.id, referenceId: payoutEntity.reference_id },
+					'Payout processed webhook updated the withdrawal ledger',
+				);
+			} else {
+				logger.warn(
+					{ payoutId: payoutEntity.id },
+					'Processed payout webhook did not include a reference ID',
+				);
+			}
+			return { received: true };
+		}
+
+		if (
+			(eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_REJECTED ||
+				eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_FAILED ||
+				eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_REVERSED) &&
+			payoutEntity
+		) {
+			if (payoutEntity.reference_id) {
+				const withdrawalStatus =
+					eventType === RAZORPAY_WEBHOOK_EVENTS.PAYOUT_REVERSED
+						? WALLET_LEDGER_STATUSES.REVERSED
+						: WALLET_LEDGER_STATUSES.FAILED;
+				await this.restaurantWalletRepository.failWithdrawal(
+					payoutEntity.reference_id,
+					withdrawalStatus,
+				);
+				logger.info(
+					{ payoutId: payoutEntity.id, referenceId: payoutEntity.reference_id, eventType },
+					'Payout failure received from Razorpay webhook; withdrawal reservation released',
+				);
+			} else {
+				logger.warn(
+					{ payoutId: payoutEntity.id, eventType },
+					'Payout failure webhook did not include a reference ID',
+				);
+			}
+			return { received: true };
+		}
 
 		if (
 			(eventType === RAZORPAY_WEBHOOK_EVENTS.PAYMENT_CAPTURED ||

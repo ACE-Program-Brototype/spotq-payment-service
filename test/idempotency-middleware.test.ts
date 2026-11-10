@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import { idempotencyMiddleware } from '@presentation/middleware/idempotency.middleware.ts';
 import { HTTP_STATUS } from '@shared/constants/index.ts';
@@ -65,7 +66,15 @@ describe('Idempotency Middleware', () => {
 			refundId: 'rfnd_123',
 			status: 'PROCESSED',
 		};
-		mockCacheService.get.mockResolvedValue(JSON.stringify(cachedData));
+		mockReq.method = 'POST';
+		mockReq.originalUrl = '/refunds';
+		mockReq.body = { paymentId: 'pay_123' };
+		const fingerprint = createHash('sha256')
+			.update('POST:/refunds:{"paymentId":"pay_123"}')
+			.digest('hex');
+		mockCacheService.get.mockResolvedValue(
+			JSON.stringify({ fingerprint, statusCode: HTTP_STATUS.OK, body: cachedData }),
+		);
 		mockReq.headers = { 'x-idempotency-key': 'test-key-1' };
 
 		const middleware = idempotencyMiddleware(mockCacheService);
@@ -112,7 +121,9 @@ describe('Idempotency Middleware', () => {
 
 		expect(mockCacheService.set).toHaveBeenCalledWith(
 			'idempotency:refund:test-key-new',
-			JSON.stringify(responseBody),
+			expect.stringMatching(
+				/^\{"fingerprint":"[a-f0-9]{64}","statusCode":200,"body":\{"refundId":"rfnd_new_123","status":"PROCESSED"\}\}$/,
+			),
 			86400,
 		);
 

@@ -39,6 +39,7 @@ export const config = {
 		keyId: env.RAZORPAY_TEST_API_KEY,
 		keySecret: env.RAZORPAY_TEST_SECRET_KEY,
 		webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+		payoutAccountNumber: env.RAZORPAYX_ACCOUNT_NUMBER,
 	},
 
 	s2s: {

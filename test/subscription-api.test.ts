@@ -1,4 +1,5 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
+import { config } from '@config/index.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
@@ -8,6 +9,7 @@ import { PlanBillingCycle, SubscriptionPlan } from '@domain/entities/subscriptio
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { databaseService } from '@infrastructure/database/index.ts';
@@ -30,6 +32,9 @@ const paymentTransactionRepository = container.get<IPaymentTransactionRepository
 );
 const billingInvoiceRepository = container.get<IBillingInvoiceRepository>(
 	TYPES.Repositories.BillingInvoiceRepository,
+);
+const restaurantWalletRepository = container.get<IRestaurantWalletRepository>(
+	TYPES.Repositories.RestaurantWalletRepository,
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
@@ -214,7 +219,7 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
+				.set('x-user-id', restId)
 				.set('x-user-role', 'CUSTOMER')
 				.send({})
 				.expect(HTTP_STATUS.FORBIDDEN);
@@ -227,8 +232,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post('/subscriptions/not-a-valid-uuid/renew')
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.send({})
 				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
@@ -240,8 +245,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.send({})
 				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
@@ -253,8 +258,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'bad key!')
 				.send({})
 				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
@@ -267,8 +272,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-strict-0001')
 				.send({ unexpectedField: 'not-allowed' })
 				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
@@ -291,8 +296,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-forbidden-0001')
 				.send({})
 				.expect(HTTP_STATUS.FORBIDDEN);
@@ -307,8 +312,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-notfound-0001')
 				.send({})
 				.expect(HTTP_STATUS.NOT_FOUND);
@@ -331,8 +336,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-far-0001')
 				.send({})
 				.expect(HTTP_STATUS.CONFLICT);
@@ -360,8 +365,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-unhealthy-0001')
 				.send({})
 				.expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
@@ -380,8 +385,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-redis-down-0001')
 				.send({})
 				.expect(HTTP_STATUS.SERVICE_UNAVAILABLE);
@@ -444,8 +449,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-success-0001')
 				.send({})
 				.expect(HTTP_STATUS.CREATED);
@@ -459,8 +464,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const replayedRes = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-success-0001')
 				.send({})
 				.expect(HTTP_STATUS.CREATED);
@@ -472,8 +477,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const mismatchRes = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-success-0001')
 				.send({ planId: '44444444-4444-4444-8444-444444444444' })
 				.expect(HTTP_STATUS.CONFLICT);
@@ -535,8 +540,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 			const res = await request(app)
 				.post(`/subscriptions/${targetSubId}/renew`)
 				.set('x-restaurant-id', restId)
-				.set('x-user-id', 'user-123')
-				.set('x-user-role', 'RESTAURANT_ADMIN')
+				.set('x-user-id', restId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
 				.set('Idempotency-Key', 'idem-api-v1-0001')
 				.send({})
 				.expect(HTTP_STATUS.CREATED);
@@ -550,6 +555,10 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	describe(`POST ${SUBSCRIPTION_ROUTES.VERIFY}`, () => {
 		it('should verify payment signature and activate subscription', async () => {
 			jest.spyOn(razorpayGateway, 'verifyPaymentSignature').mockReturnValueOnce(true);
+			jest.spyOn(restaurantWalletRepository, 'findByRestaurantId').mockResolvedValueOnce(null);
+			jest
+				.spyOn(restaurantWalletRepository, 'create')
+				.mockImplementationOnce(async (wallet) => wallet);
 
 			const mockTx = new PaymentTransaction({
 				id: 'b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e',
@@ -654,6 +663,17 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	});
 
 	describe(`POST ${SUBSCRIPTION_ROUTES.WEBHOOK}`, () => {
+		let originalWebhookSecret: string | undefined;
+
+		beforeEach(() => {
+			originalWebhookSecret = config.razorpay.webhookSecret;
+			Object.assign(config.razorpay, { webhookSecret: 'test-webhook-secret' });
+		});
+
+		afterEach(() => {
+			Object.assign(config.razorpay, { webhookSecret: originalWebhookSecret });
+		});
+
 		it('should return 200 OK for valid webhook calls', async () => {
 			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(true);
 
@@ -667,6 +687,11 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				.expect(HTTP_STATUS.OK);
 
 			expect(res.body.received).toBe(true);
+			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledWith(
+				expect.any(String),
+				'valid_test_signature',
+				'test-webhook-secret',
+			);
 		});
 
 		it('should handle payment.failed event and mark transaction failed', async () => {
@@ -705,13 +730,18 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				.expect(HTTP_STATUS.OK);
 
 			expect(res.body.received).toBe(true);
+			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledWith(
+				expect.any(String),
+				'valid_test_signature',
+				'test-webhook-secret',
+			);
 			expect(markFailedSpy).toHaveBeenCalledWith('order_failed_123', 'Payment was dropped by user');
 		});
 
 		it('should reject webhook with received: false when signature is invalid or missing', async () => {
 			jest.spyOn(razorpayGateway, 'verifyWebhookSignature').mockReturnValue(false);
 
-			const res = await request(app)
+			const missingSignatureResponse = await request(app)
 				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
 				.send({
 					event: 'payment.captured',
@@ -719,7 +749,24 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(false);
+			expect(missingSignatureResponse.body.received).toBe(false);
+
+			const invalidSignatureResponse = await request(app)
+				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
+				.set('x-razorpay-signature', 'invalid-signature')
+				.send({
+					event: 'payment.captured',
+					payload: {},
+				})
+				.expect(HTTP_STATUS.OK);
+
+			expect(invalidSignatureResponse.body.received).toBe(false);
+			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledTimes(1);
+			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledWith(
+				expect.any(String),
+				'invalid-signature',
+				'test-webhook-secret',
+			);
 		});
 	});
 });

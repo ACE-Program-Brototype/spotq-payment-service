@@ -15,6 +15,7 @@ import {
 	SubscriptionNotFoundError,
 	UnauthorizedRestaurantError,
 } from '@domain/errors/payment.errors.ts';
+import type { IPaymentGateway } from '@domain/interfaces';
 import { InvoiceNumber } from '@domain/value-objects/invoice-number.value-object.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/redis-idempotency.service.ts';
 import { INVOICE_STATUS } from '@shared/constants/index.ts';
@@ -104,8 +105,30 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		verifyPaymentSignature: jest.fn().mockReturnValue(true),
 		verifyWebhookSignature: jest.fn().mockReturnValue(true),
 		getPaymentDetails: jest.fn().mockResolvedValue({}),
+		getContact: jest.fn().mockResolvedValue({ contactId: 'contact_test_123' }),
+		getFundAccount: jest.fn().mockResolvedValue({
+			fundAccountId: 'fa_test_123',
+			contactId: 'contact_test_123',
+			accountHolderName: 'Test Account',
+			accountNumber: '1234567890',
+			ifsc: 'TEST0001234',
+			bankName: 'Test Bank',
+			active: true,
+		}),
+		createFundAccount: jest.fn().mockResolvedValue({
+			fundAccountId: 'fa_test_123',
+			contactId: 'contact_test_123',
+			accountHolderName: 'Test Account',
+			accountNumber: '1234567890',
+			ifsc: 'TEST0001234',
+			bankName: 'Test Bank',
+			active: true,
+		}),
+		createContact: jest.fn().mockResolvedValue({ contactId: 'contact_test_123' }),
+		deactivateFundAccount: jest.fn().mockResolvedValue(undefined),
+		createPayout: jest.fn().mockResolvedValue({ payoutId: 'payout_test_123', status: 'processed' }),
 		createRefund: jest.fn().mockResolvedValue({}),
-	};
+	} as unknown as jest.Mocked<IPaymentGateway>;
 
 	const mockInvoiceRepo = {
 		findByInvoiceNumber: jest.fn(),

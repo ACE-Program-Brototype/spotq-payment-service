@@ -1,7 +1,9 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import { HandleWebhookUseCase } from '@application/use-cases/handle-webhook.use-case.ts';
+import { config } from '@config/index.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { RAZORPAY_WEBHOOK_EVENTS, REFUND_STATUS } from '@shared/constants/index.ts';
@@ -11,10 +13,13 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 	let mockTxRepo: jest.Mocked<IPaymentTransactionRepository>;
 	let mockPlanRepo: jest.Mocked<ISubscriptionPlanRepository>;
 	let mockSubscriptionRepo: jest.Mocked<ISubscriptionRepository>;
+	let mockRestaurantWalletRepo: jest.Mocked<IRestaurantWalletRepository>;
 	let mockOutboxRelay: jest.Mocked<IOutboxRelayService>;
 	let useCase: HandleWebhookUseCase;
+	let originalWebhookSecret: string | undefined;
 
 	beforeEach(() => {
+		originalWebhookSecret = config.razorpay.webhookSecret;
 		mockGateway = {
 			initialize: jest.fn().mockResolvedValue(undefined),
 			isHealthy: jest.fn().mockReturnValue(true),
@@ -60,6 +65,18 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			renewSubscriptionWithOutbox: jest.fn(),
 		};
 
+		mockRestaurantWalletRepo = {
+			findById: jest.fn(),
+			findByRestaurantId: jest.fn(),
+			create: jest.fn(),
+			update: jest.fn(),
+			getOverview: jest.fn(),
+			getTodayNetEarningsPaise: jest.fn(),
+			reserveWithdrawal: jest.fn(),
+			markWithdrawalProcessed: jest.fn(),
+			failWithdrawal: jest.fn(),
+		};
+
 		mockOutboxRelay = {
 			start: jest.fn(),
 			stop: jest.fn(),
@@ -72,8 +89,13 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			mockTxRepo,
 			mockPlanRepo,
 			mockSubscriptionRepo,
+			mockRestaurantWalletRepo,
 			mockOutboxRelay,
 		);
+	});
+
+	afterEach(() => {
+		Object.assign(config.razorpay, { webhookSecret: originalWebhookSecret });
 	});
 
 	it('should process refund.processed webhook and call syncRefundFromWebhook with PROCESSED and ARN', async () => {
@@ -151,6 +173,7 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 	});
 
 	it('should reject webhook with received: false when signature verification fails', async () => {
+		Object.assign(config.razorpay, { webhookSecret: 'test-webhook-secret' });
 		mockGateway.verifyWebhookSignature.mockReturnValue(false);
 
 		const result = await useCase.execute({
@@ -169,6 +192,11 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 		});
 
 		expect(result).toEqual({ received: false });
+		expect(mockGateway.verifyWebhookSignature).toHaveBeenCalledWith(
+			'invalid_raw_body',
+			'invalid_signature',
+			'test-webhook-secret',
+		);
 		expect(mockTxRepo.syncRefundFromWebhook).not.toHaveBeenCalled();
 	});
 

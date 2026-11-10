@@ -14,7 +14,7 @@ export const withdrawFromRestaurantWalletBodySchema = z.object({
 });
 
 export const withdrawFromRestaurantWalletHeadersSchema = z.object({
-	[HTTP_HEADERS.IDEMPOTENCY_KEY]: z.string().trim().min(1, MESSAGES.IDEMPOTENCY_KEY_REQUIRED),
+	[HTTP_HEADERS.X_IDEMPOTENCY_KEY]: z.string().trim().min(1, MESSAGES.IDEMPOTENCY_KEY_REQUIRED),
 });
 
 export type WithdrawFromRestaurantWalletBody = z.infer<

@@ -5,9 +5,21 @@ import type {
 } from '@domain/types/subscription-analytics.types.ts';
 import {
 	ANALYTICS_PERIODS,
+	DAYS_IN_WEEK,
 	DEFAULT_TIMEZONE,
+	HOURS_IN_DAY,
+	MONDAY_START_WEEK_DAY_LABELS,
 	MONTH_NAMES,
+	MONTHS_IN_A_YEAR,
+	WEEKDAY_MONDAY_OFFSETS,
 } from '@shared/constants/analytics.constants.ts';
+
+const BASE_WEEKLY_RANGES: ReadonlyArray<{ label: string; start: number; end: number }> = [
+	{ label: 'Week 1', start: 1, end: 7 },
+	{ label: 'Week 2', start: 8, end: 14 },
+	{ label: 'Week 3', start: 15, end: 21 },
+	{ label: 'Week 4', start: 22, end: 28 },
+];
 
 export function isValidCalendarDate(year: number, month: number, day: number): boolean {
 	if (month < 1 || month > 12 || day < 1 || day > 31) {
@@ -41,6 +53,7 @@ export function getZonedDate(
 		minute: '2-digit',
 		second: '2-digit',
 		hour12: false,
+		hourCycle: 'h23',
 	});
 
 	const parts = formatter.formatToParts(utcGuess);
@@ -113,7 +126,7 @@ export function resolveSubscriptionDateRange(
 			nextPeriodStart = getZonedDate(year, month, resolvedDay + 1, 0, 0, 0, timeZone);
 			prevStartDate = getZonedDate(year, month, resolvedDay - 1, 0, 0, 0, timeZone);
 
-			for (let h = 0; h < 24; h++) {
+			for (let h = 0; h < HOURS_IN_DAY; h++) {
 				buckets.push({
 					bucketLabel: `${String(h).padStart(2, '0')}:00`,
 					bucketStart: getZonedDate(year, month, resolvedDay, h, 0, 0, timeZone),
@@ -132,25 +145,31 @@ export function resolveSubscriptionDateRange(
 				weekday: 'short',
 			}).format(targetDate);
 
-			const dayMap: Record<string, number> = {
-				Mon: 0,
-				Tue: -1,
-				Wed: -2,
-				Thu: -3,
-				Fri: -4,
-				Sat: -5,
-				Sun: -6,
-			};
-			const mondayOffset = dayMap[weekday] ?? 0;
+			const mondayOffset = WEEKDAY_MONDAY_OFFSETS[weekday] ?? 0;
 
 			periodStartDate = getZonedDate(year, month, refDay + mondayOffset, 0, 0, 0, timeZone);
-			nextPeriodStart = getZonedDate(year, month, refDay + mondayOffset + 7, 0, 0, 0, timeZone);
-			prevStartDate = getZonedDate(year, month, refDay + mondayOffset - 7, 0, 0, 0, timeZone);
+			nextPeriodStart = getZonedDate(
+				year,
+				month,
+				refDay + mondayOffset + DAYS_IN_WEEK,
+				0,
+				0,
+				0,
+				timeZone,
+			);
+			prevStartDate = getZonedDate(
+				year,
+				month,
+				refDay + mondayOffset - DAYS_IN_WEEK,
+				0,
+				0,
+				0,
+				timeZone,
+			);
 
-			const weekDayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-			for (let i = 0; i < 7; i++) {
+			for (let i = 0; i < DAYS_IN_WEEK; i++) {
 				buckets.push({
-					bucketLabel: weekDayLabels[i],
+					bucketLabel: MONDAY_START_WEEK_DAY_LABELS[i],
 					bucketStart: getZonedDate(year, month, refDay + mondayOffset + i, 0, 0, 0, timeZone),
 					bucketEnd: getZonedDate(year, month, refDay + mondayOffset + i + 1, 0, 0, 0, timeZone),
 				});
@@ -165,12 +184,7 @@ export function resolveSubscriptionDateRange(
 			prevStartDate = getZonedDate(year, month - 1, 1, 0, 0, 0, timeZone);
 
 			const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-			const weeklyRanges = [
-				{ label: 'Week 1', start: 1, end: 7 },
-				{ label: 'Week 2', start: 8, end: 14 },
-				{ label: 'Week 3', start: 15, end: 21 },
-				{ label: 'Week 4', start: 22, end: 28 },
-			];
+			const weeklyRanges = [...BASE_WEEKLY_RANGES];
 			if (daysInMonth > 28) {
 				weeklyRanges.push({ label: 'Week 5', start: 29, end: daysInMonth });
 			}
@@ -191,7 +205,7 @@ export function resolveSubscriptionDateRange(
 			nextPeriodStart = getZonedDate(year + 1, 1, 1, 0, 0, 0, timeZone);
 			prevStartDate = getZonedDate(year - 1, 1, 1, 0, 0, 0, timeZone);
 
-			for (let m = 1; m <= 12; m++) {
+			for (let m = 1; m <= MONTHS_IN_A_YEAR; m++) {
 				buckets.push({
 					bucketLabel: MONTH_NAMES[m - 1],
 					bucketStart: getZonedDate(year, m, 1, 0, 0, 0, timeZone),

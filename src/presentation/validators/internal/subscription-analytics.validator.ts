@@ -4,6 +4,7 @@ import {
 } from '@application/utils/subscription-date-range.util.ts';
 import {
 	ANALYTICS_PERIODS,
+	ANALYTICS_QUERY_LIMITS,
 	BILLING_CYCLES,
 	DEFAULT_ANALYTICS_PERIOD,
 	DEFAULT_BILLING_CYCLE,
@@ -14,9 +15,24 @@ import { z } from 'zod';
 export const subscriptionAnalyticsQuerySchema = z
 	.object({
 		period: z.nativeEnum(ANALYTICS_PERIODS).default(DEFAULT_ANALYTICS_PERIOD),
-		day: z.coerce.number().int().min(1).max(31).optional(),
-		month: z.coerce.number().int().min(1).max(12).optional(),
-		year: z.coerce.number().int().min(2000).max(2100).optional(),
+		day: z.coerce
+			.number()
+			.int()
+			.min(ANALYTICS_QUERY_LIMITS.MIN_DAY)
+			.max(ANALYTICS_QUERY_LIMITS.MAX_DAY)
+			.optional(),
+		month: z.coerce
+			.number()
+			.int()
+			.min(ANALYTICS_QUERY_LIMITS.MIN_MONTH)
+			.max(ANALYTICS_QUERY_LIMITS.MAX_MONTH)
+			.optional(),
+		year: z.coerce
+			.number()
+			.int()
+			.min(ANALYTICS_QUERY_LIMITS.MIN_YEAR)
+			.max(ANALYTICS_QUERY_LIMITS.MAX_YEAR)
+			.optional(),
 		billingCycle: z.nativeEnum(BILLING_CYCLES).default(DEFAULT_BILLING_CYCLE),
 	})
 	.strict()

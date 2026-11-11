@@ -4,8 +4,13 @@ import type {
 	SubscriptionAnalyticsRepoResult,
 	TimelineBucketResult,
 } from '@domain/types/subscription-analytics.types.ts';
+import { PrismaBaseRepository } from '@infrastructure/repositories/prisma-base.repository.ts';
+import {
+	BILLING_CYCLES,
+	TIMELINE_BUCKET_BATCH_SIZE,
+} from '@shared/constants/analytics.constants.ts';
+import { PAYMENT_STATUS, SUBSCRIPTION_STATUS } from '@shared/constants/subscription.constants.ts';
 import { injectable } from 'inversify';
-import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
 interface ActiveSubscriptionAggregateRow {
 	active_subscribed_restaurants: number;
@@ -52,16 +57,16 @@ export class PrismaSubscriptionAnalyticsRepository
 						COUNT(DISTINCT s."restaurant_id")::int AS active_subscribed_restaurants,
 						COALESCE(SUM(
 							CASE
-								WHEN p."billing_cycle" = 'MONTHLY' THEN p."price_paise"
-								WHEN p."billing_cycle" = 'YEARLY' THEN ROUND(p."price_paise" / 12.0)
+								WHEN p."billing_cycle"::text = ${BILLING_CYCLES.MONTHLY} THEN p."price_paise"
+								WHEN p."billing_cycle"::text = ${BILLING_CYCLES.YEARLY} THEN ROUND(p."price_paise" / 12.0)
 								ELSE 0
 							END
 						), 0)::bigint AS current_mrr_paise
 					FROM "subscriptions" s
 					JOIN "subscription_plans" p ON s."plan_id" = p."id"
-					WHERE s."status" = 'ACTIVE'
+					WHERE s."status"::text = ${SUBSCRIPTION_STATUS.ACTIVE}
 						AND s."current_period_end" >= NOW()
-						AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+						AND (${billingCycleFilter} = ${BILLING_CYCLES.ALL} OR p."billing_cycle"::text = ${billingCycleFilter})
 				`,
 
 				// 2. Subscription Tier Distribution
@@ -71,9 +76,9 @@ export class PrismaSubscriptionAnalyticsRepository
 						COUNT(DISTINCT s."restaurant_id")::int AS restaurant_count
 					FROM "subscriptions" s
 					JOIN "subscription_plans" p ON s."plan_id" = p."id"
-					WHERE s."status" = 'ACTIVE'
+					WHERE s."status"::text = ${SUBSCRIPTION_STATUS.ACTIVE}
 						AND s."current_period_end" >= NOW()
-						AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+						AND (${billingCycleFilter} = ${BILLING_CYCLES.ALL} OR p."billing_cycle"::text = ${billingCycleFilter})
 					GROUP BY p."code"
 				`,
 
@@ -97,16 +102,16 @@ export class PrismaSubscriptionAnalyticsRepository
 					FROM "payment_transactions" pt
 					JOIN "subscription_plans" p ON pt."plan_id" = p."id"
 					WHERE pt."subscription_id" IS NOT NULL
-						AND pt."status" IN ('SUCCESS', 'CAPTURED')
+						AND pt."status"::text IN (${PAYMENT_STATUS.SUCCESS}, ${PAYMENT_STATUS.CAPTURED})
 						AND pt."created_at" >= ${params.prevStartDate}
 						AND pt."created_at" < ${params.nextPeriodStart}
-						AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+						AND (${billingCycleFilter} = ${BILLING_CYCLES.ALL} OR p."billing_cycle"::text = ${billingCycleFilter})
 				`,
 
 				// 4. Timeline Buckets (batched to prevent connection pool starvation)
 				(async (): Promise<TimelineBucketResult[]> => {
 					const results: TimelineBucketResult[] = [];
-					const BUCKET_BATCH_SIZE = 3;
+					const BUCKET_BATCH_SIZE = TIMELINE_BUCKET_BATCH_SIZE;
 
 					for (let i = 0; i < params.buckets.length; i += BUCKET_BATCH_SIZE) {
 						const chunk = params.buckets.slice(i, i + BUCKET_BATCH_SIZE);
@@ -118,10 +123,10 @@ export class PrismaSubscriptionAnalyticsRepository
 										FROM "payment_transactions" pt
 										JOIN "subscription_plans" p ON pt."plan_id" = p."id"
 										WHERE pt."subscription_id" IS NOT NULL
-											AND pt."status" IN ('SUCCESS', 'CAPTURED')
+											AND pt."status"::text IN (${PAYMENT_STATUS.SUCCESS}, ${PAYMENT_STATUS.CAPTURED})
 											AND pt."created_at" >= ${bucket.bucketStart}
 											AND pt."created_at" < ${bucket.bucketEnd}
-											AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+											AND (${billingCycleFilter} = ${BILLING_CYCLES.ALL} OR p."billing_cycle"::text = ${billingCycleFilter})
 									`,
 									this.prisma.$queryRaw<BucketNewSubRow[]>`
 										SELECT COUNT(*)::int AS new_subscriptions_count
@@ -129,7 +134,7 @@ export class PrismaSubscriptionAnalyticsRepository
 										JOIN "subscription_plans" p ON s."plan_id" = p."id"
 										WHERE s."created_at" >= ${bucket.bucketStart}
 											AND s."created_at" < ${bucket.bucketEnd}
-											AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+											AND (${billingCycleFilter} = ${BILLING_CYCLES.ALL} OR p."billing_cycle"::text = ${billingCycleFilter})
 									`,
 									this.prisma.$queryRaw<BucketMrrRow[]>`
 										WITH active_payments_at_boundary AS (
@@ -141,25 +146,25 @@ export class PrismaSubscriptionAnalyticsRepository
 											JOIN "subscription_plans" p ON pt."plan_id" = p."id"
 											LEFT JOIN "subscriptions" s ON pt."subscription_id" = s."id"
 											WHERE pt."subscription_id" IS NOT NULL
-												AND pt."status" IN ('SUCCESS', 'CAPTURED')
+												AND pt."status"::text IN (${PAYMENT_STATUS.SUCCESS}, ${PAYMENT_STATUS.CAPTURED})
 												AND pt."created_at" < ${bucket.bucketEnd}
 												AND (
 													pt."created_at" + (
 														CASE 
-															WHEN p."billing_cycle" = 'YEARLY' THEN INTERVAL '1 year'
+															WHEN p."billing_cycle"::text = ${BILLING_CYCLES.YEARLY} THEN INTERVAL '1 year'
 															ELSE INTERVAL '1 month'
 														END
 													)
 												) >= ${bucket.bucketEnd}
 												AND (s."canceled_at" IS NULL OR s."canceled_at" >= ${bucket.bucketEnd})
-												AND (${billingCycleFilter} = 'ALL' OR p."billing_cycle"::text = ${billingCycleFilter})
+												AND (${billingCycleFilter} = ${BILLING_CYCLES.ALL} OR p."billing_cycle"::text = ${billingCycleFilter})
 											ORDER BY pt."restaurant_id", pt."created_at" DESC
 										)
 										SELECT
 											COALESCE(SUM(
 												CASE
-													WHEN billing_cycle = 'MONTHLY' THEN price_paise
-													WHEN billing_cycle = 'YEARLY' THEN ROUND(price_paise / 12.0)
+													WHEN billing_cycle::text = ${BILLING_CYCLES.MONTHLY} THEN price_paise
+													WHEN billing_cycle::text = ${BILLING_CYCLES.YEARLY} THEN ROUND(price_paise / 12.0)
 													ELSE 0
 												END
 											), 0)::bigint AS bucket_mrr_paise

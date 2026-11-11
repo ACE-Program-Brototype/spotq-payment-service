@@ -1,4 +1,4 @@
-import { PrismaSubscriptionAnalyticsRepository } from '../src/infrastructure/repositories/prisma-subscription-analytics.repository.ts';
+import { PrismaSubscriptionAnalyticsRepository } from '@infrastructure/repositories/prisma-subscription-analytics.repository.ts';
 
 describe('PrismaSubscriptionAnalyticsRepository (Unit Tests)', () => {
 	let repository: PrismaSubscriptionAnalyticsRepository;

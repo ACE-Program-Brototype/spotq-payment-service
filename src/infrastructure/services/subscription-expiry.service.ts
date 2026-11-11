@@ -1,17 +1,19 @@
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
-import { prisma } from '@infrastructure/database/prisma.ts';
+import { TYPES } from '@di/types.ts';
+import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import {
-	EXPIRY_CHECK_INTERVAL_MS,
-	SUBSCRIPTION_EVENTS,
-	SUBSCRIPTION_STATUS,
-} from '@shared/constants/index.ts';
-import { injectable } from 'inversify';
+import { EXPIRY_CHECK_INTERVAL_MS } from '@shared/constants/index.ts';
+import { inject, injectable } from 'inversify';
 
 @injectable()
 export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExpiryService {
 	private intervalId: NodeJS.Timeout | null = null;
 	private isRunning = false;
+
+	constructor(
+		@inject(TYPES.Repositories.SubscriptionRepository)
+		private readonly subscriptionRepository: ISubscriptionRepository,
+	) {}
 
 	start(intervalMs = EXPIRY_CHECK_INTERVAL_MS): void {
 		if (this.intervalId) return;
@@ -41,60 +43,17 @@ export class PaymentSubscriptionExpiryService implements IPaymentSubscriptionExp
 		if (this.isRunning) return 0;
 		this.isRunning = true;
 		try {
-			const pastDueSubscriptions = await prisma.subscription.findMany({
-				where: {
-					status: SUBSCRIPTION_STATUS.ACTIVE,
-					currentPeriodEnd: {
-						lt: now,
-					},
-				},
-				include: {
-					plan: true,
-				},
-			});
+			const expiredCount =
+				await this.subscriptionRepository.expirePastDueSubscriptionsWithOutbox(now);
 
-			if (pastDueSubscriptions.length === 0) {
-				return 0;
+			if (expiredCount > 0) {
+				logger.info(
+					{ count: expiredCount, timestamp: now.toISOString() },
+					'Marked past-due subscriptions as EXPIRED and created outbox events',
+				);
 			}
 
-			const subIds = pastDueSubscriptions.map((s) => s.id);
-
-			await prisma.$transaction(async (tx) => {
-				await tx.subscription.updateMany({
-					where: {
-						id: { in: subIds },
-					},
-					data: {
-						status: SUBSCRIPTION_STATUS.EXPIRED,
-					},
-				});
-
-				for (const sub of pastDueSubscriptions) {
-					await tx.outboxEvent.create({
-						data: {
-							eventType: SUBSCRIPTION_EVENTS.EXPIRED,
-							aggregateId: sub.restaurantId,
-							payload: {
-								subscriptionId: sub.id,
-								restaurantId: sub.restaurantId,
-								planCode: sub.plan.code,
-								status: SUBSCRIPTION_STATUS.EXPIRED,
-								expiredAt: now.toISOString(),
-								currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
-								timestamp: now.toISOString(),
-							},
-							status: 'PENDING',
-						},
-					});
-				}
-			});
-
-			logger.info(
-				{ count: pastDueSubscriptions.length, timestamp: now.toISOString() },
-				'Marked past-due subscriptions as EXPIRED and created outbox events',
-			);
-
-			return pastDueSubscriptions.length;
+			return expiredCount;
 		} catch (error) {
 			logger.error({ err: error }, 'Failed to expire past-due payment subscriptions');
 			throw error;

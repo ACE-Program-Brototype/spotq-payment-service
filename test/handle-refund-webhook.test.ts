@@ -63,6 +63,7 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			findSubscribersPaginated: jest.fn(),
 			findSubscriberDetailById: jest.fn(),
 			renewSubscriptionWithOutbox: jest.fn(),
+			expirePastDueSubscriptionsWithOutbox: jest.fn(),
 		};
 
 		mockRestaurantWalletRepo = {

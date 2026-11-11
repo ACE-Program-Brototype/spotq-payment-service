@@ -59,14 +59,16 @@ export class PrismaPlatformLedgerTransactionRepository
 					skip: (input.page - 1) * input.limit,
 				}),
 		};
-		const [records, totalRecords] = await Promise.all([
-			this.prisma.platformLedgerTransaction.findMany({
-				where,
-				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-				...pagination,
-			}),
-			this.prisma.platformLedgerTransaction.count({ where }),
-		]);
+		const [records, totalRecords] = await this.executePrisma(() =>
+			Promise.all([
+				this.prisma.platformLedgerTransaction.findMany({
+					where,
+					orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+					...pagination,
+				}),
+				this.prisma.platformLedgerTransaction.count({ where }),
+			]),
+		);
 
 		return PlatformLedgerTransactionPersistenceMapper.toPaginatedDomain(
 			records,

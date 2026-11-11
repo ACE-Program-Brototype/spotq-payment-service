@@ -76,6 +76,7 @@ export interface ISubscriptionRepository
 		params: ActivateSubscriptionWithOutboxParams,
 	): Promise<Subscription>;
 	renewSubscriptionWithOutbox(params: RenewSubscriptionWithOutboxParams): Promise<Subscription>;
+	expirePastDueSubscriptionsWithOutbox(now: Date): Promise<number>;
 	findSubscribersPaginated(params: SubscriberFilterParams): Promise<PaginatedSubscribersResult>;
 	findSubscriberDetailById(subscriberId: string): Promise<SubscriberDetail | null>;
 }

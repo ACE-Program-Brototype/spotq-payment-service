@@ -1,24 +1,8 @@
-import { prisma } from '../src/infrastructure/database/prisma';
+import { Prisma } from '@prisma/client';
+import type { ISubscriptionRepository } from '../src/domain/repositories/subscription.repository.interface';
+import { PrismaSubscriptionRepository } from '../src/infrastructure/repositories/prisma-subscription.repository';
 import { PaymentSubscriptionExpiryService } from '../src/infrastructure/services/subscription-expiry.service';
-
-const mockTx = {
-	subscription: {
-		updateMany: jest.fn().mockResolvedValue({ count: 2 }),
-	},
-	outboxEvent: {
-		create: jest.fn().mockResolvedValue({ id: 'outbox-1' }),
-	},
-};
-
-jest.mock('../src/infrastructure/database/prisma', () => ({
-	prisma: {
-		subscription: {
-			findMany: jest.fn(),
-			updateMany: jest.fn(),
-		},
-		$transaction: jest.fn((callback) => callback(mockTx)),
-	},
-}));
+import { AppError } from '../src/shared/errors';
 
 jest.mock('../src/infrastructure/logger', () => ({
 	logger: {
@@ -29,14 +13,96 @@ jest.mock('../src/infrastructure/logger', () => ({
 
 describe('PaymentSubscriptionExpiryService', () => {
 	let service: PaymentSubscriptionExpiryService;
+	let mockSubscriptionRepo: jest.Mocked<ISubscriptionRepository>;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		service = new PaymentSubscriptionExpiryService();
+		mockSubscriptionRepo = {
+			findById: jest.fn(),
+			create: jest.fn(),
+			findActiveByRestaurantId: jest.fn(),
+			activateSubscriptionWithOutbox: jest.fn(),
+			renewSubscriptionWithOutbox: jest.fn(),
+			expirePastDueSubscriptionsWithOutbox: jest.fn(),
+			findSubscribersPaginated: jest.fn(),
+			findSubscriberDetailById: jest.fn(),
+		};
+		service = new PaymentSubscriptionExpiryService(mockSubscriptionRepo);
 	});
 
 	afterEach(() => {
 		service.stop();
+	});
+
+	it('delegates expiry processing to subscription repository and returns count', async () => {
+		const fixedNow = new Date('2026-09-07T12:00:00Z');
+		mockSubscriptionRepo.expirePastDueSubscriptionsWithOutbox.mockResolvedValue(2);
+
+		const count = await service.expirePastDueSubscriptions(fixedNow);
+
+		expect(mockSubscriptionRepo.expirePastDueSubscriptionsWithOutbox).toHaveBeenCalledWith(
+			fixedNow,
+		);
+		expect(count).toBe(2);
+	});
+
+	it('returns 0 when no subscriptions are past due', async () => {
+		mockSubscriptionRepo.expirePastDueSubscriptionsWithOutbox.mockResolvedValue(0);
+
+		const count = await service.expirePastDueSubscriptions();
+
+		expect(count).toBe(0);
+	});
+
+	it('skips concurrent execution while an expiry run is in progress', async () => {
+		let resolveRun: ((value: number) => void) | undefined;
+		const pendingRun = new Promise<number>((resolve) => {
+			resolveRun = resolve;
+		});
+		mockSubscriptionRepo.expirePastDueSubscriptionsWithOutbox.mockReturnValue(pendingRun);
+
+		const firstCall = service.expirePastDueSubscriptions();
+		const secondCallCount = await service.expirePastDueSubscriptions();
+
+		expect(secondCallCount).toBe(0);
+		expect(mockSubscriptionRepo.expirePastDueSubscriptionsWithOutbox).toHaveBeenCalledTimes(1);
+
+		resolveRun?.(1);
+		await expect(firstCall).resolves.toBe(1);
+	});
+
+	it('handles repository errors gracefully and rethrows', async () => {
+		mockSubscriptionRepo.expirePastDueSubscriptionsWithOutbox.mockRejectedValue(
+			new Error('DB error'),
+		);
+
+		await expect(service.expirePastDueSubscriptions()).rejects.toThrow('DB error');
+	});
+});
+
+describe('PrismaSubscriptionRepository.expirePastDueSubscriptionsWithOutbox', () => {
+	const mockTx = {
+		subscription: {
+			updateMany: jest.fn().mockResolvedValue({ count: 2 }),
+		},
+		outboxEvent: {
+			create: jest.fn().mockResolvedValue({ id: 'outbox-1' }),
+		},
+	};
+
+	const mockPrisma = {
+		subscription: {
+			findMany: jest.fn(),
+		},
+		$transaction: jest.fn((callback: (tx: typeof mockTx) => Promise<void>) => callback(mockTx)),
+	};
+
+	let repository: PrismaSubscriptionRepository;
+
+	beforeEach(() => {
+		jest.clearAllMocks();
+		repository = new PrismaSubscriptionRepository();
+		(repository as unknown as { prisma: typeof mockPrisma }).prisma = mockPrisma;
 	});
 
 	it('updates past-due ACTIVE subscriptions to EXPIRED and creates outbox events', async () => {
@@ -56,11 +122,11 @@ describe('PaymentSubscriptionExpiryService', () => {
 			},
 		];
 
-		(prisma.subscription.findMany as jest.Mock).mockResolvedValue(mockPastDue);
+		mockPrisma.subscription.findMany.mockResolvedValue(mockPastDue);
 
-		const count = await service.expirePastDueSubscriptions(fixedNow);
+		const count = await repository.expirePastDueSubscriptionsWithOutbox(fixedNow);
 
-		expect(prisma.subscription.findMany).toHaveBeenCalledWith({
+		expect(mockPrisma.subscription.findMany).toHaveBeenCalledWith({
 			where: {
 				status: 'ACTIVE',
 				currentPeriodEnd: {
@@ -83,18 +149,25 @@ describe('PaymentSubscriptionExpiryService', () => {
 		expect(count).toBe(2);
 	});
 
-	it('returns 0 when no subscriptions are past due', async () => {
-		(prisma.subscription.findMany as jest.Mock).mockResolvedValue([]);
+	it('returns 0 without running a transaction when no subscriptions are past due', async () => {
+		mockPrisma.subscription.findMany.mockResolvedValue([]);
 
-		const count = await service.expirePastDueSubscriptions();
+		const count = await repository.expirePastDueSubscriptionsWithOutbox(new Date());
 
 		expect(count).toBe(0);
-		expect(prisma.$transaction).not.toHaveBeenCalled();
+		expect(mockPrisma.$transaction).not.toHaveBeenCalled();
 	});
 
-	it('handles database errors gracefully and rethrows', async () => {
-		(prisma.subscription.findMany as jest.Mock).mockRejectedValue(new Error('DB error'));
+	it('translates Prisma known request errors during expiry', async () => {
+		mockPrisma.subscription.findMany.mockRejectedValue(
+			new Prisma.PrismaClientKnownRequestError('Record missing', {
+				code: 'P2025',
+				clientVersion: '6.0.0',
+			}),
+		);
 
-		await expect(service.expirePastDueSubscriptions()).rejects.toThrow('DB error');
+		await expect(repository.expirePastDueSubscriptionsWithOutbox(new Date())).rejects.toThrow(
+			AppError,
+		);
 	});
 });

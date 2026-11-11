@@ -126,7 +126,9 @@ export class PrismaFinanceQueryRepository
 			CROSS JOIN subscription_metrics AS subm;
 		`;
 
-		const [summary] = await this.prisma.$queryRaw<PlatformFinanceSummaryReadModel[]>(query);
+		const [summary] = await this.executePrisma(() =>
+			this.prisma.$queryRaw<PlatformFinanceSummaryReadModel[]>(query),
+		);
 
 		if (!summary) {
 			throw new PersistenceError(MESSAGES.PLATFORM_FINANCE_SUMMARY_RETRIEVAL_FAILED);

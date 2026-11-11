@@ -67,6 +67,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		create: jest.fn(),
 		activateSubscriptionWithOutbox: jest.fn(),
 		renewSubscriptionWithOutbox: jest.fn(),
+		expirePastDueSubscriptionsWithOutbox: jest.fn(),
 		findSubscribersPaginated: jest.fn(),
 		findSubscriberDetailById: jest.fn(),
 	};

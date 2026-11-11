@@ -160,17 +160,19 @@ export class PrismaTransactionQueryRepository
 		const limit = Math.max(1, params.limit);
 		const skip = (page - 1) * limit;
 
-		const [totalRecords, records] = await this.prisma.$transaction([
-			this.prisma.paymentTransaction.count({ where }),
-			this.prisma.paymentTransaction.findMany({
-				where,
-				orderBy: {
-					[sortByField]: sortOrderDirection,
-				},
-				skip,
-				take: limit,
-			}),
-		]);
+		const [totalRecords, records] = await this.executePrisma(() =>
+			this.prisma.$transaction([
+				this.prisma.paymentTransaction.count({ where }),
+				this.prisma.paymentTransaction.findMany({
+					where,
+					orderBy: {
+						[sortByField]: sortOrderDirection,
+					},
+					skip,
+					take: limit,
+				}),
+			]),
+		);
 
 		const totalPages = totalRecords > 0 ? Math.ceil(totalRecords / limit) : 0;
 
@@ -209,20 +211,22 @@ export class PrismaTransactionQueryRepository
 	}
 
 	async findTransactionById(id: string, restaurantId: string): Promise<TransactionDetail | null> {
-		const record = await this.prisma.paymentTransaction.findFirst({
-			where: {
-				id,
-				restaurantId,
-			},
-			include: {
-				refunds: {
-					orderBy: {
-						createdAt: 'desc',
-					},
-					take: 1,
+		const record = await this.executePrisma(() =>
+			this.prisma.paymentTransaction.findFirst({
+				where: {
+					id,
+					restaurantId,
 				},
-			},
-		});
+				include: {
+					refunds: {
+						orderBy: {
+							createdAt: 'desc',
+						},
+						take: 1,
+					},
+				},
+			}),
+		);
 
 		if (!record) {
 			return null;
@@ -341,13 +345,15 @@ export class PrismaTransactionQueryRepository
 		];
 
 		if (pendingCheckOrderIds.length > 0) {
-			const capturedSiblings = await this.prisma.paymentTransaction.findMany({
-				where: {
-					orderId: { in: pendingCheckOrderIds },
-					status: PAYMENT_STATUS.CAPTURED,
-				},
-				select: { orderId: true },
-			});
+			const capturedSiblings = await this.executePrisma(() =>
+				this.prisma.paymentTransaction.findMany({
+					where: {
+						orderId: { in: pendingCheckOrderIds },
+						status: PAYMENT_STATUS.CAPTURED,
+					},
+					select: { orderId: true },
+				}),
+			);
 			for (const s of capturedSiblings) {
 				if (s.orderId) {
 					capturedOrderIds.add(s.orderId);
@@ -439,23 +445,25 @@ export class PrismaTransactionQueryRepository
 		);
 		const skip = (page - 1) * limit;
 
-		const [total, records] = await this.prisma.$transaction([
-			this.prisma.paymentTransaction.count({ where }),
-			this.prisma.paymentTransaction.findMany({
-				where,
-				orderBy: {
-					[sortBy]: sortOrder,
-				},
-				skip,
-				take: limit,
-				include: {
-					refunds: {
-						orderBy: { createdAt: SORT_DIRECTIONS.DESC },
-						take: 1,
+		const [total, records] = await this.executePrisma(() =>
+			this.prisma.$transaction([
+				this.prisma.paymentTransaction.count({ where }),
+				this.prisma.paymentTransaction.findMany({
+					where,
+					orderBy: {
+						[sortBy]: sortOrder,
 					},
-				},
-			}),
-		]);
+					skip,
+					take: limit,
+					include: {
+						refunds: {
+							orderBy: { createdAt: SORT_DIRECTIONS.DESC },
+							take: 1,
+						},
+					},
+				}),
+			]),
+		);
 
 		const now = Date.now();
 		const capturedOrderIds = await this.resolveCapturedOrderIds(records, now);

@@ -29,7 +29,6 @@ import {
 import axios from 'axios';
 import { injectable } from 'inversify';
 import Razorpay from 'razorpay';
-import { setRazorpayClient } from './razorpay.client.ts';
 
 interface FundAccountDetailsResponse {
 	id: string;
@@ -65,7 +64,6 @@ export class RazorpayGateway implements IPaymentGateway {
 				key_secret: keySecret,
 			});
 
-			setRazorpayClient(this.client);
 			this.initialized = true;
 
 			logger.info(MESSAGES.RAZORPAY_INITIALIZED);

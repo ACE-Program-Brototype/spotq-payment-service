@@ -59,6 +59,7 @@ export const ORDER_PAYMENT_ROUTES = {
 export const CUSTOMER_PAYMENT_ROUTES = {
 	HISTORY: '/history',
 	RETRY: '/transactions/:id/retry',
+	ORDER_REFUND_STATUS: '/:orderId/refund-status',
 } as const;
 
 export const SUBSCRIBER_ROUTES = {

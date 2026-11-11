@@ -51,6 +51,7 @@ export const TYPES = {
 			GetRestaurantWalletOverviewUseCase: Symbol.for('IGetRestaurantWalletOverviewUseCase'),
 			LinkBankAccountUseCase: Symbol.for('ILinkBankAccountUseCase'),
 			WithdrawFromRestaurantWalletUseCase: Symbol.for('IWithdrawFromRestaurantWalletUseCase'),
+			ListWalletLedgerEntriesUseCase: Symbol.for('IListWalletLedgerEntriesUseCase'),
 		},
 		GetCustomerPaymentHistoryUseCase: Symbol.for('IGetCustomerPaymentHistoryUseCase'),
 		RetryCustomerPaymentUseCase: Symbol.for('IRetryCustomerPaymentUseCase'),

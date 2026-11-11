@@ -40,6 +40,7 @@ export const RESTAURANT_WALLET_ROUTES = {
 	WALLET: '/',
 	LINK_BANK: '/bank-account',
 	WITHDRAW: '/withdraw',
+	LEDGER_ENTRIES: '/settlements',
 } as const;
 
 export const INTERNAL_ROUTES = {

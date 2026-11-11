@@ -34,7 +34,12 @@ describe('InternalSubscriptionAnalyticsController', () => {
 		controller = new InternalSubscriptionAnalyticsController(mockUseCase);
 
 		mockReq = {
-			query: {},
+			query: {
+				period: ANALYTICS_PERIODS.MONTH,
+				month: 11,
+				year: 2026,
+				billingCycle: BILLING_CYCLES.ALL,
+			} as never,
 		};
 
 		mockRes = {

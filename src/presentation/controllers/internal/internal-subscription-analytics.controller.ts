@@ -14,7 +14,7 @@ export class InternalSubscriptionAnalyticsController {
 	) {}
 
 	getSummary = async (req: Request, res: Response): Promise<void> => {
-		const query = (res.locals.query ?? req.query) as unknown as SubscriptionAnalyticsQueryParams;
+		const query = req.query as unknown as SubscriptionAnalyticsQueryParams;
 
 		const result = await this.getPlatformSubscriptionAnalyticsUseCase.execute({
 			period: query.period,

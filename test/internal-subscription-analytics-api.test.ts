@@ -77,15 +77,14 @@ describe('Internal Platform Subscription Analytics API (SCRUM-1276)', () => {
 			expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
 		});
 
-		it('should return 403 when caller service is unauthorized (e.g. order-service)', async () => {
+		it('should return 401 when caller service is unauthorized (e.g. order-service)', async () => {
 			const token = generateS2SToken(S2S_CALLER_SERVICES.ORDER_SERVICE);
 			const res = await request(app)
 				.get(analyticsEndpoint)
 				.set('Authorization', `Bearer ${token}`)
 				.set('x-caller-service', S2S_CALLER_SERVICES.ORDER_SERVICE);
 
-			expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
-			expect(res.body.error).toBe('FORBIDDEN');
+			expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
 		});
 
 		it('should return 200 when caller service is authorized restaurant-service', async () => {

@@ -24,6 +24,7 @@ process.env.QUEUE_PREFIX = 'spotq_payment_test';
 process.env.RABBITMQ_URL = 'amqp://guest:guest@localhost:5672';
 process.env.RABBITMQ_PREFETCH_COUNT = '10';
 process.env.ORDER_S2S_PUBLIC_KEY = publicKey;
+process.env.RESTAURANT_S2S_PUBLIC_KEY = publicKey;
 process.env.S2S_AUDIENCE = 'payment-service';
 process.env.S2S_PRIVATE_KEY = privateKey;
 process.env.GOTENBERG_URL = 'http://localhost:3008';

@@ -59,7 +59,7 @@ describe('internalS2SAuthMiddleware', () => {
 		expect(mockNext).not.toHaveBeenCalled();
 	});
 
-	it('should authenticate successfully with valid S2S token from order-service', () => {
+	it('should authenticate successfully with valid S2S token from order-service when allowed', () => {
 		const token = generateToken(env.S2S_AUDIENCE, {
 			serviceName: S2S_CALLER_SERVICES.ORDER_SERVICE,
 			privateKey: env.S2S_PRIVATE_KEY,
@@ -75,5 +75,42 @@ describe('internalS2SAuthMiddleware', () => {
 
 		expect(mockNext).toHaveBeenCalled();
 		expect(mockReq.callerService).toBe(S2S_CALLER_SERVICES.ORDER_SERVICE);
+	});
+
+	it('should authenticate successfully with valid S2S token from restaurant-service when allowed', () => {
+		const token = generateToken(env.S2S_AUDIENCE, {
+			serviceName: S2S_CALLER_SERVICES.RESTAURANT_SERVICE,
+			privateKey: env.S2S_PRIVATE_KEY,
+		});
+
+		mockReq.headers = {
+			authorization: `Bearer ${token}`,
+			'x-caller-service': S2S_CALLER_SERVICES.RESTAURANT_SERVICE,
+		};
+
+		const middleware = internalS2SAuthMiddleware([S2S_CALLER_SERVICES.RESTAURANT_SERVICE]);
+		middleware(mockReq as Request, mockRes as Response, mockNext);
+
+		expect(mockNext).toHaveBeenCalled();
+		expect(mockReq.callerService).toBe(S2S_CALLER_SERVICES.RESTAURANT_SERVICE);
+	});
+
+	it('should reject request with 401 when caller is not in restricted allowedCallers list', () => {
+		const token = generateToken(env.S2S_AUDIENCE, {
+			serviceName: S2S_CALLER_SERVICES.ORDER_SERVICE,
+			privateKey: env.S2S_PRIVATE_KEY,
+		});
+
+		mockReq.headers = {
+			authorization: `Bearer ${token}`,
+			'x-caller-service': S2S_CALLER_SERVICES.ORDER_SERVICE,
+		};
+
+		// Only RESTAURANT_SERVICE is allowed
+		const middleware = internalS2SAuthMiddleware([S2S_CALLER_SERVICES.RESTAURANT_SERVICE]);
+		middleware(mockReq as Request, mockRes as Response, mockNext);
+
+		expect(mockNext).not.toHaveBeenCalled();
+		expect(mockRes.status).toHaveBeenCalledWith(401);
 	});
 });

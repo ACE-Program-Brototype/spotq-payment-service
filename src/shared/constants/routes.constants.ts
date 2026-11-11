@@ -46,6 +46,7 @@ export const INTERNAL_ROUTES = {
 	BASE: '/api/internal/v1',
 	CREATE_GATEWAY_ORDER: '/payments/orders',
 	REFUND: '/payments/refunds',
+	SUBSCRIPTION_ANALYTICS: '/analytics/subscriptions/summary',
 } as const;
 
 export const ORDER_PAYMENT_ROUTES = {

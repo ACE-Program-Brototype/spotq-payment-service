@@ -5,6 +5,7 @@ export * from './customer-payment/index.ts';
 export * from './get-subscription-plans.use-case.ts';
 export * from './get-subscription-status.use-case.ts';
 export * from './handle-webhook.use-case.ts';
+export * from './internal/get-platform-subscription-analytics.use-case.ts';
 export * from './order-payment/index.ts';
 export * from './restaurant-wallet/get-restaurant-wallet-overview.use-case.ts';
 export * from './restaurant-wallet/link-bank-account.use-case.ts';

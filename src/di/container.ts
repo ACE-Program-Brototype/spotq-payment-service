@@ -18,6 +18,7 @@ import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
+import type { IGetPlatformSubscriptionAnalyticsUseCase } from '@application/ports/use-cases/internal/get-platform-subscription-analytics.use-case.port.ts';
 import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port.ts';
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
@@ -36,6 +37,7 @@ import {
 	GetCustomerInvoiceUseCase,
 	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
+	GetPlatformSubscriptionAnalyticsUseCase,
 	GetSubscriptionBillingHistoryUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
@@ -60,6 +62,7 @@ import type { IOutboxRepository } from '@domain/repositories/outbox.repository.i
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/platform-ledger-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
+import type { ISubscriptionAnalyticsRepository } from '@domain/repositories/subscription-analytics.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
@@ -77,6 +80,7 @@ import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outb
 import { PrismaPaymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
 import { PrismaPlatformLedgerTransactionRepository } from '@infrastructure/repositories/prisma-platform-ledger-transaction.repository.ts';
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
+import { PrismaSubscriptionAnalyticsRepository } from '@infrastructure/repositories/prisma-subscription-analytics.repository.ts';
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PrismaTransactionQueryRepository } from '@infrastructure/repositories/prisma-transaction-query.repository.ts';
 import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
@@ -84,6 +88,7 @@ import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subsc
 import { S3StorageService } from '@infrastructure/storage/s3-storage.service.ts';
 import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
 import { CustomerPaymentController } from '@presentation/controllers/customer-payment.controller.ts';
+import { InternalSubscriptionAnalyticsController } from '@presentation/controllers/internal/internal-subscription-analytics.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
 import { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
 import { RestaurantTransactionController } from '@presentation/controllers/restaurant-transaction.controller.ts';
@@ -137,6 +142,11 @@ container
 		TYPES.Repositories.PlatformLedgerTransactionRepository,
 	)
 	.to(PrismaPlatformLedgerTransactionRepository)
+	.inSingletonScope();
+
+container
+	.bind<ISubscriptionAnalyticsRepository>(TYPES.Repositories.SubscriptionAnalyticsRepository)
+	.to(PrismaSubscriptionAnalyticsRepository)
 	.inSingletonScope();
 
 container
@@ -294,6 +304,12 @@ container
 	.to(GetAdminSubscriberDetailsUseCase);
 
 container
+	.bind<IGetPlatformSubscriptionAnalyticsUseCase>(
+		TYPES.UseCases.GetPlatformSubscriptionAnalyticsUseCase,
+	)
+	.to(GetPlatformSubscriptionAnalyticsUseCase);
+
+container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)
 	.to(SubscriptionController)
 	.inSingletonScope();
@@ -321,6 +337,13 @@ container
 container
 	.bind<AdminSubscriberController>(TYPES.Controllers.AdminSubscriberController)
 	.to(AdminSubscriberController)
+	.inSingletonScope();
+
+container
+	.bind<InternalSubscriptionAnalyticsController>(
+		TYPES.Controllers.InternalSubscriptionAnalyticsController,
+	)
+	.to(InternalSubscriptionAnalyticsController)
 	.inSingletonScope();
 
 export const cacheService = container.get<ICacheService>(TYPES.Services.CacheService);

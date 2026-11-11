@@ -35,6 +35,7 @@ const envSchema = z.object({
 	RABBITMQ_PREFETCH_COUNT: z.coerce.number().positive().default(10),
 
 	ORDER_S2S_PUBLIC_KEY: z.string().min(1),
+	RESTAURANT_S2S_PUBLIC_KEY: z.string().min(1),
 	S2S_AUDIENCE: z.string().min(1).default('payment-service'),
 	S2S_PRIVATE_KEY: z.string().min(1),
 

@@ -65,7 +65,8 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 
 		if (existingPendingTx) {
 			if (existingPendingTx.status === PAYMENT_STATUS.FAILED) {
-				await this.paymentTransactionRepository.resetToCreated(existingPendingTx.razorpayOrderId);
+				existingPendingTx.resetToCreated();
+				await this.paymentTransactionRepository.resetToCreated(existingPendingTx);
 				logger.info(
 					{ orderId: existingPendingTx.razorpayOrderId, restaurantId: input.restaurantId },
 					'Resetting failed transaction to CREATED for retry attempt',

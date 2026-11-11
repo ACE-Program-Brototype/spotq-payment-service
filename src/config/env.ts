@@ -45,6 +45,7 @@ export const config = {
 			resetTimeoutMs: env.RAZORPAY_CB_RESET_TIMEOUT_MS,
 			volumeThreshold: env.RAZORPAY_CB_VOLUME_THRESHOLD,
 		},
+		payoutAccountNumber: env.RAZORPAYX_ACCOUNT_NUMBER,
 	},
 
 	s2s: {
@@ -56,5 +57,25 @@ export const config = {
 
 	services: {
 		restaurantServiceUrl: env.RESTAURANT_SERVICE_URL,
+	},
+
+	gotenberg: {
+		url: env.GOTENBERG_URL,
+	},
+
+	s3: {
+		accessKeyId: env.AWS_ACCESS_KEY_ID,
+		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+		region: env.AWS_REGION,
+		bucket: env.AWS_S3_BUCKET,
+		presignedUrlExpirationSeconds: env.AWS_S3_PRESIGNED_URL_EXPIRATION_SECONDS,
+	},
+
+	storage: {
+		region: env.AWS_REGION,
+		accessKeyId: env.AWS_ACCESS_KEY_ID,
+		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+		bucket: env.AWS_S3_BUCKET,
+		presignedUrlExpirationSeconds: env.AWS_S3_PRESIGNED_URL_EXPIRATION_SECONDS,
 	},
 } as const;

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import { CreateSubscriptionOrderUseCase } from '../src/application/use-cases/create-subscription-order.use-case.ts';
 import { GetSubscriptionPlansUseCase } from '../src/application/use-cases/get-subscription-plans.use-case.ts';
 import { VerifyPaymentUseCase } from '../src/application/use-cases/verify-payment.use-case.ts';
@@ -51,6 +52,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findByOrderId: jest.fn().mockResolvedValue(null),
 		findByCustomerOrderId: jest.fn().mockResolvedValue(null),
 		findByPaymentId: jest.fn().mockResolvedValue(null),
+		findCapturedByOrderId: jest.fn().mockResolvedValue(null),
 		findPendingByRestaurantAndPlan: jest.fn().mockResolvedValue(null),
 		findPendingRenewalBySubscriptionAndPlan: jest.fn().mockResolvedValue(null),
 		create: jest.fn().mockResolvedValue({ id: 'tx-created-1' }),
@@ -69,6 +71,7 @@ describe('Subscription & Payment Use Cases', () => {
 		findByRestaurantId: jest.fn().mockResolvedValue([]),
 		create: jest.fn().mockResolvedValue({}),
 		update: jest.fn().mockResolvedValue({}),
+		updatePdfKey: jest.fn().mockResolvedValue(null),
 		delete: jest.fn().mockResolvedValue(true),
 		findById: jest.fn().mockResolvedValue(null),
 	};
@@ -85,6 +88,28 @@ describe('Subscription & Payment Use Cases', () => {
 		verifyPaymentSignature: jest.fn().mockReturnValue(true),
 		verifyWebhookSignature: jest.fn().mockReturnValue(true),
 		getPaymentDetails: jest.fn().mockResolvedValue({}),
+		getContact: jest.fn().mockResolvedValue({ contactId: 'contact_test_123' }),
+		getFundAccount: jest.fn().mockResolvedValue({
+			fundAccountId: 'fa_test_123',
+			contactId: 'contact_test_123',
+			accountHolderName: 'Test Account',
+			accountNumber: '1234567890',
+			ifsc: 'TEST0001234',
+			bankName: 'Test Bank',
+			active: true,
+		}),
+		createFundAccount: jest.fn().mockResolvedValue({
+			fundAccountId: 'fa_test_123',
+			contactId: 'contact_test_123',
+			accountHolderName: 'Test Account',
+			accountNumber: '1234567890',
+			ifsc: 'TEST0001234',
+			bankName: 'Test Bank',
+			active: true,
+		}),
+		createContact: jest.fn().mockResolvedValue({ contactId: 'contact_test_123' }),
+		deactivateFundAccount: jest.fn().mockResolvedValue(undefined),
+		createPayout: jest.fn().mockResolvedValue({ payoutId: 'payout_test_123', status: 'processed' }),
 		createRefund: jest.fn().mockResolvedValue({
 			refundId: 'rfnd_test_123',
 			status: 'processed',
@@ -99,6 +124,18 @@ describe('Subscription & Payment Use Cases', () => {
 		stop: jest.fn(),
 		replayDeadLetterEvent: jest.fn(),
 		processPendingEvents: jest.fn().mockResolvedValue(0),
+	};
+
+	const mockRestaurantWalletRepo: IRestaurantWalletRepository = {
+		findById: jest.fn().mockResolvedValue(null),
+		findByRestaurantId: jest.fn().mockResolvedValue(null),
+		create: jest.fn().mockResolvedValue(undefined),
+		update: jest.fn().mockResolvedValue(undefined),
+		getOverview: jest.fn().mockResolvedValue(null),
+		getTodayNetEarningsPaise: jest.fn().mockResolvedValue(0),
+		reserveWithdrawal: jest.fn().mockResolvedValue(undefined),
+		markWithdrawalProcessed: jest.fn().mockResolvedValue(undefined),
+		failWithdrawal: jest.fn().mockResolvedValue(undefined),
 	};
 
 	beforeEach(() => {
@@ -210,7 +247,7 @@ describe('Subscription & Payment Use Cases', () => {
 			});
 
 			expect(result.orderId).toBe('order_retry_123');
-			expect(mockTxRepo.resetToCreated).toHaveBeenCalledWith('order_retry_123');
+			expect(mockTxRepo.resetToCreated).toHaveBeenCalledWith(failedTx);
 			expect(mockGateway.createOrder).not.toHaveBeenCalled();
 		});
 
@@ -278,6 +315,7 @@ describe('Subscription & Payment Use Cases', () => {
 				mockTxRepo,
 				mockPlanRepo,
 				mockSubRepo,
+				mockRestaurantWalletRepo,
 				mockOutboxRelay,
 			);
 
@@ -332,6 +370,7 @@ describe('Subscription & Payment Use Cases', () => {
 				mockTxRepo,
 				mockPlanRepo,
 				mockSubRepo,
+				mockRestaurantWalletRepo,
 				mockOutboxRelay,
 			);
 
@@ -396,6 +435,7 @@ describe('Subscription & Payment Use Cases', () => {
 				mockTxRepo,
 				mockPlanRepo,
 				mockSubRepo,
+				mockRestaurantWalletRepo,
 				mockOutboxRelay,
 			);
 

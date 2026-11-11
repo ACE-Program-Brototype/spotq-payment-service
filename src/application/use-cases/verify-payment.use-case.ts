@@ -6,6 +6,7 @@ import type { IOutboxRelayService } from '@application/ports/services/outbox-rel
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import type { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
+import { RestaurantWallet } from '@domain/entities/restaurant-wallet.entity';
 import type { Subscription } from '@domain/entities/subscription.entity.ts';
 import type { SubscriptionPlan } from '@domain/entities/subscription-plan.entity.ts';
 import {
@@ -17,6 +18,7 @@ import {
 } from '@domain/errors/payment.errors.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
+import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
@@ -42,6 +44,8 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		private readonly planRepository: ISubscriptionPlanRepository,
 		@inject(TYPES.Repositories.SubscriptionRepository)
 		private readonly subscriptionRepository: ISubscriptionRepository,
+		@inject(TYPES.Repositories.RestaurantWalletRepository)
+		private readonly restaurantWalletRepository: IRestaurantWalletRepository,
 		@inject(TYPES.Services.OutboxRelayService)
 		private readonly outboxRelayService: IOutboxRelayService,
 	) {}
@@ -109,6 +113,15 @@ export class VerifyPaymentUseCase implements IVerifyPaymentUseCase {
 		}
 
 		const now = new Date();
+		const wallet = await this.restaurantWalletRepository.findByRestaurantId(
+			existingTx.restaurantId,
+		);
+
+		if (!wallet) {
+			const wallet = RestaurantWallet.create(existingTx.restaurantId);
+			await this.restaurantWalletRepository.create(wallet);
+		}
+
 		const subscription = await this.completeSubscriptionOrRenewal(
 			existingTx,
 			plan,

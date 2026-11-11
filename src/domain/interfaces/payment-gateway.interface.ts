@@ -37,6 +37,29 @@ export interface PaymentDetailsResult {
 	[key: string]: unknown;
 }
 
+export interface FundAccountDetails {
+	fundAccountId: string;
+	contactId: string;
+	accountHolderName: string;
+	accountNumber: string;
+	ifsc: string;
+	bankName: string;
+	active: boolean;
+}
+
+export interface CreatePayoutParams {
+	fundAccountId: string;
+	amountPaise: number;
+	currency: 'INR';
+	mode: string;
+	referenceId: string;
+}
+
+export interface PayoutResult {
+	payoutId: string;
+	status: string;
+}
+
 export interface CreateRefundParams {
 	paymentId: string;
 	amountInPaise: number;
@@ -60,6 +83,17 @@ export interface IPaymentGateway {
 	verifyPaymentSignature(params: VerifyPaymentSignatureParams): boolean;
 	verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string): boolean;
 	getPaymentDetails(paymentId: string): Promise<PaymentDetailsResult>;
+	getContact(contactId: string): Promise<{ contactId: string }>;
+	getFundAccount(fundAccountId: string): Promise<FundAccountDetails>;
+	createFundAccount(
+		contactId: string,
+		accountNumber: string,
+		ifsc: string,
+		accountHolderName: string,
+	): Promise<FundAccountDetails>;
+	createContact(name: string): Promise<{ contactId: string }>;
+	deactivateFundAccount(fundAccountId: string): Promise<void>;
+	createPayout(params: CreatePayoutParams): Promise<PayoutResult>;
 	createRefund(params: CreateRefundParams): Promise<PaymentRefundResult>;
 	shutdown?(): void;
 }

@@ -1,5 +1,8 @@
 import type { IOutboxRelayService } from '@application/ports/services/outbox-relay.service.port.ts';
 import type { IPaymentSubscriptionExpiryService } from '@application/ports/services/subscription-expiry.service.port.ts';
+import { HeadBucketCommand } from '@aws-sdk/client-s3';
+import { config } from '@config/index.ts';
+import { orderInvoiceConsumer } from '@di/consumer.resolution.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
@@ -14,6 +17,7 @@ import { logger } from './logger/index.ts';
 import { bullmqService } from './queue/index.ts';
 import type { RabbitMQService } from './rabbitmq/index.ts';
 import { redisService } from './redis/index.ts';
+import { s3Client } from './storage/index.ts';
 
 export async function initInfrastructure(): Promise<void> {
 	await databaseService.connect();
@@ -22,6 +26,7 @@ export async function initInfrastructure(): Promise<void> {
 	try {
 		const rabbitMQService = container.get<RabbitMQService>(TYPES.Services.RabbitMQService);
 		await rabbitMQService.connect();
+		await orderInvoiceConsumer.start();
 	} catch (error) {
 		logger.error({ err: error }, MESSAGES.RABBITMQ_INIT_FAILED);
 		throw error;
@@ -42,6 +47,14 @@ export async function initInfrastructure(): Promise<void> {
 		throw error;
 	}
 
+	try {
+		await s3Client.send(new HeadBucketCommand({ Bucket: config.s3.bucket }));
+		logger.info({ bucket: config.s3.bucket }, MESSAGES.S3_BUCKET_ACCESSIBLE);
+	} catch (error) {
+		logger.error({ err: error, bucket: config.s3.bucket }, MESSAGES.S3_INIT_FAILED);
+		throw error;
+	}
+
 	container
 		.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService)
 		.start(OUTBOX_RELAY_INTERVAL_MS);
@@ -53,6 +66,12 @@ export async function initInfrastructure(): Promise<void> {
 export async function shutdownInfrastructure(): Promise<void> {
 	container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService).stop();
 	container.get<IPaymentSubscriptionExpiryService>(TYPES.Services.SubscriptionExpiryService).stop();
+
+	try {
+		await orderInvoiceConsumer.stop();
+	} catch (error) {
+		logger.error({ err: error }, 'Error stopping OrderInvoiceConsumer during shutdown');
+	}
 
 	try {
 		await container

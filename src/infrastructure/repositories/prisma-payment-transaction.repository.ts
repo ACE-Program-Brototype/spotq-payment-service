@@ -1,3 +1,10 @@
+import {
+	buildPaymentLedgerReferenceId,
+	buildRefundLedgerReferenceId,
+	buildRefundReversalLedgerReferenceId,
+	WALLET_LEDGER_STATUSES,
+	WALLET_LEDGER_TYPES,
+} from '@domain/constants/wallet-ledger.constants.ts';
 import type { PaymentRefund } from '@domain/entities/payment-refund.entity.ts';
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import {
@@ -60,7 +67,6 @@ export class PrismaPaymentTransactionRepository
 	private mapRefundToDomain(record: PrismaPaymentRefund): PaymentRefund {
 		return PaymentRefundPersistenceMapper.toDomain(record);
 	}
-
 	async findById(id: string): Promise<PaymentTransaction | null> {
 		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { id },
@@ -92,6 +98,18 @@ export class PrismaPaymentTransactionRepository
 	async findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null> {
 		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { razorpayPaymentId },
+		});
+
+		if (!record) return null;
+		return this.mapToDomain(record);
+	}
+
+	async findCapturedByOrderId(orderId: string): Promise<PaymentTransaction | null> {
+		const record = await this.prisma.paymentTransaction.findFirst({
+			where: {
+				orderId,
+				status: { in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.SUCCESS] },
+			},
 		});
 
 		if (!record) return null;
@@ -224,6 +242,54 @@ export class PrismaPaymentTransactionRepository
 				},
 			});
 
+			if (existing.orderId) {
+				let wallet = await tx.restaurantWallet.findUnique({
+					where: { restaurantId: existing.restaurantId },
+				});
+
+				if (!wallet) {
+					wallet = await tx.restaurantWallet.create({
+						data: {
+							restaurantId: existing.restaurantId,
+							balancePaise: 0n,
+							currency: existing.currency,
+							isLocked: false,
+						},
+					});
+				}
+
+				const creditReferenceId = buildPaymentLedgerReferenceId(existing.id);
+				const existingLedger = await tx.walletLedgerEntry.findUnique({
+					where: { referenceId: creditReferenceId },
+				});
+
+				if (!existingLedger) {
+					const amountPaise = BigInt(params.transaction.amountPaise);
+					const balanceBefore = wallet.balancePaise;
+					const balanceAfter = balanceBefore + amountPaise;
+
+					await tx.restaurantWallet.update({
+						where: { id: wallet.id },
+						data: {
+							balancePaise: { increment: amountPaise },
+							updatedAt: new Date(),
+						},
+					});
+
+					await tx.walletLedgerEntry.create({
+						data: {
+							walletId: wallet.id,
+							type: WALLET_LEDGER_TYPES.CREDIT_ORDER_PAYMENT,
+							status: WALLET_LEDGER_STATUSES.PROCESSED,
+							amountPaise,
+							balanceBefore,
+							balanceAfter,
+							referenceId: creditReferenceId,
+						},
+					});
+				}
+			}
+
 			await tx.outboxEvent.create({
 				data: {
 					eventType: params.outbox.eventType,
@@ -317,6 +383,45 @@ export class PrismaPaymentTransactionRepository
 				},
 			});
 
+			if (isProcessed && existing.orderId) {
+				const wallet = await tx.restaurantWallet.findUnique({
+					where: { restaurantId: existing.restaurantId },
+				});
+
+				if (wallet) {
+					const refundReferenceId = buildRefundLedgerReferenceId(params.refund.razorpayRefundId);
+					const existingLedger = await tx.walletLedgerEntry.findUnique({
+						where: { referenceId: refundReferenceId },
+					});
+
+					if (!existingLedger) {
+						const amountPaise = BigInt(params.refund.amountPaise);
+						const balanceBefore = wallet.balancePaise;
+						const balanceAfter = balanceBefore - amountPaise;
+
+						await tx.restaurantWallet.update({
+							where: { id: wallet.id },
+							data: {
+								balancePaise: { decrement: amountPaise },
+								updatedAt: new Date(),
+							},
+						});
+
+						await tx.walletLedgerEntry.create({
+							data: {
+								walletId: wallet.id,
+								type: WALLET_LEDGER_TYPES.DEBIT_ORDER_REFUND,
+								status: WALLET_LEDGER_STATUSES.PROCESSED,
+								amountPaise,
+								balanceBefore,
+								balanceAfter,
+								referenceId: refundReferenceId,
+							},
+						});
+					}
+				}
+			}
+
 			await tx.billingInvoice.updateMany({
 				where: { paymentTransactionId: params.transaction.id },
 				data: {
@@ -337,6 +442,7 @@ export class PrismaPaymentTransactionRepository
 		await this.prisma.$transaction(async (tx) => {
 			const existingRefund = await tx.paymentRefund.findUnique({
 				where: { razorpayRefundId: params.razorpayRefundId },
+				include: { transaction: true },
 			});
 
 			if (existingRefund) {
@@ -348,6 +454,8 @@ export class PrismaPaymentTransactionRepository
 						...(params.status === REFUND_STATUS.PROCESSED ? { processedAt: new Date() } : {}),
 					},
 				});
+
+				const txRecord = existingRefund.transaction;
 
 				if (params.status === REFUND_STATUS.PROCESSED) {
 					await tx.paymentTransaction.update({
@@ -366,6 +474,101 @@ export class PrismaPaymentTransactionRepository
 							updatedAt: new Date(),
 						},
 					});
+
+					if (txRecord?.orderId) {
+						const wallet = await tx.restaurantWallet.findUnique({
+							where: { restaurantId: txRecord.restaurantId },
+						});
+
+						if (wallet) {
+							const refundReferenceId = buildRefundLedgerReferenceId(params.razorpayRefundId);
+							const existingLedger = await tx.walletLedgerEntry.findUnique({
+								where: { referenceId: refundReferenceId },
+							});
+
+							if (!existingLedger) {
+								const amountPaise = BigInt(existingRefund.amountPaise);
+								const balanceBefore = wallet.balancePaise;
+								const balanceAfter = balanceBefore - amountPaise;
+
+								await tx.restaurantWallet.update({
+									where: { id: wallet.id },
+									data: {
+										balancePaise: { decrement: amountPaise },
+										updatedAt: new Date(),
+									},
+								});
+
+								await tx.walletLedgerEntry.create({
+									data: {
+										walletId: wallet.id,
+										type: WALLET_LEDGER_TYPES.DEBIT_ORDER_REFUND,
+										status: WALLET_LEDGER_STATUSES.PROCESSED,
+										amountPaise,
+										balanceBefore,
+										balanceAfter,
+										referenceId: refundReferenceId,
+									},
+								});
+							}
+						}
+					}
+				} else if (params.status === REFUND_STATUS.FAILED) {
+					const refundReferenceId = buildRefundLedgerReferenceId(params.razorpayRefundId);
+					const existingDebitLedger = await tx.walletLedgerEntry.findUnique({
+						where: { referenceId: refundReferenceId },
+					});
+
+					if (existingDebitLedger) {
+						const reversalReferenceId = buildRefundReversalLedgerReferenceId(
+							params.razorpayRefundId,
+						);
+						const existingReversal = await tx.walletLedgerEntry.findUnique({
+							where: { referenceId: reversalReferenceId },
+						});
+
+						if (!existingReversal) {
+							const amountPaise = existingDebitLedger.amountPaise;
+							const wallet = await tx.restaurantWallet.findUnique({
+								where: { id: existingDebitLedger.walletId },
+							});
+
+							if (wallet) {
+								const balanceBefore = wallet.balancePaise;
+								const balanceAfter = balanceBefore + amountPaise;
+
+								await tx.restaurantWallet.update({
+									where: { id: wallet.id },
+									data: {
+										balancePaise: { increment: amountPaise },
+										updatedAt: new Date(),
+									},
+								});
+
+								await tx.walletLedgerEntry.create({
+									data: {
+										walletId: wallet.id,
+										type: WALLET_LEDGER_TYPES.CREDIT_ORDER_PAYMENT,
+										status: WALLET_LEDGER_STATUSES.PROCESSED,
+										amountPaise,
+										balanceBefore,
+										balanceAfter,
+										referenceId: reversalReferenceId,
+									},
+								});
+							}
+						}
+					}
+
+					if (txRecord && txRecord.status === PAYMENT_STATUS.REFUNDED) {
+						await tx.paymentTransaction.update({
+							where: { id: txRecord.id },
+							data: {
+								status: PAYMENT_STATUS.CAPTURED,
+								updatedAt: new Date(),
+							},
+						});
+					}
 				}
 				return;
 			}
@@ -411,6 +614,45 @@ export class PrismaPaymentTransactionRepository
 								updatedAt: new Date(),
 							},
 						});
+
+						if (txRecord.orderId) {
+							const wallet = await tx.restaurantWallet.findUnique({
+								where: { restaurantId: txRecord.restaurantId },
+							});
+
+							if (wallet) {
+								const refundReferenceId = buildRefundLedgerReferenceId(params.razorpayRefundId);
+								const existingLedger = await tx.walletLedgerEntry.findUnique({
+									where: { referenceId: refundReferenceId },
+								});
+
+								if (!existingLedger) {
+									const amountPaise = BigInt(params.amountPaise ?? txRecord.amountPaise);
+									const balanceBefore = wallet.balancePaise;
+									const balanceAfter = balanceBefore - amountPaise;
+
+									await tx.restaurantWallet.update({
+										where: { id: wallet.id },
+										data: {
+											balancePaise: { decrement: amountPaise },
+											updatedAt: new Date(),
+										},
+									});
+
+									await tx.walletLedgerEntry.create({
+										data: {
+											walletId: wallet.id,
+											type: WALLET_LEDGER_TYPES.DEBIT_ORDER_REFUND,
+											status: WALLET_LEDGER_STATUSES.PROCESSED,
+											amountPaise,
+											balanceBefore,
+											balanceAfter,
+											referenceId: refundReferenceId,
+										},
+									});
+								}
+							}
+						}
 					}
 				}
 			}
@@ -448,9 +690,11 @@ export class PrismaPaymentTransactionRepository
 		return this.mapToDomain(record);
 	}
 
-	async resetToCreated(razorpayOrderId: string): Promise<PaymentTransaction> {
+	async resetToCreated(target: PaymentTransaction | string): Promise<PaymentTransaction> {
+		const where = typeof target === 'string' ? { razorpayOrderId: target } : { id: target.id };
+
 		const record = await this.prisma.paymentTransaction.update({
-			where: { razorpayOrderId },
+			where,
 			data: {
 				status: PAYMENT_STATUS.CREATED,
 				failureReason: null,

@@ -1,7 +1,6 @@
 export const INDIA_TIMEZONE_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 export const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export const PENDING_ORDER_REUSE_WINDOW_MS = 15 * 60 * 1000;
 export const SUBSCRIPTION_RENEWAL_WINDOW_DAYS = 30;
 export const SUBSCRIPTION_RENEWAL_WINDOW_MS =
 	SUBSCRIPTION_RENEWAL_WINDOW_DAYS * MILLISECONDS_PER_DAY;
@@ -56,6 +55,14 @@ export const INVOICE_STATUS = {
 	PAID: 'PAID',
 	VOID: 'VOID',
 } as const;
+
+export const SUBSCRIPTION_BILLING_HISTORY_PAGINATION = {
+	DEFAULT_PAGE: 1,
+	DEFAULT_LIMIT: 10,
+	MAX_LIMIT: 50,
+} as const;
+
+export const INVOICE_URL_EXPIRATION_SECONDS = 900;
 
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS];
 export type InvoiceStatus = (typeof INVOICE_STATUS)[keyof typeof INVOICE_STATUS];

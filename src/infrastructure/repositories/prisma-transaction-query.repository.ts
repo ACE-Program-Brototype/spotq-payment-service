@@ -1,14 +1,29 @@
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type {
 	CustomerContext,
+	CustomerRefundSummary,
+	CustomerTransactionFilterParams,
+	CustomerTransactionRecord,
+	PaginatedCustomerTransactionsResult,
+	PaginatedSubscriptionBillingHistoryResult,
 	PaginatedTransactionsResult,
 	RefundDetail,
+	SubscriptionBillingHistoryFilterParams,
 	TransactionDetail,
 	TransactionFilterParams,
 	TransactionSummary,
 } from '@domain/types/transaction-query.types.ts';
+import { SubscriptionBillingHistoryPersistenceMapper } from '@infrastructure/mappers/subscription-billing-history.persistence-mapper.ts';
 import type { PaymentStatus, Prisma } from '@prisma/client';
-import { DEFAULT_PAYMENT_METHOD } from '@shared/constants/index.ts';
+import {
+	buildTransactionInvoiceUrl,
+	DEFAULT_PAYMENT_METHOD,
+	PAGINATION,
+	PAYMENT_SORT_FIELDS,
+	PAYMENT_STATUS,
+	PENDING_ORDER_REUSE_WINDOW_MS,
+	SORT_DIRECTIONS,
+} from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -137,14 +152,18 @@ export class PrismaTransactionQueryRepository
 			}
 		}
 
-		const sortByField = params.sortBy === 'amountPaise' ? 'amountPaise' : 'createdAt';
-		const sortOrderDirection: Prisma.SortOrder = params.sortOrder === 'asc' ? 'asc' : 'desc';
+		const sortByField =
+			params.sortBy === PAYMENT_SORT_FIELDS.AMOUNT_PAISE
+				? PAYMENT_SORT_FIELDS.AMOUNT_PAISE
+				: PAYMENT_SORT_FIELDS.CREATED_AT;
+		const sortOrderDirection: Prisma.SortOrder =
+			params.sortOrder === SORT_DIRECTIONS.ASC ? SORT_DIRECTIONS.ASC : SORT_DIRECTIONS.DESC;
 
 		const page = Math.max(1, params.page);
 		const limit = Math.max(1, params.limit);
 		const skip = (page - 1) * limit;
 
-		const [totalRecords, records] = await Promise.all([
+		const [totalRecords, records] = await this.prisma.$transaction([
 			this.prisma.paymentTransaction.count({ where }),
 			this.prisma.paymentTransaction.findMany({
 				where,
@@ -269,6 +288,234 @@ export class PrismaTransactionQueryRepository
 			refund,
 			createdAt: record.createdAt,
 			updatedAt: record.updatedAt,
+		};
+	}
+
+	async findSubscriptionBillingTransactions(
+		params: SubscriptionBillingHistoryFilterParams,
+	): Promise<PaginatedSubscriptionBillingHistoryResult> {
+		const where: Prisma.PaymentTransactionWhereInput = {
+			restaurantId: params.restaurantId,
+			orderId: null,
+			OR: [{ planId: { not: null } }, { subscriptionId: { not: null } }],
+		};
+
+		if (params.status) {
+			where.status = params.status as PaymentStatus;
+		}
+
+		const skip = (params.page - 1) * params.limit;
+		const take = params.limit;
+
+		const [records, totalRecords] = await Promise.all([
+			this.prisma.paymentTransaction.findMany({
+				where,
+				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+				skip,
+				take,
+				include: {
+					plan: true,
+					invoices: {
+						orderBy: { createdAt: 'desc' },
+						take: 1,
+					},
+				},
+			}),
+			this.prisma.paymentTransaction.count({ where }),
+		]);
+
+		return {
+			records: records.map(SubscriptionBillingHistoryPersistenceMapper.toDomain),
+			totalRecords,
+		};
+	}
+
+	private buildCustomerWhere(
+		params: CustomerTransactionFilterParams,
+	): Prisma.PaymentTransactionWhereInput {
+		const where: Prisma.PaymentTransactionWhereInput = {
+			customerId: params.customerId,
+		};
+
+		if (params.status && params.status !== 'ALL') {
+			where.status = params.status as PaymentStatus;
+		}
+
+		if (params.startDate || params.endDate) {
+			where.createdAt = {};
+			if (params.startDate) {
+				where.createdAt.gte = new Date(`${params.startDate}T00:00:00.000Z`);
+			}
+			if (params.endDate) {
+				where.createdAt.lte = new Date(`${params.endDate}T23:59:59.999Z`);
+			}
+		}
+
+		return where;
+	}
+
+	private isWithinRetryWindow(createdAt: Date, now: number): boolean {
+		return now - createdAt.getTime() < PENDING_ORDER_REUSE_WINDOW_MS;
+	}
+
+	private async resolveCapturedOrderIds(
+		records: Array<{ status: PaymentStatus; orderId: string | null; createdAt: Date }>,
+		now: number,
+	): Promise<Set<string>> {
+		const capturedOrderIds = new Set(
+			records
+				.filter((r) => r.status === PAYMENT_STATUS.CAPTURED && Boolean(r.orderId))
+				.map((r) => r.orderId as string),
+		);
+
+		const pendingCheckOrderIds = [
+			...new Set(
+				records
+					.filter(
+						(r) =>
+							r.status === PAYMENT_STATUS.FAILED &&
+							Boolean(r.orderId) &&
+							!capturedOrderIds.has(r.orderId as string) &&
+							this.isWithinRetryWindow(r.createdAt, now),
+					)
+					.map((r) => r.orderId as string),
+			),
+		];
+
+		if (pendingCheckOrderIds.length > 0) {
+			const capturedSiblings = await this.prisma.paymentTransaction.findMany({
+				where: {
+					orderId: { in: pendingCheckOrderIds },
+					status: PAYMENT_STATUS.CAPTURED,
+				},
+				select: { orderId: true },
+			});
+			for (const s of capturedSiblings) {
+				if (s.orderId) {
+					capturedOrderIds.add(s.orderId);
+				}
+			}
+		}
+
+		return capturedOrderIds;
+	}
+
+	private mapCustomerTransactionRecord(
+		record: Prisma.PaymentTransactionGetPayload<{
+			include: { refunds: true };
+		}>,
+		now: number,
+		capturedOrderIds: Set<string>,
+	): CustomerTransactionRecord {
+		const meta = (record.metadata as TransactionMetadata | null) || {};
+		const isFailed = record.status === PAYMENT_STATUS.FAILED;
+		const isWithinWindow = this.isWithinRetryWindow(record.createdAt, now);
+		const isOrderAlreadyPaid = Boolean(record.orderId && capturedOrderIds.has(record.orderId));
+
+		const retryEligible = isFailed && isWithinWindow && !isOrderAlreadyPaid;
+		const retryExpiresAt = retryEligible
+			? new Date(record.createdAt.getTime() + PENDING_ORDER_REUSE_WINDOW_MS).toISOString()
+			: null;
+
+		const hasInvoice =
+			record.status === PAYMENT_STATUS.CAPTURED || record.status === PAYMENT_STATUS.REFUNDED;
+		const invoiceUrl = hasInvoice ? buildTransactionInvoiceUrl(record.id) : null;
+
+		let refundDetails: CustomerRefundSummary | null = null;
+		if (record.refunds && record.refunds.length > 0) {
+			const ref = record.refunds[0];
+			refundDetails = {
+				refundId: ref.id,
+				razorpayRefundId: ref.razorpayRefundId,
+				amountPaise: ref.amountPaise,
+				amountInRupees: ref.amountPaise / 100,
+				status: ref.status,
+				reason: ref.reason ?? null,
+				arn: ref.arn ?? null,
+				processedAt: ref.processedAt ? ref.processedAt.toISOString() : null,
+			};
+		}
+
+		const paymentMethod = (
+			meta.paymentMethod ||
+			meta.method ||
+			DEFAULT_PAYMENT_METHOD
+		).toUpperCase();
+
+		return {
+			transactionId: record.id,
+			orderId: record.orderId,
+			restaurantId: record.restaurantId,
+			amountPaise: record.amountPaise,
+			amountInRupees: record.amountPaise / 100,
+			currency: record.currency,
+			paymentMethod,
+			status: record.status,
+			failureReason: record.failureReason ?? null,
+			razorpayPaymentId: record.razorpayPaymentId,
+			razorpayOrderId: record.razorpayOrderId,
+			createdAt: record.createdAt,
+			hasInvoice,
+			invoiceUrl,
+			retryEligible,
+			retryExpiresAt,
+			refundDetails,
+		};
+	}
+
+	async findTransactionsByCustomer(
+		params: CustomerTransactionFilterParams,
+	): Promise<PaginatedCustomerTransactionsResult> {
+		const where = this.buildCustomerWhere(params);
+		const sortBy =
+			params.sortBy === PAYMENT_SORT_FIELDS.AMOUNT_PAISE
+				? PAYMENT_SORT_FIELDS.AMOUNT_PAISE
+				: PAYMENT_SORT_FIELDS.CREATED_AT;
+		const sortOrder: Prisma.SortOrder =
+			params.sortOrder === SORT_DIRECTIONS.ASC ? SORT_DIRECTIONS.ASC : SORT_DIRECTIONS.DESC;
+
+		const page = Math.max(1, params.page || PAGINATION.DEFAULT_PAGE);
+		const limit = Math.max(
+			1,
+			Math.min(PAGINATION.MAX_LIMIT, params.limit || PAGINATION.DEFAULT_LIMIT),
+		);
+		const skip = (page - 1) * limit;
+
+		const [total, records] = await this.prisma.$transaction([
+			this.prisma.paymentTransaction.count({ where }),
+			this.prisma.paymentTransaction.findMany({
+				where,
+				orderBy: {
+					[sortBy]: sortOrder,
+				},
+				skip,
+				take: limit,
+				include: {
+					refunds: {
+						orderBy: { createdAt: SORT_DIRECTIONS.DESC },
+						take: 1,
+					},
+				},
+			}),
+		]);
+
+		const now = Date.now();
+		const capturedOrderIds = await this.resolveCapturedOrderIds(records, now);
+		const transactions = records.map((record) =>
+			this.mapCustomerTransactionRecord(record, now, capturedOrderIds),
+		);
+
+		const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
+		return {
+			transactions,
+			pagination: {
+				total,
+				page,
+				limit,
+				totalPages,
+				hasNext: page < totalPages,
+				hasPrev: page > 1,
+			},
 		};
 	}
 }

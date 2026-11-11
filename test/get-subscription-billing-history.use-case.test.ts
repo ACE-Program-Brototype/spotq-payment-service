@@ -57,6 +57,8 @@ describe('GetSubscriptionBillingHistoryUseCase', () => {
 		};
 
 		mockStorageService = {
+			uploadFile: jest.fn(),
+			fileExists: jest.fn(),
 			generatePresignedDownloadUrl: jest.fn().mockResolvedValue({
 				downloadUrl: 'https://s3.signed-url.com/inv-1.pdf',
 				expiresInSeconds: 900,

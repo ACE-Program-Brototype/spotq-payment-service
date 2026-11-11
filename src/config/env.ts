@@ -53,6 +53,18 @@ export const config = {
 		restaurantServiceUrl: env.RESTAURANT_SERVICE_URL,
 	},
 
+	gotenberg: {
+		url: env.GOTENBERG_URL,
+	},
+
+	s3: {
+		accessKeyId: env.AWS_ACCESS_KEY_ID,
+		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+		region: env.AWS_REGION,
+		bucket: env.AWS_S3_BUCKET,
+		presignedUrlExpirationSeconds: env.AWS_S3_PRESIGNED_URL_EXPIRATION_SECONDS,
+	},
+
 	storage: {
 		region: env.AWS_REGION,
 		accessKeyId: env.AWS_ACCESS_KEY_ID,

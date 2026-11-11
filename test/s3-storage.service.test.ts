@@ -1,6 +1,6 @@
 import type { S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { S3StorageService } from '@infrastructure/services/s3-storage.service.ts';
+import { S3StorageService } from '@infrastructure/storage/s3-storage.service.ts';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
 	getSignedUrl: jest.fn(),

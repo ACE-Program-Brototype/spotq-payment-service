@@ -138,6 +138,7 @@ describe('RenewSubscriptionUseCase & Subscription Domain Invariants', () => {
 		update: jest.fn().mockResolvedValue({}),
 		delete: jest.fn().mockResolvedValue(true),
 		findById: jest.fn(),
+		updatePdfKey: jest.fn(),
 	};
 
 	const createMockRedisClient = () => {

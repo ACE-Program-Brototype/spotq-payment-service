@@ -132,6 +132,7 @@ describe('Subscription & Payment Use Cases', () => {
 		create: jest.fn().mockResolvedValue(undefined),
 		update: jest.fn().mockResolvedValue(undefined),
 		getOverview: jest.fn().mockResolvedValue(null),
+		findLedgerEntriesPaginated: jest.fn().mockResolvedValue(null),
 		getTodayNetEarningsPaise: jest.fn().mockResolvedValue(0),
 		reserveWithdrawal: jest.fn().mockResolvedValue(undefined),
 		markWithdrawalProcessed: jest.fn().mockResolvedValue(undefined),

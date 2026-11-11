@@ -73,6 +73,7 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			getOverview: jest.fn(),
 			getTodayNetEarningsPaise: jest.fn(),
 			reserveWithdrawal: jest.fn(),
+			findLedgerEntriesPaginated: jest.fn(),
 			markWithdrawalProcessed: jest.fn(),
 			failWithdrawal: jest.fn(),
 		};

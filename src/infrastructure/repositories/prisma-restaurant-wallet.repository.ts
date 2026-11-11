@@ -141,18 +141,12 @@ export class PrismaRestaurantWalletRepository
 	async findLedgerEntriesPaginated(
 		params: WalletLedgerEntriesFilter,
 	): Promise<PaginatedWalletLedgerEntries> {
+		const search = params.search?.trim();
 		const where = {
 			wallet: { restaurantId: params.restaurantId },
 			...(params.type ? { type: params.type } : {}),
 			...(params.status ? { status: params.status } : {}),
-			...(params.search?.trim()
-				? {
-						OR: [
-							{ referenceId: { contains: params.search.trim(), mode: 'insensitive' as const } },
-							{ utrNumber: { contains: params.search.trim(), mode: 'insensitive' as const } },
-						],
-					}
-				: {}),
+			...(search ? { referenceId: { startsWith: search } } : {}),
 			...(params.startDate || params.endDate
 				? {
 						createdAt: {

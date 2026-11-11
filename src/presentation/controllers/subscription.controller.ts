@@ -1,3 +1,4 @@
+import type { WebhookPayload } from '@application/dtos/handle-webhook.dto.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
@@ -5,26 +6,25 @@ import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-
 import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { DomainError } from '@domain/errors/payment.errors.ts';
+import { getHeaderValue } from '@presentation/middleware/index.ts';
 import type {
 	RenewSubscriptionBodyDTO,
 	RenewSubscriptionHeadersDTO,
 	RenewSubscriptionParamsDTO,
 } from '@presentation/validators/subscriptions/renew-subscription.validator.ts';
-import {
-	ERROR_CODES,
-	getStatusCodeForDomainError,
-	HTTP_HEADERS,
-	HTTP_STATUS,
-	MESSAGES,
-} from '@shared/constants/index.ts';
-import { sendErrorResponse, sendSuccessResponse } from '@shared/response/api-response.ts';
+import { HTTP_HEADERS, HTTP_STATUS, MESSAGES } from '@shared/constants/index.ts';
+import { BadRequestError, UnauthorizedError } from '@shared/errors/index.ts';
+import { sendSuccessResponse } from '@shared/response/api-response.ts';
 import type { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
-import {
-	createSubscriptionOrderSchema,
-	verifyPaymentSchema,
+import type {
+	CreateSubscriptionOrderDto,
+	VerifyPaymentDto,
 } from '../validators/subscription.validators.ts';
+
+interface RequestWithRawBody extends Request {
+	rawBody?: string;
+}
 
 /**
  * Controller handling HTTP requests for subscription plan discovery,
@@ -48,63 +48,52 @@ export class SubscriptionController {
 	) {}
 
 	getPlans = async (_req: Request, res: Response): Promise<void> => {
-		try {
-			const plans = await this.getSubscriptionPlansUseCase.execute();
-			sendSuccessResponse(
-				res,
-				plans.map((p) => p.toJSON()),
-				MESSAGES.SUBSCRIPTION_PLANS_FETCHED,
-				HTTP_STATUS.OK,
-			);
-		} catch (error: unknown) {
-			this.handleError(res, error);
-		}
+		const plans = await this.getSubscriptionPlansUseCase.execute();
+		sendSuccessResponse(
+			res,
+			plans.map((p) => p.toJSON()),
+			MESSAGES.SUBSCRIPTION_PLANS_FETCHED,
+			HTTP_STATUS.OK,
+		);
 	};
 
 	createOrder = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const validated = createSubscriptionOrderSchema.parse(req.body);
+		const body = req.body as CreateSubscriptionOrderDto;
+		const restaurantId = getHeaderValue(req.headers['x-restaurant-id']);
 
-			const restaurantId = (req.headers['x-restaurant-id'] as string) || validated.restaurantId;
-
-			if (!restaurantId) {
-				sendErrorResponse(
-					res,
-					MESSAGES.UNAUTHORIZED_RESTAURANT,
-					ERROR_CODES.UNAUTHORIZED,
-					HTTP_STATUS.UNAUTHORIZED,
-				);
-				return;
-			}
-
-			const result = await this.createSubscriptionOrderUseCase.execute({
-				restaurantId,
-				planId: validated.planId,
-				restaurantName: validated.restaurantName || (req.headers['x-restaurant-name'] as string),
-				restaurantEmail: validated.restaurantEmail || (req.headers['x-user-email'] as string),
-				restaurantPhone: validated.restaurantPhone,
-			});
-
-			sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_ORDER_CREATED, HTTP_STATUS.CREATED);
-		} catch (error: unknown) {
-			this.handleError(res, error);
+		if (!restaurantId) {
+			throw new UnauthorizedError(MESSAGES.UNAUTHORIZED_RESTAURANT);
 		}
+
+		const result = await this.createSubscriptionOrderUseCase.execute({
+			restaurantId,
+			planId: body.planId,
+			restaurantName: body.restaurantName,
+			restaurantEmail: body.restaurantEmail,
+			restaurantPhone: body.restaurantPhone,
+		});
+
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_ORDER_CREATED, HTTP_STATUS.CREATED);
 	};
 
 	renewSubscription = async (req: Request, res: Response): Promise<void> => {
-		const params = (res.locals.params ?? req.params) as RenewSubscriptionParamsDTO;
-		const headers = (res.locals.headers ?? req.headers) as RenewSubscriptionHeadersDTO;
-		const body = (req.body ?? {}) as RenewSubscriptionBodyDTO;
-		const restaurantId = (req.headers['x-restaurant-id'] as string) || '';
+		const params = res.locals.params as RenewSubscriptionParamsDTO;
+		const headers = res.locals.headers as RenewSubscriptionHeadersDTO;
+		const body = req.body as RenewSubscriptionBodyDTO;
+		const restaurantId = req.user?.restaurantId;
+
+		if (!restaurantId) {
+			throw new UnauthorizedError(MESSAGES.UNAUTHORIZED_RESTAURANT);
+		}
 
 		const { replayed, ...renewalOrder } = await this.renewSubscriptionUseCase.execute({
 			subscriptionId: params.subscriptionId,
 			restaurantId,
 			idempotencyKey: headers[HTTP_HEADERS.IDEMPOTENCY_KEY],
 			planId: body.planId,
-			restaurantName: req.headers['x-restaurant-name'] as string,
-			restaurantEmail: req.headers['x-user-email'] as string,
-			restaurantPhone: req.headers['x-user-phone'] as string,
+			restaurantName: getHeaderValue(req.headers['x-restaurant-name']),
+			restaurantEmail: req.user?.email,
+			restaurantPhone: getHeaderValue(req.headers['x-user-phone']),
 		});
 
 		if (replayed) {
@@ -120,89 +109,59 @@ export class SubscriptionController {
 	};
 
 	verifyPayment = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const validated = verifyPaymentSchema.parse(req.body);
-			const restaurantId = req.headers['x-restaurant-id'] as string;
+		const body = req.body as VerifyPaymentDto;
+		const restaurantId = getHeaderValue(req.headers['x-restaurant-id']);
 
-			const result = await this.verifyPaymentUseCase.execute({
-				razorpayOrderId: validated.razorpayOrderId,
-				razorpayPaymentId: validated.razorpayPaymentId,
-				razorpaySignature: validated.razorpaySignature,
-				restaurantId,
-			});
+		const result = await this.verifyPaymentUseCase.execute({
+			razorpayOrderId: body.razorpayOrderId,
+			razorpayPaymentId: body.razorpayPaymentId,
+			razorpaySignature: body.razorpaySignature,
+			restaurantId,
+		});
 
-			sendSuccessResponse(res, result, MESSAGES.PAYMENT_VERIFIED_SUCCESS, HTTP_STATUS.OK);
-		} catch (error: unknown) {
-			this.handleError(res, error);
-		}
+		sendSuccessResponse(res, result, MESSAGES.PAYMENT_VERIFIED_SUCCESS, HTTP_STATUS.OK);
 	};
 
 	getStatus = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const restaurantId =
-				(req.params.restaurantId as string) || (req.headers['x-restaurant-id'] as string);
+		const restaurantId = getHeaderValue(req.headers['x-restaurant-id']);
 
-			if (!restaurantId) {
-				sendErrorResponse(
-					res,
-					MESSAGES.UNAUTHORIZED_RESTAURANT,
-					ERROR_CODES.UNAUTHORIZED,
-					HTTP_STATUS.UNAUTHORIZED,
-				);
-				return;
-			}
-
-			const result = await this.getSubscriptionStatusUseCase.execute(restaurantId);
-			sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_STATUS_FETCHED, HTTP_STATUS.OK);
-		} catch (error: unknown) {
-			this.handleError(res, error);
+		if (!restaurantId) {
+			throw new UnauthorizedError(MESSAGES.UNAUTHORIZED_RESTAURANT);
 		}
+
+		const result = await this.getSubscriptionStatusUseCase.execute(restaurantId);
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_STATUS_FETCHED, HTTP_STATUS.OK);
+	};
+
+	getStatusByRestaurant = async (req: Request, res: Response): Promise<void> => {
+		const restaurantId = req.params.restaurantId as string;
+
+		if (!restaurantId) {
+			throw new BadRequestError(MESSAGES.RESTAURANT_ID_NOT_FOUND);
+		}
+
+		const result = await this.getSubscriptionStatusUseCase.execute(restaurantId);
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_STATUS_FETCHED, HTTP_STATUS.OK);
 	};
 
 	handleWebhook = async (req: Request, res: Response): Promise<void> => {
-		try {
-			const signature = (req.headers['x-razorpay-signature'] as string) || '';
-			const rawBody =
-				(req as unknown as { rawBody?: string }).rawBody ||
-				(typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+		const signature = getHeaderValue(req.headers['x-razorpay-signature']) ?? '';
+		const rawBody = (req as RequestWithRawBody).rawBody;
 
-			const result = await this.handleWebhookUseCase.execute({
-				rawBody,
-				signature,
-				parsedPayload: typeof req.body === 'object' ? req.body : JSON.parse(rawBody),
-			});
-
-			res.status(HTTP_STATUS.OK).json(result);
-		} catch (error: unknown) {
-			this.handleError(res, error);
+		if (!rawBody) {
+			throw new BadRequestError(MESSAGES.BAD_REQUEST);
 		}
+
+		if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+			throw new BadRequestError(MESSAGES.BAD_REQUEST);
+		}
+
+		const result = await this.handleWebhookUseCase.execute({
+			rawBody,
+			signature,
+			parsedPayload: req.body as WebhookPayload,
+		});
+
+		sendSuccessResponse(res, result, MESSAGES.WEBHOOK_PROCESSED, HTTP_STATUS.OK);
 	};
-
-	private handleError(res: Response, error: unknown): void {
-		if (error instanceof DomainError) {
-			const statusCode = getStatusCodeForDomainError(error.code, HTTP_STATUS.BAD_REQUEST);
-			sendErrorResponse(res, error.message, error.code, statusCode);
-			return;
-		}
-
-		if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
-			const zodError = error as unknown as { issues: unknown[] };
-			sendErrorResponse(
-				res,
-				MESSAGES.VALIDATION_ERROR,
-				ERROR_CODES.VALIDATION_ERROR,
-				HTTP_STATUS.UNPROCESSABLE_ENTITY,
-				zodError.issues,
-			);
-			return;
-		}
-
-		const message = error instanceof Error ? error.message : MESSAGES.INTERNAL_SERVER_ERROR;
-		sendErrorResponse(
-			res,
-			message,
-			ERROR_CODES.INTERNAL_SERVER_ERROR,
-			HTTP_STATUS.INTERNAL_SERVER_ERROR,
-		);
-	}
 }

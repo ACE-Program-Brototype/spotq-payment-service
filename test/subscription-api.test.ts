@@ -686,7 +686,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(true);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.received).toBe(true);
 			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledWith(
 				expect.any(String),
 				'valid_test_signature',
@@ -729,7 +730,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(true);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.received).toBe(true);
 			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledWith(
 				expect.any(String),
 				'valid_test_signature',
@@ -749,7 +751,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(missingSignatureResponse.body.received).toBe(false);
+			expect(missingSignatureResponse.body.success).toBe(true);
+			expect(missingSignatureResponse.body.data.received).toBe(false);
 
 			const invalidSignatureResponse = await request(app)
 				.post(SUBSCRIPTION_ROUTES.WEBHOOK)
@@ -760,7 +763,8 @@ describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(invalidSignatureResponse.body.received).toBe(false);
+			expect(invalidSignatureResponse.body.success).toBe(true);
+			expect(invalidSignatureResponse.body.data.received).toBe(false);
 			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledTimes(1);
 			expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledWith(
 				expect.any(String),

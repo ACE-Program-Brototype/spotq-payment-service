@@ -41,6 +41,7 @@ export enum MessageEnum {
 	SUBSCRIPTION_ORDER_CREATED = 'Subscription order created successfully',
 	PAYMENT_VERIFIED_SUCCESS = 'Payment verified and subscription activated successfully',
 	SUBSCRIPTION_STATUS_FETCHED = 'Subscription status retrieved successfully',
+	WEBHOOK_PROCESSED = 'Webhook processed successfully',
 	PLAN_NOT_FOUND = 'Subscription plan not found',
 	RESTAURANT_WALLET_NOT_FOUND = 'Restaurant wallet not found',
 	RESTAURANT_ID_NOT_FOUND = 'Restaurant ID not found',
@@ -189,6 +190,7 @@ export const MESSAGES = {
 	SUBSCRIPTION_ORDER_CREATED: MessageEnum.SUBSCRIPTION_ORDER_CREATED,
 	PAYMENT_VERIFIED_SUCCESS: MessageEnum.PAYMENT_VERIFIED_SUCCESS,
 	SUBSCRIPTION_STATUS_FETCHED: MessageEnum.SUBSCRIPTION_STATUS_FETCHED,
+	WEBHOOK_PROCESSED: MessageEnum.WEBHOOK_PROCESSED,
 
 	PLAN_NOT_FOUND: MessageEnum.PLAN_NOT_FOUND,
 	RESTAURANT_WALLET_NOT_FOUND: MessageEnum.RESTAURANT_WALLET_NOT_FOUND,

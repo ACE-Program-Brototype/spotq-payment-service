@@ -215,15 +215,18 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			});
 		});
 
-		it('should return 400 Bad Request when startDate is after endDate', async () => {
+		it('should return 422 Unprocessable Entity when startDate is after endDate', async () => {
 			const res = await request(app)
 				.get(`${TRANSACTION_ROUTES.BASE}?startDate=2026-11-01&endDate=2026-10-01`)
 				.set(validHeaders);
 
-			expect(res.status).toBe(HTTP_STATUS.BAD_REQUEST);
+			expect(res.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 			expect(res.body.success).toBe(false);
-			expect(res.body.error).toBe(ERROR_CODES.BAD_REQUEST);
-			expect(res.body.message).toBe(MESSAGES.INVALID_DATE_RANGE);
+			expect(res.body.error).toBe(ERROR_CODES.VALIDATION_ERROR);
+			expect(res.body.message).toBe(MESSAGES.VALIDATION_ERROR);
+			expect(res.body.details).toEqual(
+				expect.arrayContaining([expect.objectContaining({ message: MESSAGES.INVALID_DATE_RANGE })]),
+			);
 		});
 
 		it('should succeed 200 OK when query parameters are empty strings and ignore them', async () => {
@@ -283,13 +286,18 @@ describe('Restaurant Payment Transactions API (HTTP Integration)', () => {
 			expect(res.body.data.transaction.amountFormatted).toBe('₹868.00');
 		});
 
-		it('should return 400 Bad Request when transaction ID is malformed', async () => {
+		it('should return 422 Unprocessable Entity when transaction ID is malformed', async () => {
 			const res = await request(app).get('/transactions/not-a-valid-uuid').set(validHeaders);
 
-			expect(res.status).toBe(HTTP_STATUS.BAD_REQUEST);
+			expect(res.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 			expect(res.body.success).toBe(false);
-			expect(res.body.error).toBe(ERROR_CODES.BAD_REQUEST);
-			expect(res.body.message).toBe(MESSAGES.INVALID_TRANSACTION_ID);
+			expect(res.body.error).toBe(ERROR_CODES.VALIDATION_ERROR);
+			expect(res.body.message).toBe(MESSAGES.VALIDATION_ERROR);
+			expect(res.body.details).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ message: MESSAGES.INVALID_TRANSACTION_ID }),
+				]),
+			);
 		});
 
 		it('should return 404 Not Found when transaction does not exist or belongs to another restaurant', async () => {

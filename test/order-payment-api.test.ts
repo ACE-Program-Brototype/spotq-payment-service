@@ -497,7 +497,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(true);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.received).toBe(true);
 			expect(captureSpy).not.toHaveBeenCalled();
 		});
 	});
@@ -550,7 +551,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(true);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.received).toBe(true);
 			expect(captureSpy).toHaveBeenCalledWith(
 				expect.objectContaining({
 					transaction: expect.any(PaymentTransaction),
@@ -603,7 +605,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(true);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.received).toBe(true);
 			expect(captureSpy).toHaveBeenCalled();
 		});
 
@@ -643,7 +646,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 				})
 				.expect(HTTP_STATUS.OK);
 
-			expect(res.body.received).toBe(true);
+			expect(res.body.success).toBe(true);
+			expect(res.body.data.received).toBe(true);
 			expect(failWithOutboxSpy).toHaveBeenCalledWith(
 				expect.objectContaining({
 					transaction: expect.any(PaymentTransaction),
@@ -673,7 +677,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 					})
 					.expect(HTTP_STATUS.OK);
 
-				expect(missingSignatureResponse.body.received).toBe(false);
+				expect(missingSignatureResponse.body.success).toBe(true);
+				expect(missingSignatureResponse.body.data.received).toBe(false);
 
 				const invalidSignatureResponse = await request(app)
 					.post(SUBSCRIPTION_ROUTES.WEBHOOK)
@@ -684,7 +689,8 @@ describe('Customer Order Payment Initiation, Signature Verification & Status API
 					})
 					.expect(HTTP_STATUS.OK);
 
-				expect(invalidSignatureResponse.body.received).toBe(false);
+				expect(invalidSignatureResponse.body.success).toBe(true);
+				expect(invalidSignatureResponse.body.data.received).toBe(false);
 				expect(razorpayGateway.verifyWebhookSignature).toHaveBeenCalledTimes(1);
 			} finally {
 				Object.assign(config.razorpay, { webhookSecret: originalWebhookSecret });

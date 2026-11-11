@@ -6,6 +6,10 @@ import {
 	validateRequestParams,
 } from '@presentation/middleware/validation.middleware.ts';
 import {
+	createSubscriptionOrderSchema,
+	verifyPaymentSchema,
+} from '@presentation/validators/subscription.validators.ts';
+import {
 	renewSubscriptionBodySchema,
 	renewSubscriptionHeadersSchema,
 	renewSubscriptionParamsSchema,
@@ -23,26 +27,25 @@ const renewSubscriptionPipeline = [
 	subscriptionController.renewSubscription,
 ] as const;
 
-subscriptionRouter.get(SUBSCRIPTION_ROUTES.PLANS, (req, res) =>
-	subscriptionController.getPlans(req, res),
-);
+subscriptionRouter.get(SUBSCRIPTION_ROUTES.PLANS, subscriptionController.getPlans);
 
-subscriptionRouter.post(SUBSCRIPTION_ROUTES.ORDER, (req, res) =>
-	subscriptionController.createOrder(req, res),
+subscriptionRouter.post(
+	SUBSCRIPTION_ROUTES.ORDER,
+	validateRequestBody(createSubscriptionOrderSchema),
+	subscriptionController.createOrder,
 );
 
 subscriptionRouter.post(SUBSCRIPTION_ROUTES.RENEW, ...renewSubscriptionPipeline);
 
-subscriptionRouter.post(SUBSCRIPTION_ROUTES.VERIFY, (req, res) =>
-	subscriptionController.verifyPayment(req, res),
+subscriptionRouter.post(
+	SUBSCRIPTION_ROUTES.VERIFY,
+	validateRequestBody(verifyPaymentSchema),
+	subscriptionController.verifyPayment,
 );
-subscriptionRouter.get(SUBSCRIPTION_ROUTES.STATUS, (req, res) =>
-	subscriptionController.getStatus(req, res),
-);
-subscriptionRouter.get(SUBSCRIPTION_ROUTES.STATUS_BY_RESTAURANT, (req, res) =>
-	subscriptionController.getStatus(req, res),
+subscriptionRouter.get(SUBSCRIPTION_ROUTES.STATUS, subscriptionController.getStatus);
+subscriptionRouter.get(
+	SUBSCRIPTION_ROUTES.STATUS_BY_RESTAURANT,
+	subscriptionController.getStatusByRestaurant,
 );
 
-subscriptionRouter.post(SUBSCRIPTION_ROUTES.WEBHOOK, (req, res) =>
-	subscriptionController.handleWebhook(req, res),
-);
+subscriptionRouter.post(SUBSCRIPTION_ROUTES.WEBHOOK, subscriptionController.handleWebhook);

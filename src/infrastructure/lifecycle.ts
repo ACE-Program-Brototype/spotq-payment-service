@@ -73,14 +73,6 @@ export async function shutdownInfrastructure(): Promise<void> {
 	}
 
 	try {
-		await container
-			.get<ISubscriptionEventProducer>(TYPES.Services.SubscriptionEventProducer)
-			.close();
-	} catch (error) {
-		logger.error({ err: error }, 'Error closing SubscriptionEventProducer during shutdown');
-	}
-
-	try {
 		const paymentGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 		paymentGateway.shutdown?.();
 	} catch (error) {

@@ -15,3 +15,4 @@ export * from './repositories/subscription.repository.interface.ts';
 export * from './repositories/subscription-plan.repository.interface.ts';
 export * from './types/subscriber-query.types.ts';
 export * from './value-objects/index.ts';
+export * from './workflows/subscription-activation.workflow.ts';

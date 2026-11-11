@@ -2,6 +2,7 @@ import type {
 	CreateSubscriptionOrderInput,
 	CreateSubscriptionOrderOutput,
 } from '@application/dtos/create-subscription-order.dto.ts';
+import { SubscriptionOrderMapper } from '@application/mappers/subscriptions/subscription-order.mapper.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
 import { config } from '@config/index.ts';
 import { TYPES } from '@di/types.ts';
@@ -17,7 +18,7 @@ import type { ISubscriptionRepository } from '@domain/repositories/subscription.
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import { ReceiptId } from '@domain/value-objects/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
-import { PAYMENT_STATUS } from '@shared/constants/index.ts';
+import { INVOICE_STATUS, PAYMENT_STATUS } from '@shared/constants/index.ts';
 import { inject, injectable, optional } from 'inversify';
 
 /**
@@ -78,22 +79,16 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 				'Reusing existing pending Razorpay order',
 			);
 
-			return {
+			return SubscriptionOrderMapper.toOutputDTO({
 				orderId: existingPendingTx.razorpayOrderId,
-				amount: existingPendingTx.amountPaise,
+				amountPaise: existingPendingTx.amountPaise,
 				currency: existingPendingTx.currency,
 				keyId: config.razorpay.keyId,
-				plan: {
-					id: plan.id,
-					name: plan.name,
-					code: plan.code,
-				},
-				restaurant: {
-					name: input.restaurantName,
-					email: input.restaurantEmail,
-					phone: input.restaurantPhone,
-				},
-			};
+				plan,
+				restaurantName: input.restaurantName,
+				restaurantEmail: input.restaurantEmail,
+				restaurantPhone: input.restaurantPhone,
+			});
 		}
 
 		const receiptId = ReceiptId.forSubscription(input.restaurantId);
@@ -131,7 +126,7 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 				invoiceNumber,
 				amountPaise: plan.pricePaise,
 				currency: plan.currency,
-				status: 'DRAFT',
+				status: INVOICE_STATUS.DRAFT,
 			});
 		}
 
@@ -140,21 +135,15 @@ export class CreateSubscriptionOrderUseCase implements ICreateSubscriptionOrderU
 			'Created new subscription payment order',
 		);
 
-		return {
+		return SubscriptionOrderMapper.toOutputDTO({
 			orderId: orderResult.orderId,
-			amount: plan.pricePaise,
+			amountPaise: plan.pricePaise,
 			currency: plan.currency,
 			keyId: config.razorpay.keyId,
-			plan: {
-				id: plan.id,
-				name: plan.name,
-				code: plan.code,
-			},
-			restaurant: {
-				name: input.restaurantName,
-				email: input.restaurantEmail,
-				phone: input.restaurantPhone,
-			},
-		};
+			plan,
+			restaurantName: input.restaurantName,
+			restaurantEmail: input.restaurantEmail,
+			restaurantPhone: input.restaurantPhone,
+		});
 	}
 }

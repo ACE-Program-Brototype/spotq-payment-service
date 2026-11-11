@@ -49,12 +49,7 @@ export class SubscriptionController {
 
 	getPlans = async (_req: Request, res: Response): Promise<void> => {
 		const plans = await this.getSubscriptionPlansUseCase.execute();
-		sendSuccessResponse(
-			res,
-			plans.map((p) => p.toJSON()),
-			MESSAGES.SUBSCRIPTION_PLANS_FETCHED,
-			HTTP_STATUS.OK,
-		);
+		sendSuccessResponse(res, plans, MESSAGES.SUBSCRIPTION_PLANS_FETCHED, HTTP_STATUS.OK);
 	};
 
 	createOrder = async (req: Request, res: Response): Promise<void> => {

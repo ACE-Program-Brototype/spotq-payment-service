@@ -6,10 +6,11 @@ import {
 	validateRequestQuery,
 } from '@presentation/middleware/index.ts';
 import {
+	customerTransactionIdParamsSchema,
 	getCustomerPaymentHistorySchema,
 	retryCustomerPaymentParamsSchema,
 } from '@presentation/validators/customer-payment.validators.ts';
-import { CUSTOMER_PAYMENT_ROUTES } from '@shared/constants/routes.constants.ts';
+import { CUSTOMER_PAYMENT_ROUTES, TRANSACTION_ROUTES } from '@shared/constants/routes.constants.ts';
 import { Router } from 'express';
 import type { CustomerPaymentController } from '../controllers/customer-payment.controller.ts';
 
@@ -31,4 +32,11 @@ customerPaymentRouter.post(
 	customerAuthMiddleware,
 	validateRequestParams(retryCustomerPaymentParamsSchema),
 	customerPaymentController.retryPayment,
+);
+
+customerPaymentRouter.get(
+	TRANSACTION_ROUTES.INVOICE,
+	customerAuthMiddleware,
+	validateRequestParams(customerTransactionIdParamsSchema),
+	customerPaymentController.getInvoice,
 );

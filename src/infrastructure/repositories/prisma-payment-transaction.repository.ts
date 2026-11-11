@@ -95,6 +95,17 @@ export class PrismaPaymentTransactionRepository
 		return this.mapToDomain(record);
 	}
 
+	async findRefundByPaymentTransactionId(
+		paymentTransactionId: string,
+	): Promise<PaymentRefund | null> {
+		const record = await this.prisma.paymentRefund.findFirst({
+			where: { paymentTransactionId },
+			orderBy: { createdAt: 'desc' },
+		});
+
+		return record ? this.mapRefundToDomain(record) : null;
+	}
+
 	async findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null> {
 		const record = await this.prisma.paymentTransaction.findUnique({
 			where: { razorpayPaymentId },

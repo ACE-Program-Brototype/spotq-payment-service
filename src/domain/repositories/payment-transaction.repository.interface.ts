@@ -71,6 +71,7 @@ export interface IPaymentTransactionRepository {
 	findById(id: string): Promise<PaymentTransaction | null>;
 	findByOrderId(razorpayOrderId: string): Promise<PaymentTransaction | null>;
 	findByCustomerOrderId(orderId: string): Promise<PaymentTransaction | null>;
+	findRefundByPaymentTransactionId(paymentTransactionId: string): Promise<PaymentRefund | null>;
 	findByPaymentId(razorpayPaymentId: string): Promise<PaymentTransaction | null>;
 	findCapturedByOrderId(orderId: string): Promise<PaymentTransaction | null>;
 	findPendingByRestaurantAndPlan(

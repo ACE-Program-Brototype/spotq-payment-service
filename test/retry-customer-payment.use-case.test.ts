@@ -44,6 +44,7 @@ describe('RetryCustomerPaymentUseCase (SCRUM-35)', () => {
 			findById: jest.fn(),
 			findByOrderId: jest.fn(),
 			findByCustomerOrderId: jest.fn(),
+			findRefundByPaymentTransactionId: jest.fn(),
 			findByPaymentId: jest.fn(),
 			findCapturedByOrderId: jest.fn(),
 			findPendingByRestaurantAndPlan: jest.fn(),

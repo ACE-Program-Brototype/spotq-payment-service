@@ -54,6 +54,7 @@ export const TYPES = {
 			ListWalletLedgerEntriesUseCase: Symbol.for('IListWalletLedgerEntriesUseCase'),
 		},
 		GetCustomerPaymentHistoryUseCase: Symbol.for('IGetCustomerPaymentHistoryUseCase'),
+		GetCustomerOrderRefundStatusUseCase: Symbol.for('IGetCustomerOrderRefundStatusUseCase'),
 		RetryCustomerPaymentUseCase: Symbol.for('IRetryCustomerPaymentUseCase'),
 		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),
 		GetAdminSubscribersUseCase: Symbol.for('IGetAdminSubscribersUseCase'),

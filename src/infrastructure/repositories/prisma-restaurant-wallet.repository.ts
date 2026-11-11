@@ -17,7 +17,10 @@ import {
 } from '@infrastructure/mappers/restaurant-wallet.persistence-mapper.ts';
 import { WalletLedgerEntryPersistenceMapper } from '@infrastructure/mappers/wallet-ledger-entry.persistence-mapper.ts';
 import { Prisma } from '@prisma/client';
-import { MILLISECONDS_PER_DAY } from '@shared/constants/subscription.constants.ts';
+import {
+	INDIA_TIMEZONE_OFFSET_MS,
+	MILLISECONDS_PER_DAY,
+} from '@shared/constants/subscription.constants.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -153,11 +156,20 @@ export class PrismaRestaurantWalletRepository
 			...(params.startDate || params.endDate
 				? {
 						createdAt: {
-							...(params.startDate ? { gte: new Date(`${params.startDate}T00:00:00.000Z`) } : {}),
+							...(params.startDate
+								? {
+										gte: new Date(
+											new Date(`${params.startDate}T00:00:00.000Z`).getTime() -
+												INDIA_TIMEZONE_OFFSET_MS,
+										),
+									}
+								: {}),
 							...(params.endDate
 								? {
 										lt: new Date(
-											new Date(`${params.endDate}T00:00:00.000Z`).getTime() + MILLISECONDS_PER_DAY,
+											new Date(`${params.endDate}T00:00:00.000Z`).getTime() +
+												MILLISECONDS_PER_DAY -
+												INDIA_TIMEZONE_OFFSET_MS,
 										),
 									}
 								: {}),

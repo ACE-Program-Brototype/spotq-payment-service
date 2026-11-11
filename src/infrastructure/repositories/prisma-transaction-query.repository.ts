@@ -24,6 +24,7 @@ import {
 	PENDING_ORDER_REUSE_WINDOW_MS,
 	SORT_DIRECTIONS,
 } from '@shared/constants/index.ts';
+import { INDIA_TIMEZONE_OFFSET_MS } from '@shared/constants/subscription.constants.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -89,7 +90,9 @@ export class PrismaTransactionQueryRepository
 		}
 
 		if (params.startDate) {
-			const startDateTime = new Date(`${params.startDate}T00:00:00.000Z`);
+			const startDateTime = new Date(
+				new Date(`${params.startDate}T00:00:00.000Z`).getTime() - INDIA_TIMEZONE_OFFSET_MS,
+			);
 			where.createdAt = {
 				...(where.createdAt as Prisma.DateTimeFilter),
 				gte: startDateTime,
@@ -97,7 +100,9 @@ export class PrismaTransactionQueryRepository
 		}
 
 		if (params.endDate) {
-			const endDateTime = new Date(`${params.endDate}T23:59:59.999Z`);
+			const endDateTime = new Date(
+				new Date(`${params.endDate}T23:59:59.999Z`).getTime() - INDIA_TIMEZONE_OFFSET_MS,
+			);
 			where.createdAt = {
 				...(where.createdAt as Prisma.DateTimeFilter),
 				lte: endDateTime,
@@ -344,10 +349,14 @@ export class PrismaTransactionQueryRepository
 		if (params.startDate || params.endDate) {
 			where.createdAt = {};
 			if (params.startDate) {
-				where.createdAt.gte = new Date(`${params.startDate}T00:00:00.000Z`);
+				where.createdAt.gte = new Date(
+					new Date(`${params.startDate}T00:00:00.000Z`).getTime() - INDIA_TIMEZONE_OFFSET_MS,
+				);
 			}
 			if (params.endDate) {
-				where.createdAt.lte = new Date(`${params.endDate}T23:59:59.999Z`);
+				where.createdAt.lte = new Date(
+					new Date(`${params.endDate}T23:59:59.999Z`).getTime() - INDIA_TIMEZONE_OFFSET_MS,
+				);
 			}
 		}
 

@@ -65,8 +65,8 @@ import { OrderInvoiceConsumer } from '@infrastructure/messaging/order-invoice.co
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { GotenbergPdfService } from '@infrastructure/pdf/gotenberg-pdf.service.ts';
-import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import { SubscriptionEventProducer } from '@infrastructure/rabbitmq/subscription-event.producer.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/index.ts';
 import { RedisService } from '@infrastructure/redis/redis.service.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';

@@ -6,7 +6,6 @@ import { orderInvoiceConsumer } from '@di/consumer.resolution.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
-import type { ISubscriptionEventProducer } from '@domain/interfaces/subscription-event-producer.interface.ts';
 import {
 	EXPIRY_CHECK_INTERVAL_MS,
 	MESSAGES,
@@ -71,14 +70,6 @@ export async function shutdownInfrastructure(): Promise<void> {
 		await orderInvoiceConsumer.stop();
 	} catch (error) {
 		logger.error({ err: error }, 'Error stopping OrderInvoiceConsumer during shutdown');
-	}
-
-	try {
-		await container
-			.get<ISubscriptionEventProducer>(TYPES.Services.SubscriptionEventProducer)
-			.close();
-	} catch (error) {
-		logger.error({ err: error }, 'Error closing SubscriptionEventProducer during shutdown');
 	}
 
 	try {

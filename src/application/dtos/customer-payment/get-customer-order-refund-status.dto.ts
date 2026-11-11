@@ -1,9 +1,9 @@
-export interface GetOrderRefundStatusInputDTO {
+export interface GetCustomerOrderRefundStatusInputDTO {
 	orderId: string;
 	customerId: string;
 }
 
-export interface GetOrderRefundStatusOutputDTO {
+export interface GetCustomerOrderRefundStatusOutputDTO {
 	orderId: string;
 	paymentId: string;
 	refundId: string;

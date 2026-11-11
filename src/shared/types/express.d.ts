@@ -2,6 +2,7 @@ export interface AuthenticatedUser {
 	userId: string;
 	email: string;
 	role: string;
+	restaurantId?: string;
 }
 
 declare global {

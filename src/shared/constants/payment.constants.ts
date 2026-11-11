@@ -101,6 +101,12 @@ export const REFUND_LOCK_TTL_SECONDS = 15;
 
 export const RABBITMQ_QUEUES = {
 	ORDER_EVENTS: 'order-events',
+	SUBSCRIPTION_EVENTS: 'restaurant-subscription-events',
+	PAYMENT_EVENTS: 'payment-events',
+} as const;
+
+export const INVOICE_EVENTS = {
+	ORDER_PAYMENT_INVOICE: 'order.payment.invoice',
 } as const;
 
 export type RabbitMQQueue = (typeof RABBITMQ_QUEUES)[keyof typeof RABBITMQ_QUEUES];
@@ -112,6 +118,18 @@ export const OUTBOX_STATUS = {
 } as const;
 
 export type OutboxStatus = (typeof OUTBOX_STATUS)[keyof typeof OUTBOX_STATUS];
+
+export const RAZORPAY_CIRCUIT_BREAKER = {
+	ORDERS_BREAKER_NAME: 'razorpay-orders',
+	PAYMENTS_BREAKER_NAME: 'razorpay-payments',
+	REFUNDS_BREAKER_NAME: 'razorpay-refunds',
+} as const;
+
+export const RAZORPAY_ERROR_CODES = {
+	BAD_REQUEST_ERROR: 'BAD_REQUEST_ERROR',
+} as const;
+
+export type RazorpayErrorCode = (typeof RAZORPAY_ERROR_CODES)[keyof typeof RAZORPAY_ERROR_CODES];
 
 export const PAYMENT_SORT_FIELDS = {
 	CREATED_AT: 'createdAt',

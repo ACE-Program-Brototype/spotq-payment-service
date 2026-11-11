@@ -7,3 +7,4 @@ export * from './restaurant-wallet/restaurant-wallet-overview.mapper.ts';
 export * from './restaurant-wallet/withdraw-from-restaurant-wallet.mapper.ts';
 export * from './subscription-status.mapper.ts';
 export * from './subscriptions/renew-subscription.mapper.ts';
+export * from './subscriptions/subscription-billing-history.mapper.ts';

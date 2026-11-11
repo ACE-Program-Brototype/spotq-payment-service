@@ -91,6 +91,7 @@ describe('Restaurant Transaction Use Cases (Unit Tests)', () => {
 		mockRepo = {
 			findTransactionsByRestaurant: jest.fn().mockResolvedValue(mockPaginatedResult),
 			findTransactionById: jest.fn().mockResolvedValue(mockDetailResult),
+			findSubscriptionBillingTransactions: jest.fn(),
 			findTransactionsByCustomer: jest.fn(),
 		};
 	});

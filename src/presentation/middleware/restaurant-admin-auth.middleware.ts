@@ -3,8 +3,8 @@ import {
 	ERROR_CODES,
 	HTTP_STATUS,
 	MESSAGES,
-} from '@shared/constants';
-import { ApiResponse, sendErrorResponse } from '@shared/index';
+} from '@shared/constants/index.ts';
+import { ApiResponse, sendErrorResponse } from '@shared/index.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 /**
@@ -53,21 +53,35 @@ export function restaurantAdminAuthMiddleware(
 
 	const email = getHeaderValue(req.headers['x-user-email']);
 
-	if (userId.trim() !== restaurantId.trim()) {
-		res
-			.status(HTTP_STATUS.FORBIDDEN)
-			.json(ApiResponse.error('FORBIDDEN', MESSAGES.FORBIDDEN_ACCESS, HTTP_STATUS.FORBIDDEN));
-		return;
-	}
-
 	req.user = {
 		userId,
 		restaurantId,
 		email,
-		role: role || 'RESTAURANT_OWNER',
+		role: normalizedRole,
 	};
 
 	req.userId = userId;
+
+	next();
+}
+
+export function verifyRestaurantTenantAccess(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+): void {
+	const user = req.user;
+	const targetRestaurantId = req.params?.restaurantId;
+
+	if (targetRestaurantId && user?.restaurantId !== targetRestaurantId) {
+		sendErrorResponse(
+			res,
+			MESSAGES.FORBIDDEN_SUBSCRIPTION_ACCESS,
+			'FORBIDDEN_SUBSCRIPTION_ACCESS',
+			HTTP_STATUS.FORBIDDEN,
+		);
+		return;
+	}
 
 	next();
 }

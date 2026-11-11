@@ -1,4 +1,5 @@
 import type { PaymentSortField, SortDirection } from '@shared/constants/index.ts';
+import type { PaymentStatus } from '@shared/constants/subscription.constants.ts';
 import type {
 	TransactionPaymentMethod,
 	TransactionQueryStatus,
@@ -98,6 +99,36 @@ export interface TransactionDetail {
 	refund: RefundDetail | null;
 	createdAt: Date;
 	updatedAt: Date;
+}
+
+export interface SubscriptionBillingHistoryFilterParams {
+	restaurantId: string;
+	page: number;
+	limit: number;
+	status?: PaymentStatus;
+}
+
+export interface SubscriptionBillingTransactionRecord {
+	id: string;
+	amountPaise: number;
+	currency: string;
+	status: string;
+	razorpayPaymentId: string | null;
+	createdAt: Date;
+	plan: {
+		code: string;
+		name: string;
+		billingCycle: string;
+	} | null;
+	invoice: {
+		invoiceNumber: string;
+		invoicePdfKey: string | null;
+	} | null;
+}
+
+export interface PaginatedSubscriptionBillingHistoryResult {
+	records: SubscriptionBillingTransactionRecord[];
+	totalRecords: number;
 }
 
 export interface CustomerTransactionFilterParams {

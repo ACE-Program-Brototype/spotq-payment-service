@@ -2,6 +2,7 @@ import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cas
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
+import type { IGetSubscriptionBillingHistoryUseCase } from '@application/ports/use-cases/subscriptions/get-subscription-billing-history.use-case.port.ts';
 import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IVerifyPaymentUseCase } from '@application/ports/use-cases/verify-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
@@ -11,6 +12,10 @@ import type {
 	RenewSubscriptionHeadersDTO,
 	RenewSubscriptionParamsDTO,
 } from '@presentation/validators/subscriptions/renew-subscription.validator.ts';
+import type {
+	SubscriptionBillingHistoryParamsDTO,
+	SubscriptionBillingHistoryQueryDTO,
+} from '@presentation/validators/subscriptions/subscription-billing-history.validator.ts';
 import {
 	ERROR_CODES,
 	getStatusCodeForDomainError,
@@ -39,6 +44,8 @@ export class SubscriptionController {
 		private readonly createSubscriptionOrderUseCase: ICreateSubscriptionOrderUseCase,
 		@inject(TYPES.UseCases.RenewSubscriptionUseCase)
 		private readonly renewSubscriptionUseCase: IRenewSubscriptionUseCase,
+		@inject(TYPES.UseCases.GetSubscriptionBillingHistoryUseCase)
+		private readonly getSubscriptionBillingHistoryUseCase: IGetSubscriptionBillingHistoryUseCase,
 		@inject(TYPES.UseCases.VerifyPaymentUseCase)
 		private readonly verifyPaymentUseCase: IVerifyPaymentUseCase,
 		@inject(TYPES.UseCases.GetSubscriptionStatusUseCase)
@@ -117,6 +124,20 @@ export class SubscriptionController {
 			MESSAGES.SUBSCRIPTION_RENEWAL_ORDER_CREATED,
 			HTTP_STATUS.CREATED,
 		);
+	};
+
+	getBillingHistory = async (req: Request, res: Response): Promise<void> => {
+		const { restaurantId } = req.params as unknown as SubscriptionBillingHistoryParamsDTO;
+		const query = req.query as unknown as SubscriptionBillingHistoryQueryDTO;
+
+		const result = await this.getSubscriptionBillingHistoryUseCase.execute({
+			restaurantId,
+			page: query.page,
+			limit: query.limit,
+			status: query.status,
+		});
+
+		sendSuccessResponse(res, result, MESSAGES.SUBSCRIPTION_BILLING_HISTORY_FETCHED, HTTP_STATUS.OK);
 	};
 
 	verifyPayment = async (req: Request, res: Response): Promise<void> => {

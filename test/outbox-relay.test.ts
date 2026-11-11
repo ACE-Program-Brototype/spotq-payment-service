@@ -37,7 +37,6 @@ describe('OutboxRelayService & Dead-Letter Handling', () => {
 		mockEventProducer = {
 			publishSubscriptionActivated: jest.fn(),
 			publishSubscriptionExpired: jest.fn(),
-			close: jest.fn(),
 		};
 
 		mockRedisService = {

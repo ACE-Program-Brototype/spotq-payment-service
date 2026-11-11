@@ -62,6 +62,7 @@ describe('GetCustomerPaymentHistoryUseCase (SCRUM-35)', () => {
 		mockRepo = {
 			findTransactionsByRestaurant: jest.fn(),
 			findTransactionById: jest.fn(),
+			findSubscriptionBillingTransactions: jest.fn(),
 			findTransactionsByCustomer: jest.fn().mockResolvedValue(mockPaginatedResult),
 		};
 		useCase = new GetCustomerPaymentHistoryUseCase(mockRepo);

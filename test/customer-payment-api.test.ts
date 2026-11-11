@@ -1,14 +1,20 @@
+import type { IStorageService } from '@application/ports/services/storage.service.port.ts';
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
+import {
+	BillingInvoice,
+	type BillingInvoiceProps,
+} from '@domain/entities/billing-invoice.entity.ts';
 import {
 	PaymentTransaction,
 	type PaymentTransactionProps,
 } from '@domain/entities/payment-transaction.entity.ts';
+import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import type { PaginatedCustomerTransactionsResult } from '@domain/types/transaction-query.types.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
-import { CUSTOMER_PAYMENT_ROUTES } from '@shared/constants/routes.constants.ts';
+import { CUSTOMER_PAYMENT_ROUTES, TRANSACTION_ROUTES } from '@shared/constants/routes.constants.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
@@ -18,6 +24,10 @@ const transactionQueryRepository = container.get<ITransactionQueryRepository>(
 const paymentTransactionRepository = container.get<IPaymentTransactionRepository>(
 	TYPES.Repositories.PaymentTransactionRepository,
 );
+const billingInvoiceRepository = container.get<IBillingInvoiceRepository>(
+	TYPES.Repositories.BillingInvoiceRepository,
+);
+const storageService = container.get<IStorageService>(TYPES.Services.StorageService);
 
 describe('Customer Payment History & Failed Payment Retry API (SCRUM-35)', () => {
 	const mockCustomerId = '10101010-1010-4010-a010-101010101010';
@@ -302,6 +312,188 @@ describe('Customer Payment History & Failed Payment Retry API (SCRUM-35)', () =>
 				}),
 			);
 			expect(resetSpy).toHaveBeenCalledWith(failedTx);
+		});
+	});
+
+	describe('GET /transactions/:id/invoice', () => {
+		const invoiceUrl = (id: string) => TRANSACTION_ROUTES.INVOICE.replace(':id', id);
+
+		const createMockTx = (overrides?: Partial<PaymentTransactionProps>) =>
+			new PaymentTransaction({
+				id: mockTxId,
+				restaurantId: '2ba55e12-4211-4f2a-bada-80e83bb09911',
+				customerId: mockCustomerId,
+				orderId: mockOrderId,
+				razorpayOrderId: mockRazorpayOrderId,
+				razorpayPaymentId: 'pay_Oqk1028X9123',
+				amountPaise: 125000,
+				currency: 'INR',
+				status: 'CAPTURED',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				...overrides,
+			});
+
+		const createMockInvoice = (overrides?: Partial<BillingInvoiceProps>) =>
+			new BillingInvoice({
+				id: '4f7d8a10-2a19-4c31-9311-555555555555',
+				restaurantId: '2ba55e12-4211-4f2a-bada-80e83bb09911',
+				paymentTransactionId: mockTxId,
+				invoiceNumber: 'INV-20261111-1042',
+				amountPaise: 125000,
+				currency: 'INR',
+				status: 'PAID',
+				invoicePdfKey: `spotq-order-invoices/${mockOrderId}/2026/11/INV-20261111-1042.pdf`,
+				pdfGeneratedAt: new Date(),
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				...overrides,
+			});
+
+		it('should return 401 UNAUTHORIZED when customer auth headers are missing', async () => {
+			const res = await request(app).get(invoiceUrl(mockTxId)).expect(HTTP_STATUS.UNAUTHORIZED);
+
+			expect(res.body.success).toBe(false);
+		});
+
+		it('should return 403 FORBIDDEN when user role is not CUSTOMER', async () => {
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set('x-user-id', mockCustomerId)
+				.set('x-user-role', 'RESTAURANT_OWNER')
+				.expect(HTTP_STATUS.FORBIDDEN);
+
+			expect(res.body.success).toBe(false);
+		});
+
+		it('should return 422 UNPROCESSABLE_ENTITY when transaction id is not a valid UUID', async () => {
+			const res = await request(app)
+				.get(invoiceUrl('invalid-uuid'))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+
+			expect(res.body.success).toBe(false);
+		});
+
+		it('should return 404 NOT_FOUND when transaction does not exist', async () => {
+			jest.spyOn(paymentTransactionRepository, 'findById').mockResolvedValueOnce(null);
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.NOT_FOUND);
+
+			expect(res.body.success).toBe(false);
+		});
+
+		it('should return 403 FORBIDDEN when transaction belongs to another customer', async () => {
+			jest
+				.spyOn(paymentTransactionRepository, 'findById')
+				.mockResolvedValueOnce(
+					createMockTx({ customerId: '99999999-9999-9999-9999-999999999999' }),
+				);
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.FORBIDDEN);
+
+			expect(res.body.success).toBe(false);
+		});
+
+		it('should return 422 UNPROCESSABLE_ENTITY when payment is not completed', async () => {
+			jest
+				.spyOn(paymentTransactionRepository, 'findById')
+				.mockResolvedValueOnce(createMockTx({ status: 'FAILED' }));
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe('INVOICE_UNAVAILABLE');
+		});
+
+		it('should return 404 NOT_FOUND when billing invoice record does not exist', async () => {
+			jest.spyOn(paymentTransactionRepository, 'findById').mockResolvedValueOnce(createMockTx());
+			jest
+				.spyOn(billingInvoiceRepository, 'findByPaymentTransactionId')
+				.mockResolvedValueOnce(null);
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.NOT_FOUND);
+
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe('INVOICE_NOT_FOUND');
+		});
+
+		it('should return 409 CONFLICT when invoice has been voided after refund', async () => {
+			jest
+				.spyOn(paymentTransactionRepository, 'findById')
+				.mockResolvedValueOnce(createMockTx({ status: 'REFUNDED' }));
+			jest
+				.spyOn(billingInvoiceRepository, 'findByPaymentTransactionId')
+				.mockResolvedValueOnce(createMockInvoice({ status: 'VOID', invoicePdfKey: null }));
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.CONFLICT);
+
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe('INVOICE_VOIDED');
+		});
+
+		it('should return 409 CONFLICT when invoicePdfKey is not yet generated', async () => {
+			jest.spyOn(paymentTransactionRepository, 'findById').mockResolvedValueOnce(createMockTx());
+			jest
+				.spyOn(billingInvoiceRepository, 'findByPaymentTransactionId')
+				.mockResolvedValueOnce(createMockInvoice({ invoicePdfKey: null }));
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.CONFLICT);
+
+			expect(res.body.success).toBe(false);
+			expect(res.body.error).toBe('INVOICE_PDF_NOT_READY');
+		});
+
+		it('should return 200 OK with presigned S3 downloadUrl for captured payment invoice', async () => {
+			const signedUrl =
+				'https://spotq-order-invoices.s3.ap-south-1.amazonaws.com/spotq-order-invoices/INV-20261111-1042.pdf?X-Amz-Signature=abc';
+
+			jest.spyOn(paymentTransactionRepository, 'findById').mockResolvedValueOnce(createMockTx());
+			jest
+				.spyOn(billingInvoiceRepository, 'findByPaymentTransactionId')
+				.mockResolvedValueOnce(createMockInvoice());
+			const presignSpy = jest
+				.spyOn(storageService, 'generatePresignedDownloadUrl')
+				.mockResolvedValueOnce({
+					downloadUrl: signedUrl,
+					expiresInSeconds: 900,
+				});
+
+			const res = await request(app)
+				.get(invoiceUrl(mockTxId))
+				.set(validCustomerHeaders)
+				.expect(HTTP_STATUS.OK);
+
+			expect(res.body.success).toBe(true);
+			expect(res.body.message).toBe('Invoice download URL retrieved successfully');
+			expect(res.body.data).toEqual({
+				downloadUrl: signedUrl,
+				expiresInSeconds: 900,
+				invoiceNumber: 'INV-20261111-1042',
+			});
+			expect(presignSpy).toHaveBeenCalledWith({
+				key: `spotq-order-invoices/${mockOrderId}/2026/11/INV-20261111-1042.pdf`,
+				expiresInSeconds: 900,
+				fileName: 'SpotQ-Invoice-INV-20261111-1042.pdf',
+			});
 		});
 	});
 });

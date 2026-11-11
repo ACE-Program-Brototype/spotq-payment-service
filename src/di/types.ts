@@ -52,6 +52,7 @@ export const TYPES = {
 			LinkBankAccountUseCase: Symbol.for('ILinkBankAccountUseCase'),
 			WithdrawFromRestaurantWalletUseCase: Symbol.for('IWithdrawFromRestaurantWalletUseCase'),
 		},
+		GetCustomerInvoiceUseCase: Symbol.for('IGetCustomerInvoiceUseCase'),
 		GetCustomerPaymentHistoryUseCase: Symbol.for('IGetCustomerPaymentHistoryUseCase'),
 		RetryCustomerPaymentUseCase: Symbol.for('IRetryCustomerPaymentUseCase'),
 		ProcessOrderRefundUseCase: Symbol.for('IProcessOrderRefundUseCase'),

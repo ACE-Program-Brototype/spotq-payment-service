@@ -10,6 +10,7 @@ import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-c
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
+import type { IGetCustomerInvoiceUseCase } from '@application/ports/use-cases/customer-payment/get-customer-invoice.use-case.port.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import type { IGenerateOrderInvoiceUseCase } from '@application/ports/use-cases/generate-order-invoice.use-case.port.ts';
@@ -32,6 +33,7 @@ import {
 	CreateSubscriptionOrderUseCase,
 	GetAdminSubscriberDetailsUseCase,
 	GetAdminSubscribersUseCase,
+	GetCustomerInvoiceUseCase,
 	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
 	GetSubscriptionBillingHistoryUseCase,
@@ -250,6 +252,10 @@ container
 	.bind<IExportPlatformLedgerUseCase>(TYPES.UseCases.ExportPlatformLedgerUseCase)
 	.to(ExportPlatformLedgerUseCase)
 	.inSingletonScope();
+
+container
+	.bind<IGetCustomerInvoiceUseCase>(TYPES.UseCases.GetCustomerInvoiceUseCase)
+	.to(GetCustomerInvoiceUseCase);
 
 container
 	.bind<IGetCustomerPaymentHistoryUseCase>(TYPES.UseCases.GetCustomerPaymentHistoryUseCase)

@@ -19,9 +19,12 @@ export const getCustomerPaymentHistorySchema = z.object({
 	sortOrder: z.enum([SORT_DIRECTIONS.ASC, SORT_DIRECTIONS.DESC]).default(SORT_DIRECTIONS.DESC),
 });
 
-export const retryCustomerPaymentParamsSchema = z.object({
+export const customerTransactionIdParamsSchema = z.object({
 	id: z.uuid({ message: 'Transaction ID must be a valid UUID' }),
 });
 
+export const retryCustomerPaymentParamsSchema = customerTransactionIdParamsSchema;
+
 export type GetCustomerPaymentHistoryQueryParams = z.infer<typeof getCustomerPaymentHistorySchema>;
+export type CustomerTransactionIdParams = z.infer<typeof customerTransactionIdParamsSchema>;
 export type RetryCustomerPaymentParams = z.infer<typeof retryCustomerPaymentParamsSchema>;

@@ -76,6 +76,9 @@ export enum MessageEnum {
 	GOTENBERG_GENERATION_FAILED = 'Gotenberg PDF generation failed',
 	S3_BUCKET_ACCESSIBLE = 'S3 storage bucket verified and accessible',
 	S3_INIT_FAILED = 'Failed to connect to AWS S3 storage bucket',
+	S3_UPLOADING_FILE = 'Uploading file to S3',
+	S3_UPLOAD_SUCCESS = 'Successfully uploaded file to S3',
+	S3_UPLOAD_FAILED = 'Failed to upload file to S3',
 
 	GATEWAY_UNAUTHORIZED = 'Unauthorized request from gateway',
 	ADMIN_FORBIDDEN = 'Forbidden: Admin access required',
@@ -141,6 +144,11 @@ export enum MessageEnum {
 	ALREADY_PAID = 'The associated food order has already been successfully paid',
 	ORDER_EXPIRED = 'Payment retry window has expired',
 	NOT_RETRYABLE = 'Only failed payment transactions can be retried',
+	CUSTOMER_INVOICE_RETRIEVED = 'Invoice download URL retrieved successfully',
+	INVOICE_NOT_FOUND = 'Invoice record not found for this payment transaction',
+	INVOICE_PDF_NOT_READY = 'Invoice PDF is not generated yet. Please try again shortly',
+	INVOICE_VOIDED = 'Invoice has been voided and is no longer available',
+	INVOICE_UNAVAILABLE = 'Invoice is only available for completed payments',
 
 	// subscription renewal (SCRUM-1241)
 	SUBSCRIPTION_RENEWAL_ORDER_CREATED = 'Subscription renewal order created successfully',
@@ -244,6 +252,9 @@ export const MESSAGES = {
 	GOTENBERG_GENERATION_FAILED: MessageEnum.GOTENBERG_GENERATION_FAILED,
 	S3_BUCKET_ACCESSIBLE: MessageEnum.S3_BUCKET_ACCESSIBLE,
 	S3_INIT_FAILED: MessageEnum.S3_INIT_FAILED,
+	S3_UPLOADING_FILE: MessageEnum.S3_UPLOADING_FILE,
+	S3_UPLOAD_SUCCESS: MessageEnum.S3_UPLOAD_SUCCESS,
+	S3_UPLOAD_FAILED: MessageEnum.S3_UPLOAD_FAILED,
 	GATEWAY_UNAUTHORIZED: MessageEnum.GATEWAY_UNAUTHORIZED,
 	ADMIN_FORBIDDEN: MessageEnum.ADMIN_FORBIDDEN,
 	OWNER_FORBIDDEN: MessageEnum.OWNER_FORBIDDEN,
@@ -312,6 +323,11 @@ export const MESSAGES = {
 	ALREADY_PAID: MessageEnum.ALREADY_PAID,
 	ORDER_EXPIRED: MessageEnum.ORDER_EXPIRED,
 	NOT_RETRYABLE: MessageEnum.NOT_RETRYABLE,
+	CUSTOMER_INVOICE_RETRIEVED: MessageEnum.CUSTOMER_INVOICE_RETRIEVED,
+	INVOICE_NOT_FOUND: MessageEnum.INVOICE_NOT_FOUND,
+	INVOICE_PDF_NOT_READY: MessageEnum.INVOICE_PDF_NOT_READY,
+	INVOICE_VOIDED: MessageEnum.INVOICE_VOIDED,
+	INVOICE_UNAVAILABLE: MessageEnum.INVOICE_UNAVAILABLE,
 
 	// subscription renewal (SCRUM-1241)
 	SUBSCRIPTION_RENEWAL_ORDER_CREATED: MessageEnum.SUBSCRIPTION_RENEWAL_ORDER_CREATED,

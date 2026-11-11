@@ -1,6 +1,2 @@
 export { bullmqConnection } from './bullmq.client.ts';
-export {
-	BullMQService,
-	BullMQServiceInstance,
-	bullmqService,
-} from './bullmq.service.ts';
+export { BullMQService } from './bullmq.service.ts';

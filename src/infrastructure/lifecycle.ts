@@ -12,14 +12,18 @@ import {
 	MESSAGES,
 	OUTBOX_RELAY_INTERVAL_MS,
 } from '@shared/constants/index.ts';
-import { databaseService } from './database/index.ts';
+import type { DatabaseService } from './database/index.ts';
 import { logger } from './logger/index.ts';
-import { bullmqService } from './queue/index.ts';
+import type { BullMQService } from './queue/index.ts';
 import type { RabbitMQService } from './rabbitmq/index.ts';
-import { redisService } from './redis/index.ts';
+import type { RedisService } from './redis/index.ts';
 import { s3Client } from './storage/index.ts';
 
 export async function initInfrastructure(): Promise<void> {
+	const databaseService = container.get<DatabaseService>(TYPES.Services.DatabaseService);
+	const redisService = container.get<RedisService>(TYPES.Services.RedisService);
+	const bullmqService = container.get<BullMQService>(TYPES.Services.BullMQService);
+
 	await databaseService.connect();
 	await redisService.connect();
 
@@ -82,9 +86,9 @@ export async function shutdownInfrastructure(): Promise<void> {
 	}
 
 	await Promise.allSettled([
-		databaseService.disconnect(),
-		redisService.disconnect(),
-		bullmqService.disconnect(),
+		container.get<DatabaseService>(TYPES.Services.DatabaseService).disconnect(),
+		container.get<RedisService>(TYPES.Services.RedisService).disconnect(),
+		container.get<BullMQService>(TYPES.Services.BullMQService).disconnect(),
 		container.get<RabbitMQService>(TYPES.Services.RabbitMQService).disconnect(),
 	]);
 }

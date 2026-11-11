@@ -6,10 +6,10 @@ import { TYPES } from '@di/types.ts';
 import { PaymentTransaction } from '@domain/entities/payment-transaction.entity.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
-import { databaseService } from '@infrastructure/database/index.ts';
-import { bullmqService } from '@infrastructure/queue/index.ts';
+import type { DatabaseService } from '@infrastructure/database/index.ts';
+import type { BullMQService } from '@infrastructure/queue/index.ts';
 import type { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
-import { redisService } from '@infrastructure/redis/index.ts';
+import type { RedisService } from '@infrastructure/redis/index.ts';
 import { S2S_CALLER_SERVICES } from '@shared/constants/auth.constants.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
 import { ORDER_PAYMENT_ROUTES, SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
@@ -23,6 +23,9 @@ const paymentTransactionRepository = container.get<IPaymentTransactionRepository
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
 const rabbitMQService = container.get<RabbitMQService>(TYPES.Services.RabbitMQService);
+const databaseService = container.get<DatabaseService>(TYPES.Services.DatabaseService);
+const redisService = container.get<RedisService>(TYPES.Services.RedisService);
+const bullmqService = container.get<BullMQService>(TYPES.Services.BullMQService);
 
 describe('Customer Order Payment Initiation, Signature Verification & Status API (SCRUM-13)', () => {
 	const mockOrderId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';

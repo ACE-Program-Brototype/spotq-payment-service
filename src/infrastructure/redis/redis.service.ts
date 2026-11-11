@@ -1,6 +1,6 @@
 import type { ICacheService } from '@application/ports/services/cache.service.port.ts';
 import type { IHealthCheckable } from '@domain/index.ts';
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 import type { RedisClientType } from 'redis';
 import { redisClient } from './redis.client.ts';
 
@@ -8,7 +8,7 @@ import { redisClient } from './redis.client.ts';
 export class RedisService implements ICacheService, IHealthCheckable {
 	private readonly client: RedisClientType;
 
-	constructor(client: RedisClientType = redisClient) {
+	constructor(@unmanaged() client: RedisClientType = redisClient) {
 		this.client = client;
 	}
 
@@ -82,6 +82,3 @@ export class RedisService implements ICacheService, IHealthCheckable {
 		}
 	}
 }
-
-export const redisService = new RedisService(redisClient);
-export const RedisServiceInstance = redisService;

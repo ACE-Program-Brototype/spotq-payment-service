@@ -1,11 +1,13 @@
 import type { IHealthCheckable } from '@domain/index.ts';
 import type { PrismaClient } from '@prisma/client';
+import { injectable, unmanaged } from 'inversify';
 import { prisma } from './prisma.ts';
 
+@injectable()
 export class DatabaseService implements IHealthCheckable {
 	private readonly client: PrismaClient;
 
-	constructor(client: PrismaClient = prisma) {
+	constructor(@unmanaged() client: PrismaClient = prisma) {
 		this.client = client;
 	}
 
@@ -26,6 +28,3 @@ export class DatabaseService implements IHealthCheckable {
 		}
 	}
 }
-
-export const databaseService = new DatabaseService(prisma);
-export const PrismaService = databaseService;

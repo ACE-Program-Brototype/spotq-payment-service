@@ -12,9 +12,9 @@ import type { IPaymentTransactionRepository } from '@domain/repositories/payment
 import type { IRestaurantWalletRepository } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
-import { databaseService } from '@infrastructure/database/index.ts';
-import { bullmqService } from '@infrastructure/queue/index.ts';
-import { redisService } from '@infrastructure/redis/index.ts';
+import type { DatabaseService } from '@infrastructure/database/index.ts';
+import type { BullMQService } from '@infrastructure/queue/index.ts';
+import type { RedisService } from '@infrastructure/redis/index.ts';
 import { redisClient } from '@infrastructure/redis/redis.client.ts';
 import { HTTP_STATUS } from '@shared/constants/http.constants.ts';
 import { SUBSCRIPTION_ROUTES } from '@shared/constants/routes.constants.ts';
@@ -38,6 +38,9 @@ const restaurantWalletRepository = container.get<IRestaurantWalletRepository>(
 );
 const razorpayGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 const outboxRelayService = container.get<IOutboxRelayService>(TYPES.Services.OutboxRelayService);
+const databaseService = container.get<DatabaseService>(TYPES.Services.DatabaseService);
+const redisService = container.get<RedisService>(TYPES.Services.RedisService);
+const bullmqService = container.get<BullMQService>(TYPES.Services.BullMQService);
 
 describe('Payment & Subscription API Routes (HTTP Integration)', () => {
 	const mockPlan = new SubscriptionPlan({

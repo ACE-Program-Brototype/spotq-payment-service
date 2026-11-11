@@ -58,11 +58,13 @@ import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
+import { DatabaseService } from '@infrastructure/database/database.service.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { OrderInvoiceConsumer } from '@infrastructure/messaging/order-invoice.consumer.ts';
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { GotenbergPdfService } from '@infrastructure/pdf/gotenberg-pdf.service.ts';
+import { BullMQService } from '@infrastructure/queue/bullmq.service.ts';
 import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/index.ts';
@@ -170,7 +172,13 @@ container
 	.to(RabbitMQService)
 	.inSingletonScope();
 
-container.bind<ICacheService>(TYPES.Services.CacheService).to(RedisService).inSingletonScope();
+container
+	.bind<DatabaseService>(TYPES.Services.DatabaseService)
+	.to(DatabaseService)
+	.inSingletonScope();
+container.bind<RedisService>(TYPES.Services.RedisService).to(RedisService).inSingletonScope();
+container.bind<BullMQService>(TYPES.Services.BullMQService).to(BullMQService).inSingletonScope();
+container.bind<ICacheService>(TYPES.Services.CacheService).toService(TYPES.Services.RedisService);
 
 container
 	.bind<IInvoicePdfService>(TYPES.Services.InvoicePdfService)

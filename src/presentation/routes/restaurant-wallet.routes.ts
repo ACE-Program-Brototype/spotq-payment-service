@@ -1,5 +1,5 @@
+import { cacheService } from '@di/container.ts';
 import { restaurantWalletController } from '@di/controller.resolution';
-import { redisService } from '@infrastructure/redis/redis.service.ts';
 import { idempotencyMiddleware } from '@presentation/middleware/idempotency.middleware.ts';
 import { restaurantAdminAuthMiddleware } from '@presentation/middleware/restaurant-admin-auth.middleware.ts';
 import {
@@ -34,7 +34,7 @@ restaurantWalletRoutes.post(
 	restaurantAdminAuthMiddleware,
 	validateRequestHeaders(withdrawFromRestaurantWalletHeadersSchema),
 	idempotencyMiddleware({
-		cacheService: redisService,
+		cacheService,
 		prefix: 'restaurant-wallet:withdraw:idempotency:',
 		lockPrefix: 'restaurant-wallet:withdraw:lock:',
 	}),

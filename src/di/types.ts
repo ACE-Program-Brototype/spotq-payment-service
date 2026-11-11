@@ -17,6 +17,9 @@ export const TYPES = {
 		RestaurantServiceClient: Symbol.for('IRestaurantServiceClient'),
 	},
 	Services: {
+		DatabaseService: Symbol.for('DatabaseService'),
+		RedisService: Symbol.for('RedisService'),
+		BullMQService: Symbol.for('BullMQService'),
 		CacheService: Symbol.for('ICacheService'),
 		IdempotencyService: Symbol.for('IIdempotencyService'),
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),

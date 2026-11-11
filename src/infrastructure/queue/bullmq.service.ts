@@ -2,17 +2,19 @@ import { config } from '@config/index.ts';
 import type { IHealthCheckable } from '@domain/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import { MESSAGES } from '@shared/constants/index.ts';
+import { injectable, unmanaged } from 'inversify';
 import { Redis, type RedisOptions } from 'ioredis';
 import { bullmqConnection } from './bullmq.client.ts';
 
+@injectable()
 export class BullMQService implements IHealthCheckable {
 	private readonly connectionUrl: string;
 	private readonly options: RedisOptions;
 	private client: Redis | null = null;
 
 	constructor(
-		connectionUrl: string = config.redis.url,
-		options: RedisOptions = bullmqConnection as RedisOptions,
+		@unmanaged() connectionUrl: string = config.redis.url,
+		@unmanaged() options: RedisOptions = bullmqConnection as RedisOptions,
 	) {
 		this.connectionUrl = connectionUrl;
 		this.options = options;
@@ -65,8 +67,3 @@ export class BullMQService implements IHealthCheckable {
 		}
 	}
 }
-
-export const bullmqService = new BullMQService();
-export const PrismaService = bullmqService; // keep for any internal naming compatibility
-export const BullMQServiceInstance = bullmqService;
-export const BullMQServiceClass = BullMQService;

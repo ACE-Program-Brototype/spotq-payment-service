@@ -1,14 +1,17 @@
 import { container } from '@di/container.ts';
 import { TYPES } from '@di/types.ts';
 import type { IPaymentGateway } from '@domain/interfaces/payment-gateway.interface.ts';
-import { databaseService } from '@infrastructure/database/index.ts';
-import { bullmqService } from '@infrastructure/queue/index.ts';
-import { redisService } from '@infrastructure/redis/index.ts';
+import type { DatabaseService } from '@infrastructure/database/index.ts';
+import type { BullMQService } from '@infrastructure/queue/index.ts';
+import type { RedisService } from '@infrastructure/redis/index.ts';
 import { HEALTH_STATUS, HTTP_STATUS, MESSAGES, ROUTES } from '@shared/index.ts';
 import request from 'supertest';
 import app from '../src/app.ts';
 
 describe('Payment Service Observability Endpoints', () => {
+	const databaseService = container.get<DatabaseService>(TYPES.Services.DatabaseService);
+	const redisService = container.get<RedisService>(TYPES.Services.RedisService);
+	const bullmqService = container.get<BullMQService>(TYPES.Services.BullMQService);
 	const paymentGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
 
 	beforeEach(() => {

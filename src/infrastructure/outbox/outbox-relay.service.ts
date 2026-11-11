@@ -8,12 +8,9 @@ import type {
 import type { IOutboxRepository } from '@domain/repositories/outbox.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
 import type { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
-import {
-	redisService as defaultRedisService,
-	type RedisService,
-} from '@infrastructure/redis/index.ts';
+import type { RedisService } from '@infrastructure/redis/index.ts';
 import { PAYMENT_EVENTS, RABBITMQ_QUEUES, SUBSCRIPTION_EVENTS } from '@shared/constants/index.ts';
-import { inject, injectable, optional, unmanaged } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 
 export const MAX_OUTBOX_RETRIES = 5;
 
@@ -25,7 +22,6 @@ export const MAX_OUTBOX_RETRIES = 5;
 export class OutboxRelayService implements IOutboxRelayService {
 	private intervalId: NodeJS.Timeout | null = null;
 	private isProcessing = false;
-	private readonly redisService: RedisService;
 
 	constructor(
 		@inject(TYPES.Repositories.OutboxRepository)
@@ -34,12 +30,10 @@ export class OutboxRelayService implements IOutboxRelayService {
 		private readonly eventProducer: ISubscriptionEventProducer,
 		@inject(TYPES.Services.RabbitMQService)
 		@optional()
-		private readonly rabbitMQService?: RabbitMQService,
-		@unmanaged()
-		redisService?: RedisService,
-	) {
-		this.redisService = redisService ?? defaultRedisService;
-	}
+		private readonly rabbitMQService: RabbitMQService | undefined,
+		@inject(TYPES.Services.RedisService)
+		private readonly redisService: RedisService,
+	) {}
 
 	start(pollIntervalMs = 5000): void {
 		if (this.intervalId) return;

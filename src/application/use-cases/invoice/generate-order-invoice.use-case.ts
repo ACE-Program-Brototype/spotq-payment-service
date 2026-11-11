@@ -1,0 +1,106 @@
+import type { OrderInvoiceDataDTO } from '@application/dtos/order-payment-invoice-event.dto.ts';
+import type { IInvoicePdfService } from '@application/ports/services/invoice-pdf.service.port.ts';
+import type { ILogger } from '@application/ports/services/logger.service.port.ts';
+import type { IStorageService } from '@application/ports/services/storage.service.port.ts';
+import type { IGenerateOrderInvoiceUseCase } from '@application/ports/use-cases/generate-order-invoice.use-case.port.ts';
+import { TYPES } from '@di/types.ts';
+import type { BillingInvoice } from '@domain/entities/billing-invoice.entity.ts';
+import type { IBillingInvoiceRepository } from '@domain/repositories/billing-invoice.repository.interface.ts';
+import {
+	DEFAULT_CURRENCY,
+	HYPHEN_REGEX,
+	INVOICE_STATUS,
+	NON_ALPHANUMERIC_REGEX,
+	ORD_PREFIX_REGEX,
+} from '@shared/constants/index.ts';
+import { buildOrderInvoiceS3Key } from '@shared/utils/invoice-s3-key.util.ts';
+import { inject, injectable } from 'inversify';
+
+@injectable()
+export class GenerateOrderInvoiceUseCase implements IGenerateOrderInvoiceUseCase {
+	constructor(
+		@inject(TYPES.Repositories.BillingInvoiceRepository)
+		private readonly billingInvoiceRepository: IBillingInvoiceRepository,
+		@inject(TYPES.Services.InvoicePdfService)
+		private readonly invoicePdfService: IInvoicePdfService,
+		@inject(TYPES.Services.StorageService)
+		private readonly storageService: IStorageService,
+		@inject(TYPES.Services.Logger)
+		private readonly logger: ILogger,
+	) {}
+
+	async execute(orderData: OrderInvoiceDataDTO): Promise<BillingInvoice> {
+		this.logger.info(
+			{
+				orderId: orderData.orderId,
+				orderNumber: orderData.orderNumber,
+				paymentId: orderData.paymentId,
+			},
+			'Processing order invoice generation',
+		);
+
+		// Check idempotency: check if invoice already exists for this payment transaction
+		let invoice: BillingInvoice | null = null;
+		if (orderData.paymentId) {
+			invoice = await this.billingInvoiceRepository.findByPaymentTransactionId(orderData.paymentId);
+		}
+
+		// If invoice already exists and PDF is already generated, return early (idempotent)
+		if (invoice?.invoicePdfKey) {
+			this.logger.info(
+				{
+					invoiceId: invoice.id,
+					invoiceNumber: invoice.invoiceNumber,
+					s3Key: invoice.invoicePdfKey,
+				},
+				'Invoice PDF already exists in S3, skipping generation',
+			);
+			return invoice;
+		}
+
+		// If invoice doesn't exist yet, generate invoice number and create it in DB
+		if (!invoice) {
+			const invoiceNumber = this.generateInvoiceNumber(orderData);
+			invoice = await this.billingInvoiceRepository.create({
+				restaurantId: orderData.restaurantId,
+				paymentTransactionId: orderData.paymentId,
+				invoiceNumber,
+				amountPaise: orderData.financials.amountPaise,
+				currency: orderData.currency || DEFAULT_CURRENCY,
+				status: INVOICE_STATUS.PAID,
+			});
+		}
+
+		// 1. Generate PDF via Invoice PDF Port (Gotenberg infrastructure implementation handles template rendering)
+		const pdfBuffer = await this.invoicePdfService.generateInvoicePdf(orderData);
+
+		// 2. Construct S3 storage key partitioned by orderId
+		const s3Key = buildOrderInvoiceS3Key(
+			orderData.orderId,
+			invoice.invoiceNumber,
+			orderData.confirmedAt || orderData.createdAt,
+		);
+
+		// 3. Upload buffer to S3 / MinIO
+		await this.storageService.uploadFile(s3Key, pdfBuffer, 'application/pdf');
+
+		// 4. Update BillingInvoice in database with S3 key and timestamp
+		const updated = await this.billingInvoiceRepository.updatePdfKey(invoice.id, s3Key, new Date());
+
+		this.logger.info(
+			{ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, s3Key },
+			'Successfully generated and saved order invoice PDF to S3',
+		);
+
+		return updated || invoice;
+	}
+
+	private generateInvoiceNumber(orderData: OrderInvoiceDataDTO): string {
+		const cleanOrderNo = orderData.orderNumber
+			.replace(ORD_PREFIX_REGEX, '')
+			.replace(NON_ALPHANUMERIC_REGEX, '');
+		const date = new Date(orderData.confirmedAt || orderData.createdAt);
+		const yyyymmdd = date.toISOString().slice(0, 10).replace(HYPHEN_REGEX, '');
+		return `INV-${yyyymmdd}-${cleanOrderNo}`;
+	}
+}

@@ -8,6 +8,7 @@ import { TYPES } from '@di/types.ts';
 import {
 	CannotRefundUncapturedPaymentError,
 	PaymentGatewayError,
+	PaymentGatewayUnavailableError,
 	PaymentOrderNotFoundError,
 } from '@domain/errors/payment.errors.ts';
 import type {
@@ -62,6 +63,9 @@ export class ProcessOrderRefundUseCase implements IProcessOrderRefundUseCase {
 				},
 			});
 		} catch (err) {
+			if (err instanceof PaymentGatewayUnavailableError) {
+				throw err;
+			}
 			logger.error(
 				{ err, orderId: input.orderId, transactionId: tx.id },
 				'Payment gateway refund request failed',

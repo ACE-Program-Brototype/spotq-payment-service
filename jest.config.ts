@@ -22,6 +22,8 @@ const config: Config = {
 		'^@config/(.*)$': '<rootDir>/src/config/$1',
 		'^@di/(.*)\\.(ts|js)$': '<rootDir>/src/di/$1',
 		'^@di/(.*)$': '<rootDir>/src/di/$1',
+		'^@spotq-org/circuit-breaker$':
+			'<rootDir>/node_modules/@spotq-org/circuit-breaker/dist/index.js',
 		'^(\\.{1,2}/.*)\\.ts$': '$1',
 		'^(\\.{1,2}/.*)\\.js$': '$1',
 	},

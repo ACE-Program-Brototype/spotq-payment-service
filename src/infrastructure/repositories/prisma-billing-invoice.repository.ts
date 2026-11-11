@@ -51,6 +51,8 @@ export class PrismaBillingInvoiceRepository
 				amountPaise: data.amountPaise,
 				currency: data.currency ?? 'INR',
 				status: data.status ?? 'DRAFT',
+				invoicePdfKey: data.invoicePdfKey,
+				pdfGeneratedAt: data.pdfGeneratedAt,
 			},
 		});
 		return this.mapToEntity(record);
@@ -64,9 +66,26 @@ export class PrismaBillingInvoiceRepository
 				paymentTransactionId: data.paymentTransactionId,
 				status: data.status,
 				paidAt: data.paidAt,
+				invoicePdfKey: data.invoicePdfKey,
+				pdfGeneratedAt: data.pdfGeneratedAt,
 			},
 		});
 		return this.mapToEntity(record);
+	}
+
+	async updatePdfKey(
+		id: string,
+		invoicePdfKey: string,
+		pdfGeneratedAt: Date,
+	): Promise<BillingInvoice | null> {
+		const record = await this.prisma.billingInvoice.update({
+			where: { id },
+			data: {
+				invoicePdfKey,
+				pdfGeneratedAt,
+			},
+		});
+		return record ? this.mapToEntity(record) : null;
 	}
 
 	async delete(id: string): Promise<boolean> {
@@ -85,6 +104,8 @@ export class PrismaBillingInvoiceRepository
 		amountPaise: number;
 		currency: string;
 		status: string;
+		invoicePdfKey?: string | null;
+		pdfGeneratedAt?: Date | null;
 		createdAt: Date;
 		updatedAt: Date;
 		paidAt: Date | null;
@@ -98,6 +119,8 @@ export class PrismaBillingInvoiceRepository
 			amountPaise: record.amountPaise,
 			currency: record.currency,
 			status: record.status as 'DRAFT' | 'PAID' | 'VOID',
+			invoicePdfKey: record.invoicePdfKey,
+			pdfGeneratedAt: record.pdfGeneratedAt,
 			createdAt: record.createdAt,
 			updatedAt: record.updatedAt,
 			paidAt: record.paidAt,

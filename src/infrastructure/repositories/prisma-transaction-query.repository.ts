@@ -5,12 +5,15 @@ import type {
 	CustomerTransactionFilterParams,
 	CustomerTransactionRecord,
 	PaginatedCustomerTransactionsResult,
+	PaginatedSubscriptionBillingHistoryResult,
 	PaginatedTransactionsResult,
 	RefundDetail,
+	SubscriptionBillingHistoryFilterParams,
 	TransactionDetail,
 	TransactionFilterParams,
 	TransactionSummary,
 } from '@domain/types/transaction-query.types.ts';
+import { SubscriptionBillingHistoryPersistenceMapper } from '@infrastructure/mappers/subscription-billing-history.persistence-mapper.ts';
 import type { PaymentStatus, Prisma } from '@prisma/client';
 import {
 	buildTransactionInvoiceUrl,
@@ -285,6 +288,45 @@ export class PrismaTransactionQueryRepository
 			refund,
 			createdAt: record.createdAt,
 			updatedAt: record.updatedAt,
+		};
+	}
+
+	async findSubscriptionBillingTransactions(
+		params: SubscriptionBillingHistoryFilterParams,
+	): Promise<PaginatedSubscriptionBillingHistoryResult> {
+		const where: Prisma.PaymentTransactionWhereInput = {
+			restaurantId: params.restaurantId,
+			orderId: null,
+			OR: [{ planId: { not: null } }, { subscriptionId: { not: null } }],
+		};
+
+		if (params.status) {
+			where.status = params.status as PaymentStatus;
+		}
+
+		const skip = (params.page - 1) * params.limit;
+		const take = params.limit;
+
+		const [records, totalRecords] = await Promise.all([
+			this.prisma.paymentTransaction.findMany({
+				where,
+				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+				skip,
+				take,
+				include: {
+					plan: true,
+					invoices: {
+						orderBy: { createdAt: 'desc' },
+						take: 1,
+					},
+				},
+			}),
+			this.prisma.paymentTransaction.count({ where }),
+		]);
+
+		return {
+			records: records.map(SubscriptionBillingHistoryPersistenceMapper.toDomain),
+			totalRecords,
 		};
 	}
 

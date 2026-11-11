@@ -20,6 +20,8 @@
 		"seed:plans": "tsx prisma/seed.ts",
 		"seed:failed-tx": "infisical run --env=dev -- tsx scripts/seed-failed-transaction.ts",
 		"subscription:reset": "infisical run --env=dev -- tsx scripts/reset-subscription.ts",
+		"invoice:test-pdf": "tsx scripts/test-invoice-pdf.ts",
+		"invoice:publish": "tsx scripts/publish-test-invoice.ts",
 		"prepare": "husky"
 	},
 	"keywords": [],
@@ -29,13 +31,16 @@
 		"packageManager": {
 			"name": "pnpm",
 			"version": "11.20.0",
-			"onFail": "download"
+			"onFail": "ignore"
 		}
 	},
 	"type": "module",
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1164.0",
+		"@aws-sdk/s3-request-presigner": "^3.1164.0",
 		"@prisma/adapter-pg": "^7.9.1",
 		"@prisma/client": "7.9.1",
+		"@spotq-org/circuit-breaker": "^1.0.0",
 		"@spotq-org/rabbitmq-client": "^1.0.0",
 		"@spotq-org/s2s-core": "^1.0.0",
 		"axios": "^1.21.0",

@@ -7,6 +7,8 @@ export interface BillingInvoiceProps {
 	amountPaise: number;
 	currency: string;
 	status: 'DRAFT' | 'PAID' | 'VOID';
+	invoicePdfKey?: string | null;
+	pdfGeneratedAt?: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 	paidAt?: Date | null;
@@ -63,6 +65,20 @@ export class BillingInvoice {
 		return this.props.paidAt;
 	}
 
+	get invoicePdfKey(): string | null | undefined {
+		return this.props.invoicePdfKey;
+	}
+
+	get pdfGeneratedAt(): Date | null | undefined {
+		return this.props.pdfGeneratedAt;
+	}
+
+	attachPdf(invoicePdfKey: string, generatedAt: Date = new Date()): void {
+		this.props.invoicePdfKey = invoicePdfKey;
+		this.props.pdfGeneratedAt = generatedAt;
+		this.props.updatedAt = new Date();
+	}
+
 	toJSON(): Record<string, unknown> {
 		return {
 			id: this.id,
@@ -73,6 +89,8 @@ export class BillingInvoice {
 			amountPaise: this.amountPaise,
 			currency: this.currency,
 			status: this.status,
+			invoicePdfKey: this.invoicePdfKey ?? null,
+			pdfGeneratedAt: this.pdfGeneratedAt ? this.pdfGeneratedAt.toISOString() : null,
 			createdAt: this.createdAt.toISOString(),
 			updatedAt: this.updatedAt.toISOString(),
 			paidAt: this.paidAt ? this.paidAt.toISOString() : null,

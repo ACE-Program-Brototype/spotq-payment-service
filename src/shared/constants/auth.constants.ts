@@ -7,3 +7,12 @@ export const S2S_CALLER_SERVICES = {
 export const ALLOWED_RESTAURANT_OWNER_ROLE = 'RESTAURANT_OWNER' as const;
 
 export type S2SCallerService = (typeof S2S_CALLER_SERVICES)[keyof typeof S2S_CALLER_SERVICES];
+
+export const USER_ROLES = {
+	PLATFORM_ADMIN: 'PLATFORM_ADMIN',
+	RESTAURANT_ADMIN: 'RESTAURANT_ADMIN',
+	STAFF: 'STAFF',
+	CUSTOMER: 'CUSTOMER',
+} as const;
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];

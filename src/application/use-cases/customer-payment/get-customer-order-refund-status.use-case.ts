@@ -2,12 +2,15 @@ import type {
 	GetCustomerOrderRefundStatusInputDTO,
 	GetCustomerOrderRefundStatusOutputDTO,
 } from '@application/dtos/customer-payment/get-customer-order-refund-status.dto.ts';
+import { CustomerOrderRefundStatusMapper } from '@application/mappers/customer-payment/customer-order-refund-status.mapper.ts';
 import type { IGetOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
 import { CustomerUnauthorizedError } from '@domain/errors/payment.errors.ts';
-import { TransactionNotFoundError } from '@domain/errors/transaction.errors.ts';
+import {
+	OrderNotRefundedError,
+	TransactionNotFoundError,
+} from '@domain/errors/transaction.errors.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
-import { AppError } from '@shared/errors/app.error.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()
@@ -37,27 +40,9 @@ export class GetCustomerOrderRefundStatusUseCase implements IGetOrderRefundStatu
 		);
 
 		if (!refund) {
-			throw new AppError('No refund record exists for this order', 422, 'UNPROCESSABLE_ENTITY');
+			throw new OrderNotRefundedError();
 		}
 
-		return {
-			orderId: input.orderId,
-			paymentId: transaction.id,
-			refundId: refund.razorpayRefundId,
-			gatewayPaymentId: transaction.razorpayPaymentId,
-			amountPaise: refund.amountPaise,
-			currency: refund.currency,
-			status: refund.status,
-			reason: refund.reason,
-			paymentMethod: refund.paymentMethod ?? transaction.paymentMethod,
-			destination: refund.destination,
-			timeline: {
-				initiatedAt: (refund.createdAt ?? new Date()).toISOString(),
-				gatewayProcessedAt: refund.processedAt?.toISOString() ?? null,
-			},
-			supportReference: {
-				arn: refund.arn,
-			},
-		};
+		return CustomerOrderRefundStatusMapper.toDTO(transaction, refund);
 	}
 }

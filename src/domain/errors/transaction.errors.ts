@@ -7,6 +7,12 @@ export class TransactionNotFoundError extends DomainError {
 	}
 }
 
+export class OrderNotRefundedError extends DomainError {
+	constructor(message: string = MESSAGES.ORDER_NOT_REFUNDED) {
+		super(message, 'ORDER_NOT_REFUNDED');
+	}
+}
+
 export class ForbiddenAccessError extends DomainError {
 	constructor(message: string = MESSAGES.FORBIDDEN_ACCESS) {
 		super(message, 'FORBIDDEN');

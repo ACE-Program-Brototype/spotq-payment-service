@@ -12,6 +12,7 @@ export * from './process-order-refund.use-case.port.ts';
 export * from './restaurant-wallet/get-restaurant-wallet-overview.use-case.port.ts';
 export * from './restaurant-wallet/link-bank-account.use-case.port.ts';
 export * from './restaurant-wallet/withdraw-from-restaurant-wallet.use-case.port.ts';
+export * from './subscriptions/get-subscription-billing-history.use-case.port.ts';
 export * from './subscriptions/renew-subscription.use-case.port.ts';
 export * from './verify-order-payment.use-case.port.ts';
 export * from './verify-payment.use-case.port.ts';

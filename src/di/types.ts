@@ -19,12 +19,12 @@ export const TYPES = {
 	Services: {
 		CacheService: Symbol.for('ICacheService'),
 		IdempotencyService: Symbol.for('IIdempotencyService'),
+		StorageService: Symbol.for('IStorageService'),
 		OutboxRelayService: Symbol.for('IOutboxRelayService'),
 		SubscriptionEventProducer: Symbol.for('ISubscriptionEventProducer'),
 		SubscriptionExpiryService: Symbol.for('IPaymentSubscriptionExpiryService'),
 		RabbitMQService: Symbol.for('RabbitMQService'),
 		InvoicePdfService: Symbol.for('IInvoicePdfService'),
-		StorageService: Symbol.for('IStorageService'),
 		Logger: Symbol.for('ILogger'),
 	},
 	Consumers: {
@@ -33,6 +33,7 @@ export const TYPES = {
 	UseCases: {
 		CreateOrderPaymentUseCase: Symbol.for('ICreateOrderPaymentUseCase'),
 		CreateSubscriptionOrderUseCase: Symbol.for('ICreateSubscriptionOrderUseCase'),
+		GetSubscriptionBillingHistoryUseCase: Symbol.for('IGetSubscriptionBillingHistoryUseCase'),
 		RenewSubscriptionUseCase: Symbol.for('IRenewSubscriptionUseCase'),
 		GetOrderPaymentStatusUseCase: Symbol.for('IGetOrderPaymentStatusUseCase'),
 		GetSubscriptionPlansUseCase: Symbol.for('IGetSubscriptionPlansUseCase'),

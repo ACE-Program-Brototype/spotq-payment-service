@@ -12,5 +12,6 @@ export * from './restaurant-wallet/get-restaurant-wallet-overview.dto.ts';
 export * from './restaurant-wallet/link-restaurant-wallet-bank-account.dto.ts';
 export * from './restaurant-wallet/withdraw-from-restaurant-wallet.dto.ts';
 export * from './subscriptions/renew-subscription.dto.ts';
+export * from './subscriptions/subscription-billing-history.dto.ts';
 export * from './verify-order-payment.dto.ts';
 export * from './verify-payment.dto.ts';

@@ -21,6 +21,7 @@ import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
 import type { IProcessOrderRefundUseCase } from '@application/ports/use-cases/process-order-refund.use-case.port.ts';
+import type { IGetSubscriptionBillingHistoryUseCase } from '@application/ports/use-cases/subscriptions/get-subscription-billing-history.use-case.port.ts';
 import type { IRenewSubscriptionUseCase } from '@application/ports/use-cases/subscriptions/renew-subscription.use-case.port.ts';
 import type { IGetRestaurantTransactionsUseCase } from '@application/ports/use-cases/transactions/get-restaurant-transactions.use-case.port.ts';
 import type { IGetTransactionDetailUseCase } from '@application/ports/use-cases/transactions/get-transaction-detail.use-case.port.ts';
@@ -33,6 +34,7 @@ import {
 	GetAdminSubscribersUseCase,
 	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
+	GetSubscriptionBillingHistoryUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
 	HandleWebhookUseCase,
@@ -195,6 +197,11 @@ container
 container
 	.bind<ICreateSubscriptionOrderUseCase>(TYPES.UseCases.CreateSubscriptionOrderUseCase)
 	.to(CreateSubscriptionOrderUseCase)
+	.inSingletonScope();
+
+container
+	.bind<IGetSubscriptionBillingHistoryUseCase>(TYPES.UseCases.GetSubscriptionBillingHistoryUseCase)
+	.to(GetSubscriptionBillingHistoryUseCase)
 	.inSingletonScope();
 
 container

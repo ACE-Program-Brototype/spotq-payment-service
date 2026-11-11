@@ -40,6 +40,7 @@ const envSchema = z.object({
 	AWS_SECRET_ACCESS_KEY: z.string().trim().min(1),
 	AWS_REGION: z.string().trim().min(1).default('ap-south-1'),
 	AWS_S3_BUCKET: z.string().trim().min(1).default('spotq-restaurant-files'),
+	AWS_S3_PRESIGNED_URL_EXPIRATION_SECONDS: z.coerce.number().int().positive().default(900),
 
 	RESTAURANT_SERVICE_URL: z.string().url().default('http://restaurant-service:3001'),
 });

@@ -81,6 +81,13 @@ export async function shutdownInfrastructure(): Promise<void> {
 		logger.error({ err: error }, 'Error closing SubscriptionEventProducer during shutdown');
 	}
 
+	try {
+		const paymentGateway = container.get<IPaymentGateway>(TYPES.Gateways.PaymentGateway);
+		paymentGateway.shutdown?.();
+	} catch (error) {
+		logger.error({ err: error }, 'Error shutting down PaymentGateway');
+	}
+
 	await Promise.allSettled([
 		databaseService.disconnect(),
 		redisService.disconnect(),

@@ -95,4 +95,5 @@ export interface IPaymentGateway {
 	deactivateFundAccount(fundAccountId: string): Promise<void>;
 	createPayout(params: CreatePayoutParams): Promise<PayoutResult>;
 	createRefund(params: CreateRefundParams): Promise<PaymentRefundResult>;
+	shutdown?(): void;
 }

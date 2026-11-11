@@ -23,6 +23,10 @@ const envSchema = z.object({
 	RAZORPAY_TEST_API_KEY: z.string().min(1),
 	RAZORPAY_TEST_SECRET_KEY: z.string().min(1),
 	RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+	RAZORPAY_CB_TIMEOUT_MS: z.coerce.number().positive().default(5000),
+	RAZORPAY_CB_ERROR_THRESHOLD_PERCENT: z.coerce.number().min(1).max(100).default(50),
+	RAZORPAY_CB_RESET_TIMEOUT_MS: z.coerce.number().positive().default(15000),
+	RAZORPAY_CB_VOLUME_THRESHOLD: z.coerce.number().positive().default(5),
 	RAZORPAYX_ACCOUNT_NUMBER: z.string().optional(),
 
 	QUEUE_PREFIX: z.string().min(1).default('bull'),

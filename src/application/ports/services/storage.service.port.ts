@@ -1,6 +1,7 @@
 export interface GeneratePresignedDownloadUrlInput {
 	key: string;
 	expiresInSeconds?: number;
+	fileName?: string;
 }
 
 export interface GeneratePresignedDownloadUrlResult {

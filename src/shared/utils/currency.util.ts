@@ -1,3 +1,5 @@
+import { DECIMAL_PRECISION, PAISE_PER_RUPEE } from '@shared/constants/analytics.constants.ts';
+
 const ONES = [
 	'',
 	'One',
@@ -108,4 +110,13 @@ export function amountToIndianWords(amount: number): string {
  */
 export function formatINR(amount: number): string {
 	return `₹${amount.toFixed(2)}`;
+}
+
+/**
+ * Converts an amount in paise (bigint or number) to rupees rounded to standard decimal precision.
+ * Example: 250000n -> 2500.00
+ */
+export function paiseToRupees(paise: bigint | number): number {
+	const numericPaise = typeof paise === 'bigint' ? Number(paise) : paise;
+	return Number((numericPaise / PAISE_PER_RUPEE).toFixed(DECIMAL_PRECISION.CURRENCY));
 }

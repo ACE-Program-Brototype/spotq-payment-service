@@ -23,5 +23,4 @@ export interface SubscriptionExpiredEventPayload {
 export interface ISubscriptionEventProducer {
 	publishSubscriptionActivated(payload: SubscriptionActivatedEventPayload): Promise<void>;
 	publishSubscriptionExpired(payload: SubscriptionExpiredEventPayload): Promise<void>;
-	close(): Promise<void>;
 }

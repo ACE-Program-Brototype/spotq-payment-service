@@ -195,3 +195,27 @@ export class RenewalAlreadyInProgressError extends DomainError {
 		super(message, 'RENEWAL_ALREADY_IN_PROGRESS');
 	}
 }
+
+export class InvoiceNotFoundError extends DomainError {
+	constructor(message: string = MESSAGES.INVOICE_NOT_FOUND) {
+		super(message, PAYMENT_DOMAIN_ERROR_CODES.INVOICE_NOT_FOUND);
+	}
+}
+
+export class InvoicePdfNotReadyError extends DomainError {
+	constructor(message: string = MESSAGES.INVOICE_PDF_NOT_READY) {
+		super(message, PAYMENT_DOMAIN_ERROR_CODES.INVOICE_PDF_NOT_READY);
+	}
+}
+
+export class InvoiceVoidedError extends DomainError {
+	constructor(message: string = MESSAGES.INVOICE_VOIDED) {
+		super(message, PAYMENT_DOMAIN_ERROR_CODES.INVOICE_VOIDED);
+	}
+}
+
+export class InvoiceUnavailableError extends DomainError {
+	constructor(message: string = MESSAGES.INVOICE_UNAVAILABLE) {
+		super(message, PAYMENT_DOMAIN_ERROR_CODES.INVOICE_UNAVAILABLE);
+	}
+}

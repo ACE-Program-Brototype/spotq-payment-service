@@ -12,6 +12,14 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '@config/index.ts';
 import { logger } from '@infrastructure/logger/index.ts';
+import {
+	CONTENT_DISPOSITION,
+	HTTP_STATUS,
+	INVOICE_PDF_CONTENT_TYPE,
+	MESSAGES,
+	S3_ERROR_NAMES,
+	UNSAFE_CONTENT_DISPOSITION_FILENAME_REGEX,
+} from '@shared/constants/index.ts';
 import { injectable } from 'inversify';
 import { s3Client as defaultS3Client } from './s3.client.ts';
 
@@ -32,7 +40,7 @@ export class S3StorageService implements IStorageService {
 	}
 
 	async uploadFile(key: string, buffer: Buffer, contentType: string): Promise<void> {
-		logger.debug({ bucket: this.bucket, key, contentType }, 'Uploading file to S3');
+		logger.debug({ bucket: this.bucket, key, contentType }, MESSAGES.S3_UPLOADING_FILE);
 
 		try {
 			await this.s3Client.send(
@@ -43,9 +51,9 @@ export class S3StorageService implements IStorageService {
 					ContentType: contentType,
 				}),
 			);
-			logger.info({ bucket: this.bucket, key }, 'Successfully uploaded file to S3');
+			logger.info({ bucket: this.bucket, key }, MESSAGES.S3_UPLOAD_SUCCESS);
 		} catch (error) {
-			logger.error({ err: error, bucket: this.bucket, key }, 'Failed to upload file to S3');
+			logger.error({ err: error, bucket: this.bucket, key }, MESSAGES.S3_UPLOAD_FAILED);
 			throw error;
 		}
 	}
@@ -61,7 +69,10 @@ export class S3StorageService implements IStorageService {
 			return true;
 		} catch (error: unknown) {
 			const err = error as { name?: string; $metadata?: { httpStatusCode?: number } };
-			if (err?.name === 'NotFound' || err?.$metadata?.httpStatusCode === 404) {
+			if (
+				err?.name === S3_ERROR_NAMES.NOT_FOUND ||
+				err?.$metadata?.httpStatusCode === HTTP_STATUS.NOT_FOUND
+			) {
 				return false;
 			}
 			throw error;
@@ -73,9 +84,23 @@ export class S3StorageService implements IStorageService {
 	): Promise<GeneratePresignedDownloadUrlResult> {
 		const expiresInSeconds = params.expiresInSeconds ?? this.defaultExpiresInSeconds;
 
+		const trimmedFileName = params.fileName?.trim();
+		const safeFileName = trimmedFileName
+			? trimmedFileName.replace(
+					UNSAFE_CONTENT_DISPOSITION_FILENAME_REGEX,
+					CONTENT_DISPOSITION.FILENAME_REPLACEMENT,
+				)
+			: undefined;
+
 		const command = new GetObjectCommand({
 			Bucket: this.bucket,
 			Key: params.key,
+			...(safeFileName
+				? {
+						ResponseContentType: INVOICE_PDF_CONTENT_TYPE,
+						ResponseContentDisposition: `${CONTENT_DISPOSITION.ATTACHMENT}; ${CONTENT_DISPOSITION.FILENAME_PARAM}="${safeFileName}"`,
+					}
+				: {}),
 		});
 
 		const downloadUrl = await getSignedUrl(

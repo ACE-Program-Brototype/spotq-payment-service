@@ -39,12 +39,19 @@ export const config = {
 		keyId: env.RAZORPAY_TEST_API_KEY,
 		keySecret: env.RAZORPAY_TEST_SECRET_KEY,
 		webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+		circuitBreaker: {
+			timeoutMs: env.RAZORPAY_CB_TIMEOUT_MS,
+			errorThresholdPercent: env.RAZORPAY_CB_ERROR_THRESHOLD_PERCENT,
+			resetTimeoutMs: env.RAZORPAY_CB_RESET_TIMEOUT_MS,
+			volumeThreshold: env.RAZORPAY_CB_VOLUME_THRESHOLD,
+		},
 		payoutAccountNumber: env.RAZORPAYX_ACCOUNT_NUMBER,
 	},
 
 	s2s: {
 		audience: env.S2S_AUDIENCE,
 		orderPublicKey: env.ORDER_S2S_PUBLIC_KEY,
+		restaurantPublicKey: env.RESTAURANT_S2S_PUBLIC_KEY,
 		privateKey: env.S2S_PRIVATE_KEY,
 		tokenTtlMs: Number(process.env.S2S_TOKEN_TTL_MS) || 10 * 60 * 1000,
 	},

@@ -219,6 +219,9 @@ importers:
       '@prisma/client':
         specifier: 7.9.1
         version: 7.9.1(prisma@7.9.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(typescript@7.0.2)
+      '@spotq-org/circuit-breaker':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@spotq-org/rabbitmq-client':
         specifier: ^1.0.0
         version: 1.0.0
@@ -1511,6 +1514,10 @@ packages:
 
   '@smithy/types@4.20.0':
     resolution: {integrity: sha512-lCA6QG22dPk9ecHbv91jDQZsmtPUjdS1aE2Il6NNPqe7DrYc0dZQi6DhcESk2KYXH2sp5xbAcGdYMZDFnuzA2A==}
+    engines: {node: '>=18.0.0'}
+
+  '@spotq-org/circuit-breaker@1.0.0':
+    resolution: {integrity: sha512-GtmfMAunHZj9vt0flniBSzEGuC77aHiFG0RZUFhVqI/8LC4qTbevQlJkbYlPxldrjnUThoYs4QvlWemTFN0jMQ==}
     engines: {node: '>=18.0.0'}
 
   '@spotq-org/rabbitmq-client@1.0.0':
@@ -3296,6 +3303,10 @@ packages:
   onetime@5.1.2:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
+
+  opossum@10.0.0:
+    resolution: {integrity: sha512-sghtqL8Usj+et06Zui0nyn0R6FFsl7cyuoU+d7MctYU0nbS7Htzjleh+tWohFqk1Rp1srrFwbFa8Vxd0O64w6A==}
+    engines: {node: ^26 || ^24 || ^22}
 
   p-limit@2.3.0:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
@@ -5181,6 +5192,10 @@ snapshots:
   '@smithy/types@4.20.0':
     dependencies:
       tslib: 2.8.1
+
+  '@spotq-org/circuit-breaker@1.0.0':
+    dependencies:
+      opossum: 10.0.0
 
   '@spotq-org/rabbitmq-client@1.0.0':
     dependencies:
@@ -7094,6 +7109,8 @@ snapshots:
   onetime@5.1.2:
     dependencies:
       mimic-fn: 2.1.0
+
+  opossum@10.0.0: {}
 
   p-limit@2.3.0:
     dependencies:

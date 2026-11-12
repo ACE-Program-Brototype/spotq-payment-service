@@ -13,6 +13,10 @@ export const PAYMENT_DOMAIN_ERROR_CODES = {
 	PAYMENT_GATEWAY_ERROR: 'PAYMENT_GATEWAY_ERROR',
 	PAYMENT_GATEWAY_REQUEST_NOT_SENT: 'PAYMENT_GATEWAY_REQUEST_NOT_SENT',
 	INVALID_BANK_ACCOUNT: 'INVALID_BANK_ACCOUNT',
+	INVOICE_NOT_FOUND: 'INVOICE_NOT_FOUND',
+	INVOICE_PDF_NOT_READY: 'INVOICE_PDF_NOT_READY',
+	INVOICE_VOIDED: 'INVOICE_VOIDED',
+	INVOICE_UNAVAILABLE: 'INVOICE_UNAVAILABLE',
 } as const;
 
 export const CURRENCIES = {
@@ -101,6 +105,7 @@ export const REFUND_LOCK_TTL_SECONDS = 15;
 
 export const RABBITMQ_QUEUES = {
 	ORDER_EVENTS: 'order-events',
+	SUBSCRIPTION_EVENTS: 'restaurant-subscription-events',
 	PAYMENT_EVENTS: 'payment-events',
 } as const;
 
@@ -117,6 +122,18 @@ export const OUTBOX_STATUS = {
 } as const;
 
 export type OutboxStatus = (typeof OUTBOX_STATUS)[keyof typeof OUTBOX_STATUS];
+
+export const RAZORPAY_CIRCUIT_BREAKER = {
+	ORDERS_BREAKER_NAME: 'razorpay-orders',
+	PAYMENTS_BREAKER_NAME: 'razorpay-payments',
+	REFUNDS_BREAKER_NAME: 'razorpay-refunds',
+} as const;
+
+export const RAZORPAY_ERROR_CODES = {
+	BAD_REQUEST_ERROR: 'BAD_REQUEST_ERROR',
+} as const;
+
+export type RazorpayErrorCode = (typeof RAZORPAY_ERROR_CODES)[keyof typeof RAZORPAY_ERROR_CODES];
 
 export const PAYMENT_SORT_FIELDS = {
 	CREATED_AT: 'createdAt',
@@ -139,3 +156,7 @@ export const PAGINATION = {
 } as const;
 
 export const PENDING_ORDER_REUSE_WINDOW_MS = 15 * 60 * 1000;
+
+export const INVOICE_PDF_CONTENT_TYPE = 'application/pdf';
+export const INVOICE_PDF_FILE_PREFIX = 'SpotQ-Invoice-';
+export const INVOICE_PDF_FILE_EXTENSION = '.pdf';

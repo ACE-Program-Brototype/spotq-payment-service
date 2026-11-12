@@ -1,3 +1,4 @@
+import type { IGetCustomerInvoiceUseCase } from '@application/ports/use-cases/customer-payment/get-customer-invoice.use-case.port.ts';
 import type { IGetCustomerOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
@@ -24,6 +25,8 @@ export class CustomerPaymentController {
 		private readonly retryCustomerPaymentUseCase: IRetryCustomerPaymentUseCase,
 		@inject(TYPES.UseCases.GetCustomerOrderRefundStatusUseCase)
 		private readonly getCustomerOrderRefundStatusUseCase: IGetCustomerOrderRefundStatusUseCase,
+		@inject(TYPES.UseCases.GetCustomerInvoiceUseCase)
+		private readonly getCustomerInvoiceUseCase: IGetCustomerInvoiceUseCase,
 	) {}
 
 	getPaymentHistory = async (req: Request, res: Response): Promise<void> => {
@@ -74,5 +77,17 @@ export class CustomerPaymentController {
 			MESSAGES.CUSTOMER_ORDER_REFUND_STATUS_RETRIEVED,
 			HTTP_STATUS.OK,
 		);
+	};
+
+	getInvoice = async (req: Request, res: Response): Promise<void> => {
+		const customerId = req.user?.userId as string;
+		const transactionId = req.params.id as string;
+
+		const result = await this.getCustomerInvoiceUseCase.execute({
+			transactionId,
+			customerId,
+		});
+
+		sendSuccessResponse(res, result, MESSAGES.CUSTOMER_INVOICE_RETRIEVED, HTTP_STATUS.OK);
 	};
 }

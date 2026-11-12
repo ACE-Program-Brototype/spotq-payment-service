@@ -10,6 +10,7 @@ import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-c
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
+import type { IGetCustomerInvoiceUseCase } from '@application/ports/use-cases/customer-payment/get-customer-invoice.use-case.port.ts';
 import type { IGetCustomerOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
@@ -18,6 +19,7 @@ import type { IGetOrderPaymentStatusUseCase } from '@application/ports/use-cases
 import type { IGetSubscriptionPlansUseCase } from '@application/ports/use-cases/get-subscription-plans.use-case.port.ts';
 import type { IGetSubscriptionStatusUseCase } from '@application/ports/use-cases/get-subscription-status.use-case.port.ts';
 import type { IHandleWebhookUseCase } from '@application/ports/use-cases/handle-webhook.use-case.port.ts';
+import type { IGetPlatformSubscriptionAnalyticsUseCase } from '@application/ports/use-cases/internal/get-platform-subscription-analytics.use-case.port.ts';
 import type { IExportPlatformLedgerUseCase } from '@application/ports/use-cases/platform-finance/export-platform-ledger.use-case.port.ts';
 import type { IGetPlatformFinanceSummaryUseCase } from '@application/ports/use-cases/platform-finance/get-platform-finance-summary.use-case.port.ts';
 import type { IGetPlatformMasterLedgerUseCase } from '@application/ports/use-cases/platform-finance/get-platform-master-ledger.use-case.port.ts';
@@ -33,9 +35,11 @@ import {
 	CreateSubscriptionOrderUseCase,
 	GetAdminSubscriberDetailsUseCase,
 	GetAdminSubscribersUseCase,
+	GetCustomerInvoiceUseCase,
 	GetCustomerOrderRefundStatusUseCase,
 	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
+	GetPlatformSubscriptionAnalyticsUseCase,
 	GetSubscriptionBillingHistoryUseCase,
 	GetSubscriptionPlansUseCase,
 	GetSubscriptionStatusUseCase,
@@ -60,6 +64,7 @@ import type { IOutboxRepository } from '@domain/repositories/outbox.repository.i
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import type { IPlatformLedgerTransactionRepository } from '@domain/repositories/platform-ledger-transaction.repository.interface.ts';
 import type { ISubscriptionRepository } from '@domain/repositories/subscription.repository.interface.ts';
+import type { ISubscriptionAnalyticsRepository } from '@domain/repositories/subscription-analytics.repository.interface.ts';
 import type { ISubscriptionPlanRepository } from '@domain/repositories/subscription-plan.repository.interface.ts';
 import type { ITransactionQueryRepository } from '@domain/repositories/transaction-query.repository.interface.ts';
 import { logger } from '@infrastructure/logger/index.ts';
@@ -67,8 +72,8 @@ import { OrderInvoiceConsumer } from '@infrastructure/messaging/order-invoice.co
 import { OutboxRelayService } from '@infrastructure/outbox/outbox-relay.service.ts';
 import { RazorpayGateway } from '@infrastructure/payment/razorpay.gateway.ts';
 import { GotenbergPdfService } from '@infrastructure/pdf/gotenberg-pdf.service.ts';
-import { SubscriptionEventProducer } from '@infrastructure/queue/subscription-event.producer.ts';
 import { RabbitMQService } from '@infrastructure/rabbitmq/index.ts';
+import { SubscriptionEventProducer } from '@infrastructure/rabbitmq/subscription-event.producer.ts';
 import { RedisIdempotencyService } from '@infrastructure/redis/index.ts';
 import { RedisService } from '@infrastructure/redis/redis.service.ts';
 import { PrismaBillingInvoiceRepository } from '@infrastructure/repositories/prisma-billing-invoice.repository.ts';
@@ -77,6 +82,7 @@ import { PrismaOutboxRepository } from '@infrastructure/repositories/prisma-outb
 import { PrismaPaymentTransactionRepository } from '@infrastructure/repositories/prisma-payment-transaction.repository.ts';
 import { PrismaPlatformLedgerTransactionRepository } from '@infrastructure/repositories/prisma-platform-ledger-transaction.repository.ts';
 import { PrismaSubscriptionRepository } from '@infrastructure/repositories/prisma-subscription.repository.ts';
+import { PrismaSubscriptionAnalyticsRepository } from '@infrastructure/repositories/prisma-subscription-analytics.repository.ts';
 import { PrismaSubscriptionPlanRepository } from '@infrastructure/repositories/prisma-subscription-plan.repository.ts';
 import { PrismaTransactionQueryRepository } from '@infrastructure/repositories/prisma-transaction-query.repository.ts';
 import { RestaurantServiceClient } from '@infrastructure/services/restaurant-service.client.ts';
@@ -84,6 +90,7 @@ import { PaymentSubscriptionExpiryService } from '@infrastructure/services/subsc
 import { S3StorageService } from '@infrastructure/storage/s3-storage.service.ts';
 import { AdminSubscriberController } from '@presentation/controllers/admin-subscriber.controller.ts';
 import { CustomerPaymentController } from '@presentation/controllers/customer-payment.controller.ts';
+import { InternalSubscriptionAnalyticsController } from '@presentation/controllers/internal/internal-subscription-analytics.controller.ts';
 import { OrderPaymentController } from '@presentation/controllers/order-payment.controller.ts';
 import { PlatformFinanceController } from '@presentation/controllers/platform-finance.controller.ts';
 import { RestaurantTransactionController } from '@presentation/controllers/restaurant-transaction.controller.ts';
@@ -137,6 +144,11 @@ container
 		TYPES.Repositories.PlatformLedgerTransactionRepository,
 	)
 	.to(PrismaPlatformLedgerTransactionRepository)
+	.inSingletonScope();
+
+container
+	.bind<ISubscriptionAnalyticsRepository>(TYPES.Repositories.SubscriptionAnalyticsRepository)
+	.to(PrismaSubscriptionAnalyticsRepository)
 	.inSingletonScope();
 
 container
@@ -254,6 +266,10 @@ container
 	.inSingletonScope();
 
 container
+	.bind<IGetCustomerInvoiceUseCase>(TYPES.UseCases.GetCustomerInvoiceUseCase)
+	.to(GetCustomerInvoiceUseCase);
+
+container
 	.bind<IGetCustomerPaymentHistoryUseCase>(TYPES.UseCases.GetCustomerPaymentHistoryUseCase)
 	.to(GetCustomerPaymentHistoryUseCase);
 
@@ -295,6 +311,12 @@ container
 	.to(GetAdminSubscriberDetailsUseCase);
 
 container
+	.bind<IGetPlatformSubscriptionAnalyticsUseCase>(
+		TYPES.UseCases.GetPlatformSubscriptionAnalyticsUseCase,
+	)
+	.to(GetPlatformSubscriptionAnalyticsUseCase);
+
+container
 	.bind<SubscriptionController>(TYPES.Controllers.SubscriptionController)
 	.to(SubscriptionController)
 	.inSingletonScope();
@@ -322,6 +344,13 @@ container
 container
 	.bind<AdminSubscriberController>(TYPES.Controllers.AdminSubscriberController)
 	.to(AdminSubscriberController)
+	.inSingletonScope();
+
+container
+	.bind<InternalSubscriptionAnalyticsController>(
+		TYPES.Controllers.InternalSubscriptionAnalyticsController,
+	)
+	.to(InternalSubscriptionAnalyticsController)
 	.inSingletonScope();
 
 export const cacheService = container.get<ICacheService>(TYPES.Services.CacheService);

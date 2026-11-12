@@ -18,9 +18,9 @@ export interface WalletLedgerEntryDTO {
 	id: string;
 	type: WalletLedgerType;
 	status: WalletLedgerStatus;
-	amountPaise: number;
-	balanceBeforePaise: number;
-	balanceAfterPaise: number;
+	amountPaise: string;
+	balanceBeforePaise: string;
+	balanceAfterPaise: string;
 	referenceId: string | null;
 	utrNumber: string | null;
 	createdAt: string;

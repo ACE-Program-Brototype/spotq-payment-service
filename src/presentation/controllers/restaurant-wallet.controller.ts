@@ -33,7 +33,7 @@ export class RestaurantWalletController {
 
 		const response = await this.getRestaurantWalletOverviewUseCase.execute(restaurantId);
 
-		return sendSuccessResponse(
+		sendSuccessResponse(
 			res,
 			response,
 			MESSAGES.GET_RESTAURANT_WALLET_OVERVIEW_SUCCESS,
@@ -53,7 +53,7 @@ export class RestaurantWalletController {
 			ifsc,
 		});
 
-		return sendSuccessResponse(
+		sendSuccessResponse(
 			res,
 			response,
 			MESSAGES.LINK_RESTAURANT_WALLET_BANK_ACCOUNT_SUCCESS,
@@ -73,12 +73,7 @@ export class RestaurantWalletController {
 			mode,
 		});
 
-		return sendSuccessResponse(
-			res,
-			response,
-			MESSAGES.WITHDRAWAL_INITIATED_SUCCESS,
-			HTTP_STATUS.OK,
-		);
+		sendSuccessResponse(res, response, MESSAGES.WITHDRAWAL_INITIATED_SUCCESS, HTTP_STATUS.OK);
 	};
 
 	listLedgerEntries = async (req: Request, res: Response): Promise<void> => {

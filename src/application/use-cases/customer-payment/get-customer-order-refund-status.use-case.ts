@@ -3,18 +3,15 @@ import type {
 	GetCustomerOrderRefundStatusOutputDTO,
 } from '@application/dtos/customer-payment/get-customer-order-refund-status.dto.ts';
 import { CustomerOrderRefundStatusMapper } from '@application/mappers/customer-payment/customer-order-refund-status.mapper.ts';
-import type { IGetOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
+import type { IGetCustomerOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
-import { CustomerUnauthorizedError } from '@domain/errors/payment.errors.ts';
-import {
-	OrderNotRefundedError,
-	TransactionNotFoundError,
-} from '@domain/errors/transaction.errors.ts';
+import { OrderPaymentNotFoundError } from '@domain/errors/payment.errors.ts';
+import { OrderNotRefundedError } from '@domain/errors/transaction.errors.ts';
 import type { IPaymentTransactionRepository } from '@domain/repositories/payment-transaction.repository.interface.ts';
 import { inject, injectable } from 'inversify';
 
 @injectable()
-export class GetCustomerOrderRefundStatusUseCase implements IGetOrderRefundStatusUseCase {
+export class GetCustomerOrderRefundStatusUseCase implements IGetCustomerOrderRefundStatusUseCase {
 	constructor(
 		@inject(TYPES.Repositories.PaymentTransactionRepository)
 		private readonly paymentTransactionRepository: IPaymentTransactionRepository,
@@ -28,12 +25,10 @@ export class GetCustomerOrderRefundStatusUseCase implements IGetOrderRefundStatu
 		);
 
 		if (!transaction) {
-			throw new TransactionNotFoundError();
+			throw new OrderPaymentNotFoundError();
 		}
 
-		if (!transaction.isOwnedBy(input.customerId)) {
-			throw new CustomerUnauthorizedError();
-		}
+		transaction.assertOwnership(input.customerId);
 
 		const refund = await this.paymentTransactionRepository.findRefundByPaymentTransactionId(
 			transaction.id,

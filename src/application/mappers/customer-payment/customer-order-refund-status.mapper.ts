@@ -19,7 +19,7 @@ export const CustomerOrderRefundStatusMapper = {
 			paymentMethod: refund.paymentMethod ?? transaction.paymentMethod,
 			destination: refund.destination,
 			timeline: {
-				initiatedAt: (refund.createdAt ?? new Date()).toISOString(),
+				initiatedAt: (refund.createdAt ?? transaction.createdAt)?.toISOString() ?? '',
 				gatewayProcessedAt: refund.processedAt?.toISOString() ?? null,
 			},
 			supportReference: {

@@ -1,4 +1,4 @@
-import type { IGetOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
+import type { IGetCustomerOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import { TYPES } from '@di/types.ts';
@@ -6,7 +6,6 @@ import type { GetCustomerOrderRefundStatusParams } from '@presentation/validator
 import {
 	HTTP_STATUS,
 	MESSAGES,
-	messages,
 	PAGINATION,
 	type PaymentSortField,
 	type SortDirection,
@@ -24,7 +23,7 @@ export class CustomerPaymentController {
 		@inject(TYPES.UseCases.RetryCustomerPaymentUseCase)
 		private readonly retryCustomerPaymentUseCase: IRetryCustomerPaymentUseCase,
 		@inject(TYPES.UseCases.GetCustomerOrderRefundStatusUseCase)
-		private readonly getOrderRefundStatusUseCase: IGetOrderRefundStatusUseCase,
+		private readonly getCustomerOrderRefundStatusUseCase: IGetCustomerOrderRefundStatusUseCase,
 	) {}
 
 	getPaymentHistory = async (req: Request, res: Response): Promise<void> => {
@@ -61,11 +60,11 @@ export class CustomerPaymentController {
 		const { userId } = req.user ?? {};
 
 		if (!userId) {
-			throw new UnauthorizedError(messages.CUSTOMER_AUTH_REQUIRED);
+			throw new UnauthorizedError(MESSAGES.CUSTOMER_AUTH_REQUIRED);
 		}
 
-		const result = await this.getOrderRefundStatusUseCase.execute({
-			orderId: orderId,
+		const result = await this.getCustomerOrderRefundStatusUseCase.execute({
+			orderId,
 			customerId: userId,
 		});
 

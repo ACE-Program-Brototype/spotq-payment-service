@@ -4,6 +4,7 @@ import {
 } from '@domain/constants/wallet-ledger.constants.ts';
 import { emptyToUndefined } from '@presentation/utils/query.utils.ts';
 import { dateSchema } from '@presentation/validators/common/date.validators.ts';
+import { MESSAGES } from '@shared/constants/message.constants.ts';
 import { z } from 'zod';
 
 export const listWalletLedgerEntriesQuerySchema = z
@@ -17,7 +18,7 @@ export const listWalletLedgerEntriesQuerySchema = z
 		endDate: z.preprocess(emptyToUndefined, dateSchema.optional()),
 	})
 	.refine(({ startDate, endDate }) => !startDate || !endDate || startDate <= endDate, {
-		message: 'startDate must be on or before endDate',
+		message: MESSAGES.INVALID_WALLET_LEDGER_DATE_RANGE,
 		path: ['endDate'],
 	});
 

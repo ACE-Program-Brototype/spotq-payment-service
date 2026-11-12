@@ -3,7 +3,7 @@ import type {
 	GetCustomerOrderRefundStatusOutputDTO,
 } from '@application/dtos/customer-payment/get-customer-order-refund-status.dto.ts';
 
-export interface IGetOrderRefundStatusUseCase {
+export interface IGetCustomerOrderRefundStatusUseCase {
 	execute(
 		input: GetCustomerOrderRefundStatusInputDTO,
 	): Promise<GetCustomerOrderRefundStatusOutputDTO>;

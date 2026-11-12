@@ -10,7 +10,7 @@ import type { IGetAdminSubscriberDetailsUseCase } from '@application/ports/use-c
 import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/admin-subscribers/get-admin-subscribers.use-case.port.ts';
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
-import type { IGetOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
+import type { IGetCustomerOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import type { IGenerateOrderInvoiceUseCase } from '@application/ports/use-cases/generate-order-invoice.use-case.port.ts';
@@ -258,7 +258,7 @@ container
 	.to(GetCustomerPaymentHistoryUseCase);
 
 container
-	.bind<IGetOrderRefundStatusUseCase>(TYPES.UseCases.GetCustomerOrderRefundStatusUseCase)
+	.bind<IGetCustomerOrderRefundStatusUseCase>(TYPES.UseCases.GetCustomerOrderRefundStatusUseCase)
 	.to(GetCustomerOrderRefundStatusUseCase)
 	.inSingletonScope();
 

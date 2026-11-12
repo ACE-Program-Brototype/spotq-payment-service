@@ -31,6 +31,7 @@ describe('SCRUM-1278: Wallet Balance Synchronization & Onboarding Invariant', ()
 				getOverview: jest.fn(),
 				getTodayNetEarningsPaise: jest.fn(),
 				reserveWithdrawal: jest.fn(),
+				findLedgerEntriesPaginated: jest.fn(),
 				markWithdrawalProcessed: jest.fn(),
 				failWithdrawal: jest.fn(),
 			};

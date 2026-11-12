@@ -6,7 +6,9 @@ import {
 import type { RestaurantWallet } from '@domain/entities/restaurant-wallet.entity.ts';
 import type {
 	IRestaurantWalletRepository,
+	PaginatedWalletLedgerEntries,
 	RestaurantWalletOverviewData,
+	WalletLedgerEntriesFilter,
 	WalletWithdrawalReservation,
 } from '@domain/repositories/restaurant-wallet.repository.interface.ts';
 import {
@@ -15,6 +17,10 @@ import {
 } from '@infrastructure/mappers/restaurant-wallet.persistence-mapper.ts';
 import { WalletLedgerEntryPersistenceMapper } from '@infrastructure/mappers/wallet-ledger-entry.persistence-mapper.ts';
 import { Prisma } from '@prisma/client';
+import {
+	INDIA_TIMEZONE_OFFSET_MS,
+	MILLISECONDS_PER_DAY,
+} from '@shared/constants/subscription.constants.ts';
 import { injectable } from 'inversify';
 import { PrismaBaseRepository } from './prisma-base.repository.ts';
 
@@ -131,6 +137,57 @@ export class PrismaRestaurantWalletRepository
 				.amountPaise ?? 0n;
 		return credits - refunds;
 	}
+
+	async findLedgerEntriesPaginated(
+		params: WalletLedgerEntriesFilter,
+	): Promise<PaginatedWalletLedgerEntries> {
+		const search = params.search?.trim();
+		const where = {
+			wallet: { restaurantId: params.restaurantId },
+			...(params.type ? { type: params.type } : {}),
+			...(params.status ? { status: params.status } : {}),
+			...(search ? { referenceId: { startsWith: search } } : {}),
+			...(params.startDate || params.endDate
+				? {
+						createdAt: {
+							...(params.startDate
+								? {
+										gte: new Date(
+											new Date(`${params.startDate}T00:00:00.000Z`).getTime() -
+												INDIA_TIMEZONE_OFFSET_MS,
+										),
+									}
+								: {}),
+							...(params.endDate
+								? {
+										lt: new Date(
+											new Date(`${params.endDate}T00:00:00.000Z`).getTime() +
+												MILLISECONDS_PER_DAY -
+												INDIA_TIMEZONE_OFFSET_MS,
+										),
+									}
+								: {}),
+						},
+					}
+				: {}),
+		};
+
+		const [records, totalRecords] = await Promise.all([
+			this.prisma.walletLedgerEntry.findMany({
+				where,
+				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+				skip: (params.page - 1) * params.limit,
+				take: params.limit,
+			}),
+			this.prisma.walletLedgerEntry.count({ where }),
+		]);
+
+		return {
+			entries: records.map(WalletLedgerEntryPersistenceMapper.toDomain),
+			totalRecords,
+		};
+	}
+
 	async reserveWithdrawal(
 		walletId: string,
 		amountPaise: bigint,

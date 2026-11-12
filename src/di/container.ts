@@ -11,6 +11,7 @@ import type { IGetAdminSubscribersUseCase } from '@application/ports/use-cases/a
 import type { ICreateOrderPaymentUseCase } from '@application/ports/use-cases/create-order-payment.use-case.port.ts';
 import type { ICreateSubscriptionOrderUseCase } from '@application/ports/use-cases/create-subscription-order.use-case.port.ts';
 import type { IGetCustomerInvoiceUseCase } from '@application/ports/use-cases/customer-payment/get-customer-invoice.use-case.port.ts';
+import type { IGetCustomerOrderRefundStatusUseCase } from '@application/ports/use-cases/customer-payment/get-customer-order-refund-status.use-case.port.ts';
 import type { IGetCustomerPaymentHistoryUseCase } from '@application/ports/use-cases/customer-payment/get-customer-payment-history.use-case.port.ts';
 import type { IRetryCustomerPaymentUseCase } from '@application/ports/use-cases/customer-payment/retry-customer-payment.use-case.port.ts';
 import type { IGenerateOrderInvoiceUseCase } from '@application/ports/use-cases/generate-order-invoice.use-case.port.ts';
@@ -35,6 +36,7 @@ import {
 	GetAdminSubscriberDetailsUseCase,
 	GetAdminSubscribersUseCase,
 	GetCustomerInvoiceUseCase,
+	GetCustomerOrderRefundStatusUseCase,
 	GetCustomerPaymentHistoryUseCase,
 	GetOrderPaymentStatusUseCase,
 	GetPlatformSubscriptionAnalyticsUseCase,
@@ -270,6 +272,11 @@ container
 container
 	.bind<IGetCustomerPaymentHistoryUseCase>(TYPES.UseCases.GetCustomerPaymentHistoryUseCase)
 	.to(GetCustomerPaymentHistoryUseCase);
+
+container
+	.bind<IGetCustomerOrderRefundStatusUseCase>(TYPES.UseCases.GetCustomerOrderRefundStatusUseCase)
+	.to(GetCustomerOrderRefundStatusUseCase)
+	.inSingletonScope();
 
 container
 	.bind<IRetryCustomerPaymentUseCase>(TYPES.UseCases.RetryCustomerPaymentUseCase)

@@ -81,6 +81,7 @@ describe('GetCustomerInvoiceUseCase', () => {
 			findPendingByRestaurantAndPlan: jest.fn(),
 			findPendingRenewalBySubscriptionAndPlan: jest.fn(),
 			create: jest.fn(),
+			findRefundByPaymentTransactionId: jest.fn(),
 			createRenewalWithInvoice: jest.fn(),
 			captureOrderPaymentWithOutbox: jest.fn(),
 			failOrderPaymentWithOutbox: jest.fn(),

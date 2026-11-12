@@ -146,8 +146,8 @@ describe('PrismaTransactionQueryRepository (Unit Tests)', () => {
 						amountPaise: { gte: 1000, lte: 100000 },
 						metadata: { path: ['paymentMethod'], equals: 'UPI' },
 						createdAt: {
-							gte: new Date('2026-10-01T00:00:00.000Z'),
-							lte: new Date('2026-10-31T23:59:59.999Z'),
+							gte: new Date('2026-09-30T18:30:00.000Z'),
+							lte: new Date('2026-10-31T18:29:59.999Z'),
 						},
 					}),
 					orderBy: { amountPaise: 'asc' },

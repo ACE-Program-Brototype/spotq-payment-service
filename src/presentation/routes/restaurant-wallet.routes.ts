@@ -5,16 +5,25 @@ import { restaurantAdminAuthMiddleware } from '@presentation/middleware/restaura
 import {
 	validateRequestBody,
 	validateRequestHeaders,
+	validateRequestQuery,
 } from '@presentation/middleware/validation.middleware.ts';
 import { RESTAURANT_WALLET_ROUTES } from '@shared/constants';
 import { Router } from 'express';
 import { linkBankAccountBodySchema } from '../validators/restaurant-wallet/link-bank-account.validator.ts';
+import { listWalletLedgerEntriesQuerySchema } from '../validators/restaurant-wallet/list-wallet-ledger-entries.validator.ts';
 import {
 	withdrawFromRestaurantWalletBodySchema,
 	withdrawFromRestaurantWalletHeadersSchema,
 } from '../validators/restaurant-wallet/withdraw-from-restaurant-wallet.validator.ts';
 
 export const restaurantWalletRoutes = Router();
+
+restaurantWalletRoutes.get(
+	RESTAURANT_WALLET_ROUTES.LEDGER_ENTRIES,
+	restaurantAdminAuthMiddleware,
+	validateRequestQuery(listWalletLedgerEntriesQuerySchema),
+	restaurantWalletController.listLedgerEntries,
+);
 
 restaurantWalletRoutes.get(
 	RESTAURANT_WALLET_ROUTES.WALLET,

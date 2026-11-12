@@ -5,6 +5,7 @@ import {
 	validateRequestParams,
 	validateRequestQuery,
 } from '@presentation/middleware/index.ts';
+import { getCustomerOrderRefundStatusParamsSchema } from '@presentation/validators/customer-payment/get-customer-order-refund-status.validator.ts';
 import {
 	customerTransactionIdParamsSchema,
 	getCustomerPaymentHistorySchema,
@@ -18,6 +19,13 @@ export const customerPaymentRouter = Router();
 
 const customerPaymentController = container.get<CustomerPaymentController>(
 	TYPES.Controllers.CustomerPaymentController,
+);
+
+customerPaymentRouter.get(
+	CUSTOMER_PAYMENT_ROUTES.ORDER_REFUND_STATUS,
+	customerAuthMiddleware,
+	validateRequestParams(getCustomerOrderRefundStatusParamsSchema),
+	customerPaymentController.getOrderRefundStatus,
 );
 
 customerPaymentRouter.get(

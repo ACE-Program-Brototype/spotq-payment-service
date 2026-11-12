@@ -34,6 +34,7 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			findById: jest.fn(),
 			findByOrderId: jest.fn(),
 			findByCustomerOrderId: jest.fn(),
+			findRefundByPaymentTransactionId: jest.fn(),
 			findCapturedByOrderId: jest.fn(),
 			findByPaymentId: jest.fn(),
 			findPendingByRestaurantAndPlan: jest.fn(),
@@ -73,6 +74,7 @@ describe('HandleWebhookUseCase - Refund Events', () => {
 			getOverview: jest.fn(),
 			getTodayNetEarningsPaise: jest.fn(),
 			reserveWithdrawal: jest.fn(),
+			findLedgerEntriesPaginated: jest.fn(),
 			markWithdrawalProcessed: jest.fn(),
 			failWithdrawal: jest.fn(),
 		};

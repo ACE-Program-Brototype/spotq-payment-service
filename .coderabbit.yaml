@@ -4,13 +4,13 @@ language: "en-US"
 
 reviews:
   # 'chill' profile gives feedback in a friendly, constructive manner with less pedantic comments
-  profile: "chill" 
+  profile: "chill"
   request_changes_workflow: true
   high_level_summary: true
   poem: false
   review_status: true
   collapse_walkthrough: false
-  
+
   auto_review:
     enabled: true
     drafts: false

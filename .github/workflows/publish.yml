@@ -29,7 +29,7 @@ jobs:
       - name: Checkout Payment Service
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}  
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set Image Details
         id: image

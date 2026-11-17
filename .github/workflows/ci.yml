@@ -10,8 +10,8 @@ on:
     branches:
       - development
       - main
-    
-concurrency: 
+
+concurrency:
   group: restaurant-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Enable Corepack
         run: corepack enable
 

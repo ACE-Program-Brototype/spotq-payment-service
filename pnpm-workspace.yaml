@@ -1,8 +1,8 @@
 allowBuilds:
-  '@parcel/watcher': false
-  '@prisma/client': true
-  '@prisma/engines': true
-  '@swc/core': true
+  "@parcel/watcher": false
+  "@prisma/client": true
+  "@prisma/engines": true
+  "@swc/core": true
   esbuild: true
   msgpackr-extract: true
   prisma: true

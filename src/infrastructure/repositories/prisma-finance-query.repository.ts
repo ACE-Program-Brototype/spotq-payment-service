@@ -68,16 +68,18 @@ export class PrismaFinanceQueryRepository
 			),
 
 			-- --------------------------------------------------
-			-- Pending settlement amount
+			-- Pending venue payouts (withdrawals awaiting bank processing)
 			-- --------------------------------------------------
 			settlement_metrics AS (
 				SELECT
-					COALESCE(SUM(s.net_credit_paise), 0)::bigint AS tonight_eod_payout_queue_paise
-				FROM settlements AS s
-				CROSS JOIN date_bounds AS db
+					COALESCE(SUM(le.amount_paise), 0)::bigint AS tonight_eod_payout_queue_paise
+				FROM wallet_ledger_entries AS le
+				INNER JOIN restaurant_wallets AS rw
+					ON rw.id = le.wallet_id
 				WHERE
-					s.status IN ('PENDING', 'CALCULATING')
-					AND s.settlement_date <= db.today
+					rw.currency = 'INR'
+					AND le.type = 'DEBIT_PAYOUT_WITHDRAWAL'
+					AND le.status = 'PROCESSING'
 			),
 
 			-- --------------------------------------------------

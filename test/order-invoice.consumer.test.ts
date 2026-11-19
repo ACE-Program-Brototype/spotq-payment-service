@@ -1,8 +1,16 @@
+import type { IGenerateOrderInvoiceUseCase } from '@application/ports/index.ts';
+import type { RabbitMQService } from '@infrastructure/index.ts';
 import { OrderInvoiceConsumer } from '../src/infrastructure/messaging/order-invoice.consumer.ts';
 
+type MockRabbitMQService = Pick<
+	jest.Mocked<RabbitMQService>,
+	'consumeFromQueue' | 'connect' | 'disconnect' | 'isHealthy' | 'publishToQueue'
+>;
+type InvoiceMessageHandler = (payload: unknown) => Promise<void>;
+
 describe('OrderInvoiceConsumer', () => {
-	let mockRabbitMQService: any;
-	let mockUseCase: any;
+	let mockRabbitMQService: MockRabbitMQService;
+	let mockUseCase: IGenerateOrderInvoiceUseCase;
 	let consumer: OrderInvoiceConsumer;
 
 	const validPayload = {
@@ -51,11 +59,18 @@ describe('OrderInvoiceConsumer', () => {
 	beforeEach(() => {
 		mockRabbitMQService = {
 			consumeFromQueue: jest.fn(),
+			connect: jest.fn(),
+			disconnect: jest.fn(),
+			isHealthy: jest.fn(),
+			publishToQueue: jest.fn(),
 		};
 		mockUseCase = {
 			execute: jest.fn().mockResolvedValue({}),
 		};
-		consumer = new OrderInvoiceConsumer(mockRabbitMQService, mockUseCase);
+		consumer = new OrderInvoiceConsumer(
+			mockRabbitMQService as unknown as RabbitMQService,
+			mockUseCase,
+		);
 	});
 
 	it('should start consumer and subscribe to payment-events queue', async () => {
@@ -68,14 +83,16 @@ describe('OrderInvoiceConsumer', () => {
 
 	it('should process valid order.payment.invoice event when running', async () => {
 		await consumer.start();
-		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		const handler = mockRabbitMQService.consumeFromQueue.mock
+			.calls[0][1] as unknown as InvoiceMessageHandler;
 		await handler(validPayload);
 		expect(mockUseCase.execute).toHaveBeenCalledWith(validPayload.orderData);
 	});
 
 	it('should ignore events when consumer is stopped', async () => {
 		await consumer.start();
-		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		const handler = mockRabbitMQService.consumeFromQueue.mock
+			.calls[0][1] as unknown as InvoiceMessageHandler;
 		await consumer.stop();
 		await handler(validPayload);
 		expect(mockUseCase.execute).not.toHaveBeenCalled();
@@ -83,7 +100,8 @@ describe('OrderInvoiceConsumer', () => {
 
 	it('should ignore events with different eventType', async () => {
 		await consumer.start();
-		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		const handler = mockRabbitMQService.consumeFromQueue.mock
+			.calls[0][1] as unknown as InvoiceMessageHandler;
 		await handler({
 			eventType: 'other.event',
 			orderData: {},
@@ -93,7 +111,8 @@ describe('OrderInvoiceConsumer', () => {
 
 	it('should ignore malformed event without crashing', async () => {
 		await consumer.start();
-		const handler = mockRabbitMQService.consumeFromQueue.mock.calls[0][1];
+		const handler = mockRabbitMQService.consumeFromQueue.mock
+			.calls[0][1] as unknown as InvoiceMessageHandler;
 		await handler({
 			eventType: 'order.payment.invoice',
 			orderData: { invalid: true },

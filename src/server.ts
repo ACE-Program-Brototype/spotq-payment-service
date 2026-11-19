@@ -8,7 +8,10 @@ async function bootstrap() {
 	await initInfrastructure();
 
 	const server = app.listen(config.server.port, () => {
-		logger.info(`${config.service.name} running on port ${config.server.port}`);
+		logger.info(
+			{ context: { port: config.server.port, service: config.service.name } },
+			'Server started successfully',
+		);
 	});
 
 	let isShuttingDown = false;

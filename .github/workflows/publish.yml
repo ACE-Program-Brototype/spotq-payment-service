@@ -6,10 +6,6 @@ on:
     types: [completed]
     branches:
       - main
-<<<<<<< HEAD
-=======
-      - development
->>>>>>> development
 
 permissions:
   contents: read

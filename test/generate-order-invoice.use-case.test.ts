@@ -1,6 +1,10 @@
 import type { OrderInvoiceDataDTO } from '../src/application/dtos/order-payment-invoice-event.dto.ts';
+import type { IInvoicePdfService } from '../src/application/ports/services/invoice-pdf.service.port.ts';
+import type { ILogger } from '../src/application/ports/services/logger.service.port.ts';
+import type { IStorageService } from '../src/application/ports/services/storage.service.port.ts';
 import { GenerateOrderInvoiceUseCase } from '../src/application/use-cases/invoice/generate-order-invoice.use-case.ts';
 import { BillingInvoice } from '../src/domain/entities/billing-invoice.entity.ts';
+import type { IBillingInvoiceRepository } from '../src/domain/repositories/billing-invoice.repository.interface.ts';
 
 describe('GenerateOrderInvoiceUseCase', () => {
 	const mockOrderData: OrderInvoiceDataDTO = {
@@ -43,10 +47,15 @@ describe('GenerateOrderInvoiceUseCase', () => {
 		confirmedAt: '2026-11-04T19:44:10.429Z',
 	};
 
-	let mockInvoiceRepo: any;
-	let mockPdfService: any;
-	let mockStorageService: any;
-	let mockLogger: any;
+	type InvoiceRepositoryMock = Pick<
+		jest.Mocked<IBillingInvoiceRepository>,
+		'findByPaymentTransactionId' | 'create' | 'updatePdfKey'
+	>;
+	type StorageServiceMock = Pick<jest.Mocked<IStorageService>, 'uploadFile' | 'fileExists'>;
+	let mockInvoiceRepo: InvoiceRepositoryMock;
+	let mockPdfService: jest.Mocked<IInvoicePdfService>;
+	let mockStorageService: StorageServiceMock;
+	let mockLogger: ILogger;
 	let useCase: GenerateOrderInvoiceUseCase;
 
 	beforeEach(() => {
@@ -58,7 +67,7 @@ describe('GenerateOrderInvoiceUseCase', () => {
 
 		mockPdfService = {
 			generateInvoicePdf: jest.fn().mockResolvedValue(Buffer.from('%PDF-1.4 Mock PDF')),
-		};
+		} as jest.Mocked<IInvoicePdfService>;
 
 		mockStorageService = {
 			uploadFile: jest.fn().mockResolvedValue(undefined),
@@ -73,9 +82,9 @@ describe('GenerateOrderInvoiceUseCase', () => {
 		};
 
 		useCase = new GenerateOrderInvoiceUseCase(
-			mockInvoiceRepo,
+			mockInvoiceRepo as unknown as IBillingInvoiceRepository,
 			mockPdfService,
-			mockStorageService,
+			mockStorageService as unknown as IStorageService,
 			mockLogger,
 		);
 	});
@@ -123,7 +132,15 @@ describe('GenerateOrderInvoiceUseCase', () => {
 		mockInvoiceRepo.create.mockResolvedValue(createdInvoice);
 		mockInvoiceRepo.updatePdfKey.mockResolvedValue(
 			new BillingInvoice({
-				...createdInvoice['props'],
+				id: createdInvoice.id,
+				restaurantId: createdInvoice.restaurantId,
+				paymentTransactionId: createdInvoice.paymentTransactionId,
+				invoiceNumber: createdInvoice.invoiceNumber,
+				amountPaise: createdInvoice.amountPaise,
+				currency: createdInvoice.currency,
+				status: createdInvoice.status,
+				createdAt: createdInvoice.createdAt,
+				updatedAt: createdInvoice.updatedAt,
 				invoicePdfKey: `invoices/${mockOrderData.orderId}/2026/11/INV-20261104-MW2IVUYM40CDEC.pdf`,
 				pdfGeneratedAt: new Date(),
 			}),

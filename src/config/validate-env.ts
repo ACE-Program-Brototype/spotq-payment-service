@@ -7,6 +7,7 @@ const envSchema = z.object({
 	PORT: z.coerce.number().positive(),
 
 	SERVICE_NAME: z.string().min(1).default('payment-service'),
+	SERVICE_VERSION: z.string().default('1.0.0'),
 
 	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']),
 

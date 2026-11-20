@@ -7,4 +7,6 @@ export interface ILogger {
 	warn(message: string, ...args: unknown[]): void;
 	debug(mergObj: object, message?: string, ...args: unknown[]): void;
 	debug(message: string, ...args: unknown[]): void;
+	fatal?(mergObj: object, message?: string, ...args: unknown[]): void;
+	fatal?(message: string, ...args: unknown[]): void;
 }

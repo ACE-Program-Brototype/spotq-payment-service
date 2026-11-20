@@ -24,7 +24,10 @@ if (caCert) {
 		try {
 			caContent = fs.readFileSync(caCert, 'utf8');
 		} catch (error) {
-			logger.error({ err: error }, `Failed to read database CA cert from path: ${caCert}`);
+			logger.error(
+				{ err: error, context: { path: caCert } },
+				'Failed to read database CA cert from path',
+			);
 		}
 	}
 	ssl = {
@@ -71,5 +74,35 @@ const adapter = new PrismaPg(pool);
 
 export const prisma = new PrismaClient({
 	adapter,
-	log: ['warn', 'error'],
+	log: [
+		{ emit: 'event', level: 'error' },
+		{ emit: 'event', level: 'warn' },
+	],
+});
+
+prisma.$on('error' as never, (e: { message: string; target?: string }) => {
+	logger.error(
+		{
+			error: {
+				name: 'PrismaClientError',
+				message: e.message,
+			},
+			context: {
+				target: e.target,
+			},
+		},
+		'Prisma database error',
+	);
+});
+
+prisma.$on('warn' as never, (e: { message: string }) => {
+	logger.warn(
+		{
+			error: {
+				name: 'PrismaClientWarning',
+				message: e.message,
+			},
+		},
+		'Prisma database warning',
+	);
 });

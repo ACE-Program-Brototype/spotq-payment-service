@@ -44,15 +44,29 @@ export class SubscriptionEventProducer implements ISubscriptionEventProducer {
 
 			logger.info(
 				{
-					eventId: payload.eventId,
-					restaurantId: payload.restaurantId,
-					planCode: payload.planCode,
+					event: {
+						action: 'SUBSCRIPTION_ACTIVATED',
+						event_id: payload.eventId,
+						plan_code: payload.planCode,
+					},
+					context: {
+						restaurant_id: payload.restaurantId,
+					},
 				},
 				'Published subscription.activated event to RabbitMQ',
 			);
 		} catch (error) {
 			logger.error(
-				{ err: error, payload },
+				{
+					err: error,
+					event: {
+						action: 'SUBSCRIPTION_ACTIVATED_FAILED',
+						event_id: payload.eventId,
+					},
+					context: {
+						restaurant_id: payload.restaurantId,
+					},
+				},
 				'Failed to publish subscription.activated event to RabbitMQ',
 			);
 			throw error;
@@ -81,15 +95,29 @@ export class SubscriptionEventProducer implements ISubscriptionEventProducer {
 
 			logger.info(
 				{
-					eventId: payload.eventId,
-					restaurantId: payload.restaurantId,
-					planCode: payload.planCode,
+					event: {
+						action: 'SUBSCRIPTION_EXPIRED',
+						event_id: payload.eventId,
+						plan_code: payload.planCode,
+					},
+					context: {
+						restaurant_id: payload.restaurantId,
+					},
 				},
 				'Published subscription.expired event to RabbitMQ',
 			);
 		} catch (error) {
 			logger.error(
-				{ err: error, payload },
+				{
+					err: error,
+					event: {
+						action: 'SUBSCRIPTION_EXPIRED_FAILED',
+						event_id: payload.eventId,
+					},
+					context: {
+						restaurant_id: payload.restaurantId,
+					},
+				},
 				'Failed to publish subscription.expired event to RabbitMQ',
 			);
 			throw error;

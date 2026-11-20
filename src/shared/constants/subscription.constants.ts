@@ -1,0 +1,69 @@
+export const INDIA_TIMEZONE_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+export const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export const SUBSCRIPTION_RENEWAL_WINDOW_DAYS = 30;
+export const SUBSCRIPTION_RENEWAL_WINDOW_MS =
+	SUBSCRIPTION_RENEWAL_WINDOW_DAYS * MILLISECONDS_PER_DAY;
+export const OUTBOX_RELAY_INTERVAL_MS = 5000;
+export const EXPIRY_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+
+export const IDEMPOTENCY_KEY_MIN_LENGTH = 8;
+export const IDEMPOTENCY_KEY_MAX_LENGTH = 128;
+export const IDEMPOTENCY_IN_PROGRESS_TTL_SECONDS = 60;
+export const IDEMPOTENCY_COMPLETED_TTL_SECONDS = 24 * 60 * 60;
+export const SUBSCRIPTION_RENEWAL_LOCK_TTL_SECONDS = 60;
+
+export const IDEMPOTENCY_REDIS_PREFIXES = {
+	SUBSCRIPTION_RENEW: 'idempotency:sub-renew',
+	SUBSCRIPTION_LOCK: 'lock:subscription:renew',
+} as const;
+
+export const IDEMPOTENCY_CLAIM_STATUS = {
+	CLAIMED: 'CLAIMED',
+	REPLAY: 'REPLAY',
+	IN_PROGRESS: 'IN_PROGRESS',
+	PAYLOAD_MISMATCH: 'PAYLOAD_MISMATCH',
+} as const;
+
+export type IdempotencyClaimStatus =
+	(typeof IDEMPOTENCY_CLAIM_STATUS)[keyof typeof IDEMPOTENCY_CLAIM_STATUS];
+
+export const SUBSCRIPTION_EVENTS = {
+	ACTIVATED: 'subscription.activated',
+	EXPIRED: 'subscription.expired',
+	RENEWED: 'subscription.renewed',
+} as const;
+
+export const PAYMENT_STATUS = {
+	CREATED: 'CREATED',
+	CAPTURED: 'CAPTURED',
+	SUCCESS: 'SUCCESS',
+	FAILED: 'FAILED',
+	REFUNDED: 'REFUNDED',
+} as const;
+
+export const SUBSCRIPTION_STATUS = {
+	PENDING: 'PENDING',
+	ACTIVE: 'ACTIVE',
+	EXPIRED: 'EXPIRED',
+	CANCELLED: 'CANCELLED',
+	PAST_DUE: 'PAST_DUE',
+} as const;
+
+export const INVOICE_STATUS = {
+	DRAFT: 'DRAFT',
+	PAID: 'PAID',
+	VOID: 'VOID',
+} as const;
+
+export const SUBSCRIPTION_BILLING_HISTORY_PAGINATION = {
+	DEFAULT_PAGE: 1,
+	DEFAULT_LIMIT: 10,
+	MAX_LIMIT: 50,
+} as const;
+
+export const INVOICE_URL_EXPIRATION_SECONDS = 900;
+
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS];
+export type InvoiceStatus = (typeof INVOICE_STATUS)[keyof typeof INVOICE_STATUS];
+export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];

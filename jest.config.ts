@@ -1,0 +1,55 @@
+import type { Config } from 'jest';
+
+const config: Config = {
+	testEnvironment: 'node',
+	maxWorkers: 1,
+	setupFiles: ['<rootDir>/test/setup.ts'],
+	extensionsToTreatAsEsm: ['.ts'],
+	moduleNameMapper: {
+		'^@domain/(.*)\\.(ts|js)$': '<rootDir>/src/domain/$1',
+		'^@domain/(.*)$': '<rootDir>/src/domain/$1',
+		'^@application/(.*)\\.(ts|js)$': '<rootDir>/src/application/$1',
+		'^@application/(.*)$': '<rootDir>/src/application/$1',
+		'^@infrastructure/(.*)\\.(ts|js)$': '<rootDir>/src/infrastructure/$1',
+		'^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+		'^@presentation/(.*)\\.(ts|js)$': '<rootDir>/src/presentation/$1',
+		'^@presentation/(.*)$': '<rootDir>/src/presentation/$1',
+		'^@modules/(.*)\\.(ts|js)$': '<rootDir>/src/modules/$1',
+		'^@modules/(.*)$': '<rootDir>/src/modules/$1',
+		'^@shared/(.*)\\.(ts|js)$': '<rootDir>/src/shared/$1',
+		'^@shared/(.*)$': '<rootDir>/src/shared/$1',
+		'^@config/(.*)\\.(ts|js)$': '<rootDir>/src/config/$1',
+		'^@config/(.*)$': '<rootDir>/src/config/$1',
+		'^@di/(.*)\\.(ts|js)$': '<rootDir>/src/di/$1',
+		'^@di/(.*)$': '<rootDir>/src/di/$1',
+		'^@spotq-org/circuit-breaker$':
+			'<rootDir>/node_modules/@spotq-org/circuit-breaker/dist/index.js',
+		'^(\\.{1,2}/.*)\\.ts$': '$1',
+		'^(\\.{1,2}/.*)\\.js$': '$1',
+	},
+	transform: {
+		'^.+\\.(t|j)sx?$': [
+			'@swc/jest',
+			{
+				jsc: {
+					parser: {
+						syntax: 'typescript',
+						decorators: true,
+						dynamicImport: true,
+					},
+					transform: {
+						legacyDecorator: true,
+						decoratorMetadata: true,
+					},
+					target: 'es2022',
+				},
+				module: {
+					type: 'es6',
+				},
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*(inversify|@inversifyjs|@spotq-org))'],
+};
+
+export default config;
